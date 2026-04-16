@@ -1,0 +1,41 @@
+{
+  "name": "sajuweb",
+  "version": "1.0.0",
+  "description": "사주 분석 챗봇 웹서비스. 사용자가 생년월일시를 입력하면 사주팔자를 계산하고 Claude API를 통해 해석 및 대화형 인터랙션을 제공한다.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "typescript": "^6.0.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.89.0",
+    "@tailwindcss/postcss": "^4.2.2",
+    "date-fns": "^4.1.0",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^17.4.2",
+    "lucide-react": "^1.8.0",
+    "next": "^16.2.3",
+    "postcss": "^8.5.9",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.2.2",
+    "zod": "^4.3.6"
+  }
+}

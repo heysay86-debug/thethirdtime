@@ -1,0 +1,84 @@
+/**
+ * 사주 전체 분석 통합 함수
+ *
+ * 입력: 생년월일시 + 옵션
+ * 출력: SajuResult (M8~M14.5 전체 통합 JSON)
+ */
+
+import { calculateSaju, SajuInput } from './saju';
+import { calculateTenGods } from './ten_gods';
+import { calculateAllJijanggan } from './jijanggan';
+import { analyzeDayMasterStrength } from './day_master_strength';
+import { determineGyeokGuk } from './gyeok_guk';
+import { determineYongSin } from './yong_sin';
+import { calculateDaeun, calculateSeUn } from './daeun';
+import { SajuResultSchema, SajuResult } from './schema';
+
+export function analyzeSaju(input: SajuInput): SajuResult {
+  // M8: 4기둥
+  const saju = calculateSaju(input);
+  const pillars = {
+    year: saju.yearPillar,
+    month: saju.monthPillar,
+    day: saju.dayPillar,
+    hour: saju.hourPillar,
+  };
+
+  const dayStem = saju.dayPillar.gan;
+
+  // M9: 십성
+  const tenGods = calculateTenGods(dayStem, pillars);
+
+  // M10: 지장간
+  const jijanggan = calculateAllJijanggan(pillars);
+
+  // M11: 신강/신약
+  const strength = analyzeDayMasterStrength(dayStem, pillars);
+
+  // M12: 격국
+  const gyeokGuk = determineGyeokGuk(dayStem, pillars);
+
+  // M13: 용신
+  const yongSin = determineYongSin(dayStem, pillars, strength.level, gyeokGuk.type);
+
+  // M14.5: 대운/세운 (분석 포함)
+  const yongSinElement = yongSin.final.primary as '木' | '火' | '土' | '金' | '水';
+
+  let daeun = null;
+  if (input.gender && input.birthTime) {
+    const [y, m, d] = saju.birth.solar.split('-').map(Number);
+    const [hh, mm] = (saju.birth.adjustedTime ?? input.birthTime).split(':').map(Number);
+    const adjustedBirthDate = new Date(y, m - 1, d, hh, mm);
+
+    daeun = calculateDaeun(
+      pillars.year.gan,
+      pillars.month.gan,
+      pillars.month.ji,
+      input.gender,
+      adjustedBirthDate,
+      pillars,
+      yongSinElement,
+    );
+  }
+
+  // 세운: 올해부터 10년
+  const currentYear = new Date().getFullYear();
+  const seun = calculateSeUn(currentYear, currentYear + 9, pillars, yongSinElement);
+
+  const result: SajuResult = {
+    pillars,
+    birth: saju.birth,
+    tenGods,
+    jijanggan,
+    strength,
+    gyeokGuk,
+    yongSin,
+    daeun,
+    seun,
+  };
+
+  // Zod 검증
+  SajuResultSchema.parse(result);
+
+  return result;
+}

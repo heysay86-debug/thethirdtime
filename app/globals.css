@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 295 100% 79%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 294 100% 94%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 53%;
+    --accent: 54 100% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 295 100% 79%;
+    --radius: 0.75rem;
+    --chart-1: 295 100% 79%;
+    --chart-2: 335 100% 79%;
+    --chart-3: 15 100% 79%;
+    --chart-4: 95 100% 79%;
+    --chart-5: 155 100% 79%;
+  }
+
+  .dark {
+    --background: 290 17% 7%;
+    --foreground: 0 0% 98%;
+    --card: 287 18% 10%;
+    --card-foreground: 0 0% 98%;
+    --popover: 289 18% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 295 100% 79%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 293 16% 20%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 293 11% 15%;
+    --muted-foreground: 0 0% 63%;
+    --accent: 54 100% 50%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 300 10% 18%;
+    --input: 300 10% 23%;
+    --ring: 295 100% 79%;
+    --chart-1: 295 100% 79%;
+    --chart-2: 335 100% 79%;
+    --chart-3: 15 100% 79%;
+    --chart-4: 95 100% 79%;
+    --chart-5: 155 100% 79%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", Roboto,
+      "Noto Sans KR", "Malgun Gothic", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
