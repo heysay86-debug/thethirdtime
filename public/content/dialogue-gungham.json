@@ -1,0 +1,20 @@
+{
+  "id": "gungham-tease",
+  "description": "개인 결과 후 궁합 유도",
+  "lines": [
+    {
+      "character": "doin",
+      "name": "도인",
+      "text": "혼자만의 이야기가 아닌,\n누군가와의 이야기도 궁금하다면…"
+    },
+    {
+      "character": "doin",
+      "text": "두 사람, 혹은 세 사람의 사주를\n함께 풀어볼 수 있어요.",
+      "action": "show_choices",
+      "choices": [
+        { "label": "2인 궁합 보기", "action": "open_gungham_2", "style": "primary" },
+        { "label": "3인 궁합 보기", "action": "open_gungham_3", "style": "secondary" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "upsell",
+  "description": "무료 결과 후 과금 유도 대화",
+  "lines": [
+    {
+      "character": "angel",
+      "name": "안내자",
+      "text": "여기까지가 무료로 볼 수 있는\n당신의 사주 겉모습이에요."
+    },
+    {
+      "character": "devil",
+      "text": "하지만 진짜 이야기는\n이제부터 시작이라면?",
+      "style": "whisper"
+    },
+    {
+      "character": "angel",
+      "text": "격국과 용신, 대운의 흐름까지...\n더 깊은 해석이 기다리고 있어요.",
+      "style": "emphasis"
+    }
+  ]
+}

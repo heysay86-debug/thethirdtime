@@ -1,0 +1,37 @@
+{
+  "id": "result-comments",
+  "description": "ZONE B 결과 내 인라인 대화창 템플릿",
+  "sections": {
+    "after_pillar_table": [
+      {
+        "character": "speak",
+        "name": "안내자",
+        "text": "이것이 당신의 사주원국이에요.\n네 기둥에 담긴 이야기를 살펴볼게요."
+      }
+    ],
+    "after_seun": [
+      {
+        "character": "speak",
+        "text": "올해와 내년의 흐름을\n살짝 엿볼 수 있어요."
+      }
+    ],
+    "after_oheng": [
+      {
+        "character": "flash",
+        "text": "오행의 균형이 보이시나요?\n이것이 당신의 에너지 분포예요.",
+        "style": "emphasis"
+      }
+    ],
+    "free_section_end": [
+      {
+        "character": "normal",
+        "text": "여기까지가 당신의 사주에서\n보이는 겉모습이에요."
+      },
+      {
+        "character": "speak",
+        "text": "더 깊은 이야기가 궁금하다면...",
+        "style": "whisper"
+      }
+    ]
+  }
+}

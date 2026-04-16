@@ -1,0 +1,291 @@
+{
+  "id": "intro",
+  "description": "ZONE A 도입 대화 + 대화형 입력 수집. 멀린의 후예(도인)가 유저를 맞이하고 시간의 유적에서 사주 정보를 수집한다.",
+  "lines": [
+    {
+      "character": "normal",
+      "name": "???",
+      "text": "......누군가 오는군.",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "name": "???",
+      "text": "오래 기다렸네.\n자네가 올 줄 알고 있었지.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "name": "복길",
+      "text": "나는 대마법사 멀린의 후예. \n시간의 마법사 복길이다",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "오늘 자네가 나의 공간에 찾아올 것이라는 사실은 \n이미 예정된 일이었어",
+      "style": "normal",
+      "icon": "star"
+    },
+    {
+      "character": "magician",
+      "name": "복길",
+      "text": "자네 역시 자신의 운명의 방향을 확인하고 싶겠지?",
+      "style": "normal"
+    },
+    {
+      "character": "flash",
+      "text": "좋아. 자네의 숨겨진 힘,\n내가 찾아주지.",
+      "style": "emphasis"
+    },
+    {
+      "character": "crazy",
+      "text": "하지만 그러려면\n자네가 태어난 그 순간으로\n돌아가야 하네.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "모든 시간이 교차하는 [시간의 유적]\n그곳에서 과거로 거슬러 올라갈 수 있지.",
+      "style": "normal",
+      "icon": "wait"
+    },
+    {
+      "character": "excite",
+      "text": "함께 가보겠나?",
+      "style": "emphasis",
+      "action": "show_choices",
+      "choices": [
+        {
+          "label": "함께 가겠습니다",
+          "action": "start_input_flow",
+          "style": "primary"
+        },
+        {
+          "label": "조금 더 알려주세요",
+          "action": "continue",
+          "style": "secondary"
+        }
+      ]
+    },
+    {
+      "character": "sweat",
+      "text": "허허, 신중한 성격이로군.\n좋아, 조금 더 설명해주지.",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "사람은 누구나 태어난 순간\n시간으로부터 ID를 부여받는다네",
+      "style": "normal",
+      "icon": "star"
+    },
+    {
+      "character": "speak",
+      "text": "어렵게 들리지만 간단해. \n출생시점에 자신을 둘러싼 환경의 상태",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "해석은 각자 달라도 동서양의 운명해석의 근간은 점성술일세. \n자네도 이 태양계의 구조를 이해하고 있겠지?",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "본인이 태어난 계절은, 바꿔 이야기 하면 \n태양으로부터의 거리가 어느정도인지에 따라 결정되지",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "그리고 이 태양계를 구성하는 별들의 운행이 \n본인이 느끼지 못하는 영역에서 영향을 주고 있지",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "그 심오한 운명의 길을 대마법사 멀린의 후예인 나 복길이! \n자네에게 익숙한 사주팔자의 구조로 눈 앞에 보여줄걸세",
+      "style": "emphasis"
+    },
+    {
+      "character": "excite",
+      "text": "자, 이제 준비가 됐나?",
+      "style": "emphasis",
+      "action": "show_choices",
+      "choices": [
+        {
+          "label": "함께 가겠습니다",
+          "action": "start_input_flow",
+          "style": "primary"
+        }
+      ]
+    }
+  ],
+  "inputFlow": [
+    {
+      "character": "magician",
+      "name": "복길",
+      "text": "유적에 들어가기 전에\n자네에 대해 알아야겠군.\n이름이 무엇인가?",
+      "action": "input_name",
+      "inputConfig": {
+        "placeholder": "이름을 입력하세요",
+        "skipLabel": "밝히지 않겠습니다"
+      },
+      "responses": {
+        "_any": {
+          "character": "magician",
+          "text": "{{value}}...\n좋은 이름이로군."
+        },
+        "_skip": {
+          "character": "magician",
+          "text": "그것도 하나의 선택이지.\n이 곳에서 이름은 무의미하니 상관 없네"
+        }
+      }
+    },
+    {
+      "character": "magician",
+      "text": "그리고 유적을 작동할 때 외울 주문에 필요하니 \n자네 성별을 알려주게",
+      "action": "input_gender",
+      "responses": {
+        "M": {
+          "character": "doin",
+          "text": "건양의 기운이 느껴지는군.\n대운의 방향을 정할 수 있겠어."
+        },
+        "F": {
+          "character": "doin",
+          "text": "곤음의 기운이 느껴지는군.\n대운의 방향을 정할 수 있겠어."
+        }
+      }
+    },
+    {
+      "character": "magician",
+      "text": "좋아. 이제 유적으로 가세.\n시간의 유적은 태양의 신전과 달의 신전으로 나뉘어 있지.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "name": "복길",
+      "text": "자네가 태어난 날을 알려주게.\n양력인지 음력인지도 함께 말이야.",
+      "action": "input_birthdate",
+      "icon": "excl",
+      "responses": {
+        "_any": {
+          "character": "flash",
+          "text": "좋아, 받았네. 유적으로 향하지."
+        }
+      }
+    },
+    {
+      "character": "magician",
+      "text": "......",
+      "style": "system"
+    },
+    {
+      "character": "magician",
+      "text": "시간의 유적에 도착했네.",
+      "style": "system",
+      "action": "bg_past"
+    },
+    {
+      "character": "crazy",
+      "text": "오...! 보이는가?\n이곳이 자네가 태어난 바로 그 시점이야.",
+      "style": "emphasis"
+    },
+    {
+      "character": "speak",
+      "text": "우주의 한 귀퉁이에 떠 있는 이 작은 방...\n자네의 시간은 이곳에서 시작되었지.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "저기 벽에 달력이 걸려 있군.\n확인해보게.",
+      "style": "normal"
+    },
+    {
+      "character": "excite",
+      "text": "{{birthdate_display}}\n이 날이 맞는가?",
+      "style": "emphasis",
+      "action": "show_choices",
+      "choices": [
+        { "label": "맞아, 이 날이야", "action": "confirm_birthdate", "style": "primary" },
+        { "label": "아니, 다시 입력할게", "action": "retry_birthdate", "style": "secondary" }
+      ]
+    },
+    {
+      "character": "doin",
+      "text": "좋아. 이제 저 시계를 보게.\n자네가 이 세상에 첫 울음을 터뜨린\n바로 그 시각이 적혀 있을 거야.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "자네는 자네 출생에 대한\n비밀을 들은 적이 있는가?",
+      "action": "input_birthtime",
+      "icon": "ques",
+      "inputConfig": {
+        "skipLabel": "모르겠어요",
+        "skipValue": "unknown"
+      },
+      "responses": {
+        "_any": {
+          "character": "flash",
+          "text": "{{value}}...\n그래, 그 시각이었군.\n시계의 바늘이 움직이기 시작했어."
+        },
+        "_skip": {
+          "character": "sweat",
+          "text": "시계가... 멈춰 있군.\n때론 모르는 것이 나을 수도 있지."
+        }
+      }
+    },
+    {
+      "character": "speak",
+      "text": "이 방의 창밖을 보게.\n별들의 위치가 자네가 태어난 곳을 가리키고 있어.",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "자네가 태어난 곳의 기운을\n기억해보게. 어디였지?\n가장 가까운 곳을 선택하게.",
+      "action": "input_birthcity",
+      "inputConfig": {
+        "skipLabel": "서울 기준으로 하겠습니다",
+        "skipValue": "서울",
+        "options": [
+          "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
+          "수원", "성남", "고양", "용인", "부천", "안산", "안양", "남양주",
+          "화성", "평택", "의정부", "시흥", "파주", "김포",
+          "춘천", "원주", "강릉", "청주", "충주", "천안", "아산",
+          "전주", "군산", "익산", "목포", "여수", "순천",
+          "포항", "경주", "구미", "안동", "창원", "진주", "김해",
+          "제주", "서귀포"
+        ]
+      },
+      "responses": {
+        "_any": {
+          "character": "flash",
+          "text": "{{value}}...\n그곳의 기운까지 반영하겠네.\n시간 보정이 더 정확해질 거야."
+        },
+        "_skip": {
+          "character": "flash",
+          "text": "좋네. 서울의 기준점으로 읽겠네."
+        }
+      }
+    },
+    {
+      "character": "magician",
+      "text": "......",
+      "style": "system"
+    },
+    {
+      "character": "excite",
+      "name": "복길",
+      "text": "됐어! 네 기둥의 글자가\n모두 드러나기 시작했네!",
+      "style": "emphasis",
+      "icon": "star"
+    },
+    {
+      "character": "magician",
+      "text": "이 방의 모든 것이 자네의 사주를 가리키고 있었어.\n달력은 자네의 날을, 시계는 자네의 시를.",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "이제 시간의 문을 열어\n자네의 숨겨진 힘을 읽어보지.",
+      "style": "emphasis",
+      "action": "submit_and_transition"
+    }
+  ]
+}

@@ -240,12 +240,13 @@
 ### alt1 / alt2 분기
 - [ ] 현재 구현을 `app/alt1/`로 이전. `app/page.tsx`는 alt1 redirect.
 - [ ] `app/alt2/` 신규 구현 — 캐릭터 스토리텔링 버전
-  - 선행 조건: 캐릭터 SVG 파일 `public/character/`에 준비 (AI/PDF → SVG 변환)
+  - **구현 명령서**: `docs/alt2-implementation-guide.md` (단계별 상세 지시)
+  - **디자인 시스템**: `DESIGN-ALT2.md` (Mystical Night 테마)
+  - 선행 조건: 캐릭터 SVG 파일 `public/character/`에 준비 (placeholder로 선 구현, 후 교체)
   - Step 1 랜딩: 캐릭터 + 타이핑 말풍선 + CTA
-  - Step 2 입력: SajuForm 재사용
-  - Step 3 핵심판단: CoreJudgment 재사용 + 캐릭터 내레이션 (1.5초 간격 순차 등장)
-  - Step 4 상세해석: InterpretationStream 재사용 + 캐릭터 아이콘
-  - Step 5 PDF: window.print() MVP
+  - Step 2 입력: SajuForm 로직 재사용, UI 다크 테마 재작성
+  - Step 3 로딩: 캐릭터 애니메이션 + 순환 멘트
+  - Step 4 결과: PillarCard + CoreNarration + StreamRenderer (스크롤 레이아웃)
 - [ ] alt1·alt2 비교 후 메인 방향 확정
 
 ### M-SEO. 검색엔진 최적화 (Phase 4 병행)
