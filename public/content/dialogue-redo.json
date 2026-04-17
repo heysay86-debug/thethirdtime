@@ -1,0 +1,35 @@
+{
+  "id": "redo",
+  "description": "다시하기 시 짧은 대화 + 한 번에 입력 수집",
+  "lines": [
+    {
+      "character": "excite",
+      "name": "복길",
+      "text": "다시 해보고 싶은가 보군.\n한 번 해봤으니\n이제 잘 할 수 있겠지?",
+      "style": "normal"
+    },
+    {
+      "character": "magician",
+      "text": "이번엔 빠르게 가자.\n정보를 한 번에 알려주게.",
+      "style": "normal",
+      "action": "open_input_modal"
+    }
+  ],
+  "afterInput": [
+    {
+      "character": "flash",
+      "name": "복길",
+      "text": "좋아, 경험치가 쌓이니\n훨씬 빠르군!",
+      "style": "emphasis"
+    },
+    {
+      "character": "excite",
+      "text": "자, 그럼 다시\n신전으로 가볼까?",
+      "style": "emphasis",
+      "action": "show_choices",
+      "choices": [
+        { "label": "준비되었습니다", "action": "submit_and_transition", "style": "primary" }
+      ]
+    }
+  ]
+}

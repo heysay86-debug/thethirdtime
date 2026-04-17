@@ -12,6 +12,8 @@ import { analyzeDayMasterStrength } from './day_master_strength';
 import { determineGyeokGuk } from './gyeok_guk';
 import { determineYongSin } from './yong_sin';
 import { calculateDaeun, calculateSeUn } from './daeun';
+import { calculateSinsal } from './sinsal';
+import { calculateTwelveStages } from './twelve_stages';
 import { SajuResultSchema, SajuResult } from './schema';
 
 export function analyzeSaju(input: SajuInput): SajuResult {
@@ -32,6 +34,9 @@ export function analyzeSaju(input: SajuInput): SajuResult {
   // M10: 지장간
   const jijanggan = calculateAllJijanggan(pillars);
 
+  // 십이운성
+  const twelveStages = calculateTwelveStages(dayStem, pillars);
+
   // M11: 신강/신약
   const strength = analyzeDayMasterStrength(dayStem, pillars);
 
@@ -40,6 +45,9 @@ export function analyzeSaju(input: SajuInput): SajuResult {
 
   // M13: 용신
   const yongSin = determineYongSin(dayStem, pillars, strength.level, gyeokGuk.type);
+
+  // M14.6: 신살
+  const sinsal = calculateSinsal(pillars);
 
   // M14.5: 대운/세운 (분석 포함)
   const yongSinElement = yongSin.final.primary as '木' | '火' | '土' | '金' | '水';
@@ -70,9 +78,11 @@ export function analyzeSaju(input: SajuInput): SajuResult {
     birth: saju.birth,
     tenGods,
     jijanggan,
+    twelveStages,
     strength,
     gyeokGuk,
     yongSin,
+    sinsal,
     daeun,
     seun,
   };

@@ -44,7 +44,7 @@
     },
     {
       "character": "magician",
-      "text": "모든 시간이 교차하는 [시간의 유적]\n그곳에서 과거로 거슬러 올라갈 수 있지.",
+      "text": "모든 시간이 교차하는 \n[시간의 유적]\n그곳에서 과거로 거슬러 올라갈 수 있지.",
       "style": "normal",
       "icon": "wait"
     },
@@ -153,6 +153,11 @@
       }
     },
     {
+      "character": "normal",
+      "text": "어? 순간 모습이 바뀐 것 같은데, 뭐지...?",
+      "style": "thought"
+    },
+    {
       "character": "magician",
       "text": "좋아. 이제 유적으로 가세.\n시간의 유적은 태양의 신전과 달의 신전으로 나뉘어 있지.",
       "style": "normal"
@@ -177,13 +182,24 @@
     },
     {
       "character": "magician",
-      "text": "시간의 유적에 도착했네.",
-      "style": "system",
+      "name": "복길",
+      "text": "여기가 시간의 유적이야.\n과거와 현재가 교차하는 곳이지.",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "이 제단에 자네의 시간을\n새기면, 태어난 그 순간으로\n거슬러 올라갈 수 있어.",
+      "style": "normal"
+    },
+    {
+      "character": "excite",
+      "text": "자, 문을 열겠네.\n단단히 붙잡게!",
+      "style": "emphasis",
       "action": "bg_past"
     },
     {
       "character": "crazy",
-      "text": "오...! 보이는가?\n이곳이 자네가 태어난 바로 그 시점이야.",
+      "text": "오...! 보이는가?\n이곳이 자네가 태어난\n바로 그 시점이야.",
       "style": "emphasis"
     },
     {
@@ -202,8 +218,16 @@
       "style": "emphasis",
       "action": "show_choices",
       "choices": [
-        { "label": "맞아, 이 날이야", "action": "confirm_birthdate", "style": "primary" },
-        { "label": "아니, 다시 입력할게", "action": "retry_birthdate", "style": "secondary" }
+        {
+          "label": "맞아, 이 날이야",
+          "action": "confirm_birthdate",
+          "style": "primary"
+        },
+        {
+          "label": "아니, 다시 입력할게",
+          "action": "retry_birthdate",
+          "style": "secondary"
+        }
       ]
     },
     {
@@ -244,13 +268,50 @@
         "skipLabel": "서울 기준으로 하겠습니다",
         "skipValue": "서울",
         "options": [
-          "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종",
-          "수원", "성남", "고양", "용인", "부천", "안산", "안양", "남양주",
-          "화성", "평택", "의정부", "시흥", "파주", "김포",
-          "춘천", "원주", "강릉", "청주", "충주", "천안", "아산",
-          "전주", "군산", "익산", "목포", "여수", "순천",
-          "포항", "경주", "구미", "안동", "창원", "진주", "김해",
-          "제주", "서귀포"
+          "서울",
+          "부산",
+          "대구",
+          "인천",
+          "광주",
+          "대전",
+          "울산",
+          "세종",
+          "수원",
+          "성남",
+          "고양",
+          "용인",
+          "부천",
+          "안산",
+          "안양",
+          "남양주",
+          "화성",
+          "평택",
+          "의정부",
+          "시흥",
+          "파주",
+          "김포",
+          "춘천",
+          "원주",
+          "강릉",
+          "청주",
+          "충주",
+          "천안",
+          "아산",
+          "전주",
+          "군산",
+          "익산",
+          "목포",
+          "여수",
+          "순천",
+          "포항",
+          "경주",
+          "구미",
+          "안동",
+          "창원",
+          "진주",
+          "김해",
+          "제주",
+          "서귀포"
         ]
       },
       "responses": {
@@ -284,8 +345,20 @@
     {
       "character": "magician",
       "text": "이제 시간의 문을 열어\n자네의 숨겨진 힘을 읽어보지.",
+      "style": "emphasis"
+    },
+    {
+      "character": "excite",
+      "text": "준비되었나?",
       "style": "emphasis",
-      "action": "submit_and_transition"
+      "action": "show_choices",
+      "choices": [
+        {
+          "label": "준비되었습니다",
+          "action": "submit_and_transition",
+          "style": "primary"
+        }
+      ]
     }
   ]
 }

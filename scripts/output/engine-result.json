@@ -1,0 +1,900 @@
+{
+  "pillars": {
+    "year": {
+      "gan": "丙",
+      "ji": "寅"
+    },
+    "month": {
+      "gan": "丁",
+      "ji": "酉"
+    },
+    "day": {
+      "gan": "壬",
+      "ji": "戌"
+    },
+    "hour": {
+      "gan": "庚",
+      "ji": "子"
+    }
+  },
+  "birth": {
+    "solar": "1986-09-15",
+    "time": "01:17",
+    "adjustedTime": "00:45",
+    "city": "서울",
+    "offsetMinutes": -32
+  },
+  "tenGods": {
+    "yearGan": "편재",
+    "monthGan": "정재",
+    "dayGan": "비견",
+    "hourGan": "편인",
+    "yearJi": "식신",
+    "monthJi": "정인",
+    "dayJi": "편관",
+    "hourJi": "겁재"
+  },
+  "jijanggan": {
+    "year": [
+      {
+        "stem": "戊",
+        "role": "여기",
+        "days": 7,
+        "strength": 23
+      },
+      {
+        "stem": "丙",
+        "role": "중기",
+        "days": 7,
+        "strength": 23
+      },
+      {
+        "stem": "甲",
+        "role": "정기",
+        "days": 16,
+        "strength": 54
+      }
+    ],
+    "month": [
+      {
+        "stem": "庚",
+        "role": "여기",
+        "days": 10,
+        "strength": 33
+      },
+      {
+        "stem": "辛",
+        "role": "정기",
+        "days": 20,
+        "strength": 67
+      }
+    ],
+    "day": [
+      {
+        "stem": "辛",
+        "role": "여기",
+        "days": 9,
+        "strength": 29
+      },
+      {
+        "stem": "丁",
+        "role": "중기",
+        "days": 3,
+        "strength": 10
+      },
+      {
+        "stem": "戊",
+        "role": "정기",
+        "days": 19,
+        "strength": 61
+      }
+    ],
+    "hour": [
+      {
+        "stem": "壬",
+        "role": "여기",
+        "days": 10,
+        "strength": 33
+      },
+      {
+        "stem": "癸",
+        "role": "정기",
+        "days": 20,
+        "strength": 67
+      }
+    ]
+  },
+  "strength": {
+    "level": "신강",
+    "score": 70,
+    "wolryeong": "득령",
+    "details": {
+      "wolryeongScore": 18,
+      "deukjiScore": 8.9,
+      "deukseScore": 6,
+      "seolgiPenalty": -8
+    },
+    "cheonganHaps": [
+      {
+        "stem1": "丁",
+        "stem2": "壬",
+        "position1": "월간",
+        "position2": "일간",
+        "hwaElement": "木"
+      }
+    ],
+    "monthDamage": [
+      {
+        "type": "해",
+        "ji1": "酉",
+        "ji2": "戌",
+        "position1": "월지",
+        "position2": "일지"
+      },
+      {
+        "type": "파",
+        "ji1": "酉",
+        "ji2": "子",
+        "position1": "월지",
+        "position2": "시지"
+      }
+    ]
+  },
+  "gyeokGuk": {
+    "type": "편인격",
+    "category": "내격",
+    "basis": {
+      "method": "투출",
+      "sourceStem": "庚",
+      "sourcePosition": "시간"
+    },
+    "monthMainTenGod": "정인",
+    "state": "파격",
+    "breakCauses": [
+      "재극인(財克印): 재성이 인성을 극"
+    ],
+    "weakenedBy": [
+      "酉戌해(월지/일지): 월지 해으로 격 약화"
+    ],
+    "strengthLevel": "신강",
+    "warnings": [
+      "酉戌해(월지/일지): 월지 해으로 격 약화"
+    ]
+  },
+  "yongSin": {
+    "methods": {
+      "eokbu": {
+        "applicable": true,
+        "primary": "木",
+        "secondary": "火",
+        "reasoning": "일간(水) 신강 — 설기 木(식상) + 火(재성)"
+      },
+      "johu": {
+        "applicable": true,
+        "primary": "木",
+        "secondary": "金",
+        "reasoning": "궁통보감 壬일간 유월: 甲/庚 — 중가을 금왕, 甲木 설기+庚金 보조"
+      },
+      "tonggwan": {
+        "applicable": false,
+        "primary": null,
+        "secondary": null,
+        "reasoning": "오행 대립 없음, 통관 불필요"
+      },
+      "byeongyak": {
+        "applicable": false,
+        "primary": null,
+        "secondary": null,
+        "reasoning": "과다 오행 없음, 병약 불필요"
+      },
+      "jeonwang": {
+        "applicable": false,
+        "primary": null,
+        "secondary": null,
+        "reasoning": "종격 아님"
+      }
+    },
+    "final": {
+      "primary": "木",
+      "secondary": "火",
+      "xiSin": [
+        "木",
+        "火",
+        "水"
+      ],
+      "giSin": [
+        "金"
+      ],
+      "method": "억부+조후 일치",
+      "reasoning": "일간(水) 신강 — 설기 木(식상) + 火(재성) / 궁통보감 壬일간 유월: 甲/庚 — 중가을 금왕, 甲木 설기+庚金 보조"
+    }
+  },
+  "sinsal": [
+    {
+      "name": "문창귀인",
+      "position": "연주"
+    },
+    {
+      "name": "천복귀인",
+      "position": "월주"
+    },
+    {
+      "name": "천주귀인",
+      "position": "연주"
+    },
+    {
+      "name": "천덕귀인",
+      "position": "연주"
+    },
+    {
+      "name": "월덕귀인",
+      "position": "시주"
+    },
+    {
+      "name": "원진살",
+      "position": "월주"
+    },
+    {
+      "name": "양인살",
+      "position": "시주"
+    },
+    {
+      "name": "홍염살",
+      "position": "시주"
+    },
+    {
+      "name": "현침살",
+      "position": "일주"
+    },
+    {
+      "name": "협록",
+      "position": "일주"
+    },
+    {
+      "name": "협록",
+      "position": "시주"
+    },
+    {
+      "name": "공망",
+      "position": "시주"
+    },
+    {
+      "name": "육해살",
+      "position": "월주"
+    },
+    {
+      "name": "화개살",
+      "position": "일주"
+    },
+    {
+      "name": "재살",
+      "position": "시주"
+    }
+  ],
+  "daeun": {
+    "direction": "순행",
+    "startAge": 8,
+    "periods": [
+      {
+        "index": 1,
+        "startAge": 8,
+        "endAge": 17,
+        "gan": "戊",
+        "ji": "戌",
+        "analysis": {
+          "ganTenGod": "편관",
+          "jiTenGod": "편관",
+          "yongSinRelation": "중립",
+          "cheonganHaps": [],
+          "jijiRelations": [
+            {
+              "type": "해",
+              "ji1": "戌",
+              "ji2": "酉",
+              "position1": "대운",
+              "position2": "월지"
+            }
+          ],
+          "score": 42,
+          "rating": "평"
+        },
+        "sinsal": [
+          {
+            "name": "화개살"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "startAge": 18,
+        "endAge": 27,
+        "gan": "己",
+        "ji": "亥",
+        "analysis": {
+          "ganTenGod": "정관",
+          "jiTenGod": "비견",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [],
+          "jijiRelations": [],
+          "score": 75,
+          "rating": "대길"
+        },
+        "sinsal": [
+          {
+            "name": "겁살"
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "startAge": 28,
+        "endAge": 37,
+        "gan": "庚",
+        "ji": "子",
+        "analysis": {
+          "ganTenGod": "편인",
+          "jiTenGod": "겁재",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [],
+          "jijiRelations": [],
+          "score": 70,
+          "rating": "길"
+        },
+        "sinsal": [
+          {
+            "name": "재살"
+          }
+        ]
+      },
+      {
+        "index": 4,
+        "startAge": 38,
+        "endAge": 47,
+        "gan": "辛",
+        "ji": "丑",
+        "analysis": {
+          "ganTenGod": "정인",
+          "jiTenGod": "정관",
+          "yongSinRelation": "기신",
+          "cheonganHaps": [
+            {
+              "stem1": "辛",
+              "stem2": "丙",
+              "position1": "대운",
+              "position2": "연간",
+              "hwaElement": "水"
+            }
+          ],
+          "jijiRelations": [
+            {
+              "type": "형",
+              "ji1": "丑",
+              "ji2": "戌",
+              "position1": "대운",
+              "position2": "일지"
+            }
+          ],
+          "score": 37,
+          "rating": "흉"
+        },
+        "sinsal": [
+          {
+            "name": "천살"
+          }
+        ]
+      },
+      {
+        "index": 5,
+        "startAge": 48,
+        "endAge": 57,
+        "gan": "壬",
+        "ji": "寅",
+        "analysis": {
+          "ganTenGod": "비견",
+          "jiTenGod": "식신",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [
+            {
+              "stem1": "壬",
+              "stem2": "丁",
+              "position1": "대운",
+              "position2": "월간",
+              "hwaElement": "木"
+            }
+          ],
+          "jijiRelations": [],
+          "score": 77,
+          "rating": "대길"
+        },
+        "sinsal": [
+          {
+            "name": "지살"
+          }
+        ]
+      },
+      {
+        "index": 6,
+        "startAge": 58,
+        "endAge": 67,
+        "gan": "癸",
+        "ji": "卯",
+        "analysis": {
+          "ganTenGod": "겁재",
+          "jiTenGod": "상관",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [],
+          "jijiRelations": [
+            {
+              "type": "충",
+              "ji1": "卯",
+              "ji2": "酉",
+              "position1": "대운",
+              "position2": "월지"
+            },
+            {
+              "type": "형",
+              "ji1": "卯",
+              "ji2": "子",
+              "position1": "대운",
+              "position2": "시지"
+            }
+          ],
+          "score": 50,
+          "rating": "평"
+        },
+        "sinsal": [
+          {
+            "name": "연살"
+          }
+        ]
+      },
+      {
+        "index": 7,
+        "startAge": 68,
+        "endAge": 77,
+        "gan": "甲",
+        "ji": "辰",
+        "analysis": {
+          "ganTenGod": "식신",
+          "jiTenGod": "편관",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [],
+          "jijiRelations": [
+            {
+              "type": "충",
+              "ji1": "辰",
+              "ji2": "戌",
+              "position1": "대운",
+              "position2": "일지"
+            }
+          ],
+          "score": 63,
+          "rating": "길"
+        },
+        "sinsal": [
+          {
+            "name": "월살"
+          }
+        ]
+      },
+      {
+        "index": 8,
+        "startAge": 78,
+        "endAge": 87,
+        "gan": "乙",
+        "ji": "巳",
+        "analysis": {
+          "ganTenGod": "상관",
+          "jiTenGod": "편재",
+          "yongSinRelation": "희신",
+          "cheonganHaps": [
+            {
+              "stem1": "乙",
+              "stem2": "庚",
+              "position1": "대운",
+              "position2": "시간",
+              "hwaElement": "金"
+            }
+          ],
+          "jijiRelations": [
+            {
+              "type": "형",
+              "ji1": "巳",
+              "ji2": "寅",
+              "position1": "대운",
+              "position2": "연지"
+            },
+            {
+              "type": "해",
+              "ji1": "巳",
+              "ji2": "寅",
+              "position1": "대운",
+              "position2": "연지"
+            }
+          ],
+          "score": 65,
+          "rating": "길"
+        },
+        "sinsal": [
+          {
+            "name": "망신살"
+          }
+        ]
+      },
+      {
+        "index": 9,
+        "startAge": 88,
+        "endAge": 97,
+        "gan": "丙",
+        "ji": "午",
+        "analysis": {
+          "ganTenGod": "편재",
+          "jiTenGod": "정재",
+          "yongSinRelation": "중립",
+          "cheonganHaps": [],
+          "jijiRelations": [
+            {
+              "type": "충",
+              "ji1": "午",
+              "ji2": "子",
+              "position1": "대운",
+              "position2": "시지"
+            }
+          ],
+          "score": 47,
+          "rating": "평"
+        },
+        "sinsal": [
+          {
+            "name": "장성살"
+          }
+        ]
+      },
+      {
+        "index": 10,
+        "startAge": 98,
+        "endAge": 107,
+        "gan": "丁",
+        "ji": "未",
+        "analysis": {
+          "ganTenGod": "정재",
+          "jiTenGod": "정관",
+          "yongSinRelation": "중립",
+          "cheonganHaps": [
+            {
+              "stem1": "丁",
+              "stem2": "壬",
+              "position1": "대운",
+              "position2": "일간",
+              "hwaElement": "木"
+            }
+          ],
+          "jijiRelations": [
+            {
+              "type": "형",
+              "ji1": "未",
+              "ji2": "戌",
+              "position1": "대운",
+              "position2": "일지"
+            },
+            {
+              "type": "해",
+              "ji1": "未",
+              "ji2": "子",
+              "position1": "대운",
+              "position2": "시지"
+            }
+          ],
+          "score": 54,
+          "rating": "평"
+        },
+        "sinsal": [
+          {
+            "name": "반안살"
+          }
+        ]
+      }
+    ]
+  },
+  "seun": [
+    {
+      "year": 2026,
+      "gan": "丙",
+      "ji": "午",
+      "analysis": {
+        "ganTenGod": "편재",
+        "jiTenGod": "정재",
+        "yongSinRelation": "중립",
+        "cheonganHaps": [],
+        "jijiRelations": [
+          {
+            "type": "충",
+            "ji1": "午",
+            "ji2": "子",
+            "position1": "대운",
+            "position2": "시지"
+          }
+        ],
+        "score": 47,
+        "rating": "평"
+      },
+      "sinsal": [
+        {
+          "name": "장성살"
+        }
+      ]
+    },
+    {
+      "year": 2027,
+      "gan": "丁",
+      "ji": "未",
+      "analysis": {
+        "ganTenGod": "정재",
+        "jiTenGod": "정관",
+        "yongSinRelation": "중립",
+        "cheonganHaps": [
+          {
+            "stem1": "丁",
+            "stem2": "壬",
+            "position1": "대운",
+            "position2": "일간",
+            "hwaElement": "木"
+          }
+        ],
+        "jijiRelations": [
+          {
+            "type": "형",
+            "ji1": "未",
+            "ji2": "戌",
+            "position1": "대운",
+            "position2": "일지"
+          },
+          {
+            "type": "해",
+            "ji1": "未",
+            "ji2": "子",
+            "position1": "대운",
+            "position2": "시지"
+          }
+        ],
+        "score": 54,
+        "rating": "평"
+      },
+      "sinsal": [
+        {
+          "name": "반안살"
+        }
+      ]
+    },
+    {
+      "year": 2028,
+      "gan": "戊",
+      "ji": "申",
+      "analysis": {
+        "ganTenGod": "편관",
+        "jiTenGod": "편인",
+        "yongSinRelation": "기신",
+        "cheonganHaps": [],
+        "jijiRelations": [
+          {
+            "type": "충",
+            "ji1": "申",
+            "ji2": "寅",
+            "position1": "대운",
+            "position2": "연지"
+          },
+          {
+            "type": "형",
+            "ji1": "申",
+            "ji2": "寅",
+            "position1": "대운",
+            "position2": "연지"
+          }
+        ],
+        "score": 14,
+        "rating": "대흉"
+      },
+      "sinsal": [
+        {
+          "name": "역마살"
+        }
+      ]
+    },
+    {
+      "year": 2029,
+      "gan": "己",
+      "ji": "酉",
+      "analysis": {
+        "ganTenGod": "정관",
+        "jiTenGod": "정인",
+        "yongSinRelation": "기신",
+        "cheonganHaps": [],
+        "jijiRelations": [
+          {
+            "type": "해",
+            "ji1": "酉",
+            "ji2": "戌",
+            "position1": "대운",
+            "position2": "일지"
+          }
+        ],
+        "score": 36,
+        "rating": "흉"
+      },
+      "sinsal": [
+        {
+          "name": "육해살"
+        }
+      ]
+    },
+    {
+      "year": 2030,
+      "gan": "庚",
+      "ji": "戌",
+      "analysis": {
+        "ganTenGod": "편인",
+        "jiTenGod": "편관",
+        "yongSinRelation": "기신",
+        "cheonganHaps": [],
+        "jijiRelations": [
+          {
+            "type": "해",
+            "ji1": "戌",
+            "ji2": "酉",
+            "position1": "대운",
+            "position2": "월지"
+          }
+        ],
+        "score": 27,
+        "rating": "흉"
+      },
+      "sinsal": [
+        {
+          "name": "화개살"
+        }
+      ]
+    },
+    {
+      "year": 2031,
+      "gan": "辛",
+      "ji": "亥",
+      "analysis": {
+        "ganTenGod": "정인",
+        "jiTenGod": "비견",
+        "yongSinRelation": "희신",
+        "cheonganHaps": [
+          {
+            "stem1": "辛",
+            "stem2": "丙",
+            "position1": "대운",
+            "position2": "연간",
+            "hwaElement": "水"
+          }
+        ],
+        "jijiRelations": [],
+        "score": 78,
+        "rating": "대길"
+      },
+      "sinsal": [
+        {
+          "name": "겁살"
+        }
+      ]
+    },
+    {
+      "year": 2032,
+      "gan": "壬",
+      "ji": "子",
+      "analysis": {
+        "ganTenGod": "비견",
+        "jiTenGod": "겁재",
+        "yongSinRelation": "희신",
+        "cheonganHaps": [
+          {
+            "stem1": "壬",
+            "stem2": "丁",
+            "position1": "대운",
+            "position2": "월간",
+            "hwaElement": "木"
+          }
+        ],
+        "jijiRelations": [],
+        "score": 71,
+        "rating": "길"
+      },
+      "sinsal": [
+        {
+          "name": "재살"
+        }
+      ]
+    },
+    {
+      "year": 2033,
+      "gan": "癸",
+      "ji": "丑",
+      "analysis": {
+        "ganTenGod": "겁재",
+        "jiTenGod": "정관",
+        "yongSinRelation": "희신",
+        "cheonganHaps": [],
+        "jijiRelations": [
+          {
+            "type": "형",
+            "ji1": "丑",
+            "ji2": "戌",
+            "position1": "대운",
+            "position2": "일지"
+          }
+        ],
+        "score": 66,
+        "rating": "길"
+      },
+      "sinsal": [
+        {
+          "name": "천살"
+        }
+      ]
+    },
+    {
+      "year": 2034,
+      "gan": "甲",
+      "ji": "寅",
+      "analysis": {
+        "ganTenGod": "식신",
+        "jiTenGod": "식신",
+        "yongSinRelation": "희신",
+        "cheonganHaps": [],
+        "jijiRelations": [],
+        "score": 79,
+        "rating": "대길"
+      },
+      "sinsal": [
+        {
+          "name": "지살"
+        }
+      ]
+    },
+    {
+      "year": 2035,
+      "gan": "乙",
+      "ji": "卯",
+      "analysis": {
+        "ganTenGod": "상관",
+        "jiTenGod": "상관",
+        "yongSinRelation": "희신",
+        "cheonganHaps": [
+          {
+            "stem1": "乙",
+            "stem2": "庚",
+            "position1": "대운",
+            "position2": "시간",
+            "hwaElement": "金"
+          }
+        ],
+        "jijiRelations": [
+          {
+            "type": "충",
+            "ji1": "卯",
+            "ji2": "酉",
+            "position1": "대운",
+            "position2": "월지"
+          },
+          {
+            "type": "형",
+            "ji1": "卯",
+            "ji2": "子",
+            "position1": "대운",
+            "position2": "시지"
+          }
+        ],
+        "score": 54,
+        "rating": "평"
+      },
+      "sinsal": [
+        {
+          "name": "연살"
+        }
+      ]
+    }
+  ]
+}

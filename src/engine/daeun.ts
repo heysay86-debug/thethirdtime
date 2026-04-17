@@ -10,6 +10,7 @@ import { findJeolgi, jeolgiToDate } from './data/jeolip_adapter';
 import { getTenGod, TenGodName } from './ten_gods';
 import { getMainStem } from './jijanggan';
 import { detectCheonganHap, detectJijiRelations, CheonganHapInfo, JijiRelation } from './relations';
+import { getSibiiSinsal, SibiiSinsalEntry } from './sinsal';
 
 // ── 상수 ──
 
@@ -59,6 +60,7 @@ export interface DaeunPeriod {
   gan: string;
   ji: string;
   analysis: PeriodAnalysis;
+  sinsal: SibiiSinsalEntry[];
 }
 
 export interface SeUnYear {
@@ -66,6 +68,7 @@ export interface SeUnYear {
   gan: string;
   ji: string;
   analysis: PeriodAnalysis;
+  sinsal: SibiiSinsalEntry[];
 }
 
 export interface DaeunResult {
@@ -114,8 +117,9 @@ export function calculateDaeun(
     const ji = JIJI[jiIdx];
 
     const analysis = analyzePeriod(gan, ji, dayStem, pillars, yongSinElement);
+    const sinsal = getSibiiSinsal(pillars.year.ji, ji);
 
-    periods.push({ index: idx, startAge: currentAge, endAge: currentAge + 9, gan, ji, analysis });
+    periods.push({ index: idx, startAge: currentAge, endAge: currentAge + 9, gan, ji, analysis, sinsal });
     currentAge += 10;
     idx++;
   }
@@ -141,7 +145,8 @@ export function calculateSeUn(
     const ji = JIJI[jiIdx];
 
     const analysis = analyzePeriod(gan, ji, dayStem, pillars, yongSinElement);
-    result.push({ year, gan, ji, analysis });
+    const sinsal = getSibiiSinsal(pillars.year.ji, ji);
+    result.push({ year, gan, ji, analysis, sinsal });
   }
 
   return result;

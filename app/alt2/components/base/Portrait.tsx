@@ -10,8 +10,12 @@ interface PortraitProps {
 
 const sizeMap = { sm: 48, md: 80, lg: 110 };
 
+// 세로형 캐릭터 (높이 > 폭) — cover + top crop
+const TALL_CHARACTERS = new Set(['angel', 'devil', 'doin', 'magician']);
+
 export default function Portrait({ name, size = 'md', className = '' }: PortraitProps) {
   const px = sizeMap[size];
+  const isTall = TALL_CHARACTERS.has(name);
 
   return (
     <div
@@ -34,8 +38,8 @@ export default function Portrait({ name, size = 'md', className = '' }: Portrait
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'top center',
+            objectFit: isTall ? 'cover' : 'contain',
+            objectPosition: isTall ? 'top center' : 'center center',
           }}
         />
       </AnimatePresence>

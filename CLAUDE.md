@@ -41,6 +41,8 @@ Claude API를 통해 해석·대화 인터랙션을 제공한다.
 | 격국 판정 체크리스트 | `docs/gyeokguk-checklist.md` |
 | 사주 해석·명리학 | `.claude/commands/saju-individual.md`, `saju-gungham.md` |
 | UI·디자인 관련 | `DESIGN.md` |
+| 통변(해석문) 작성 | `docs/tongbyeon/INDEX.md` → 해당 섹션 지침 원본 |
+| LLM 프롬프트 수정 | `src/gateway/prompts/XX-name.prompt.md` (지침 원본에서 증류) |
 
 ## 현재 구현 상태
 

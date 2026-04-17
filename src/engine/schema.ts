@@ -146,6 +146,17 @@ const BirthInfoSchema = z.object({
   offsetMinutes: z.number(),
 });
 
+// ── 신살 ──
+
+const SinsalEntrySchema = z.object({
+  name: z.string(),
+  position: z.string(),
+});
+
+const SibiiSinsalEntrySchema = z.object({
+  name: z.string(),
+});
+
 // ── 대운/세운 ──
 
 const PeriodAnalysisSchema = z.object({
@@ -165,6 +176,7 @@ const DaeunPeriodSchema = z.object({
   gan: z.string().length(1),
   ji: z.string().length(1),
   analysis: PeriodAnalysisSchema,
+  sinsal: z.array(SibiiSinsalEntrySchema),
 });
 
 const DaeunSchema = z.object({
@@ -178,6 +190,7 @@ const SeUnYearSchema = z.object({
   gan: z.string().length(1),
   ji: z.string().length(1),
   analysis: PeriodAnalysisSchema,
+  sinsal: z.array(SibiiSinsalEntrySchema),
 });
 
 // ── 통합 스키마 ──
@@ -196,12 +209,21 @@ export const SajuResultSchema = z.object({
   tenGods: TenGodsSchema,
   /** 지장간 */
   jijanggan: JijangganSchema,
+  /** 십이운성 */
+  twelveStages: z.object({
+    year: z.string(),
+    month: z.string(),
+    day: z.string(),
+    hour: z.string().nullable(),
+  }),
   /** 신강/신약 */
   strength: DayMasterStrengthSchema,
   /** 격국 */
   gyeokGuk: GyeokGukSchema,
   /** 용신 */
   yongSin: YongSinSchema,
+  /** 신살 (원국) */
+  sinsal: z.array(SinsalEntrySchema),
   /** 대운 (성별 미입력 시 null) */
   daeun: DaeunSchema,
   /** 세운 (향후 10년) */

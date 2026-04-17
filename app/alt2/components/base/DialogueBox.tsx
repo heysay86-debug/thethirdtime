@@ -7,7 +7,7 @@ export interface DialogueLine {
   character: string;
   name?: string;
   text: string;
-  style?: 'normal' | 'emphasis' | 'whisper' | 'system';
+  style?: 'normal' | 'emphasis' | 'whisper' | 'system' | 'thought';
   icon?: string;
   action?: string;
   choices?: { label: string; action: string; style?: 'primary' | 'secondary' }[];
@@ -151,17 +151,22 @@ export default function DialogueBox({
   }, [wrappedText, typing, typingSpeed, onTypingComplete]);
 
   const isSystem = line.style === 'system';
+  const isThought = line.style === 'thought';
+  const hidePortrait = isSystem || isThought;
 
   const textStyle: React.CSSProperties = {
     fontFamily: isSystem
       ? '"Pretendard Variable", "Noto Sans KR", sans-serif'
+      : isThought
+      ? '"Pretendard Variable", "Noto Sans KR", sans-serif'
       : 'var(--font-gaegu), "Gaegu", cursive',
-    fontSize: line.style === 'emphasis' ? 18 : line.style === 'whisper' ? 14 : isSystem ? 13 : 16,
-    color: line.style === 'emphasis' ? '#f0dfad' : '#dde1e5',
+    fontSize: line.style === 'emphasis' ? 18 : line.style === 'whisper' ? 14 : isSystem ? 13 : isThought ? 14 : 16,
+    color: isThought ? '#a1c5ac' : line.style === 'emphasis' ? '#f0dfad' : '#dde1e5',
     opacity: line.style === 'whisper' ? 0.6 : 1,
     lineHeight: 1.6,
     whiteSpace: 'pre-wrap',
-    textAlign: isSystem ? 'center' : undefined,
+    textAlign: isSystem ? 'center' : isThought ? 'right' : undefined,
+    fontStyle: isThought ? 'italic' : undefined,
   };
 
   return (
@@ -180,7 +185,7 @@ export default function DialogueBox({
         {/* Text area - left */}
         <div className="flex-1 min-w-0">
           {/* Speaker name */}
-          {!isSystem && line.name && (
+          {!hidePortrait && line.name && (
             <div
               className="mb-1"
               style={{ fontSize: 13, fontWeight: 700, color: '#f0dfad' }}
@@ -211,7 +216,7 @@ export default function DialogueBox({
         </div>
 
         {/* Portrait - right */}
-        {!isSystem && (
+        {!hidePortrait && (
           <Portrait name={line.character} size={portraitSize} />
         )}
       </div>

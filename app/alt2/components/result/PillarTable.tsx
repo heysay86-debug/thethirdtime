@@ -12,6 +12,8 @@ interface PillarTableProps {
   tenGods: Record<string, string>;
   jijanggan?: Record<string, string[]>;
   relations?: string[];
+  sinsalList?: { name: string; position: string }[];
+  twelveStages?: { year: string; month: string; day: string; hour: string | null };
 }
 
 const HANJA_TO_HANGUL: Record<string, string> = {
@@ -37,7 +39,7 @@ const LABELS = ['시주', '일주', '월주', '연주'];
 const GAN_KEYS = ['hourGan', 'dayGan', 'monthGan', 'yearGan'];
 const JI_KEYS = ['hourJi', 'dayJi', 'monthJi', 'yearJi'];
 
-export default function PillarTable({ pillars, tenGods, jijanggan, relations }: PillarTableProps) {
+export default function PillarTable({ pillars, tenGods, jijanggan, relations, sinsalList, twelveStages }: PillarTableProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -53,10 +55,10 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations }: 
   }, []);
 
   const cols = [
-    { pillar: pillars.hour, label: '시주', ganKey: 'hourGan', jiKey: 'hourJi' },
-    { pillar: pillars.day, label: '일주', ganKey: 'dayGan', jiKey: 'dayJi' },
-    { pillar: pillars.month, label: '월주', ganKey: 'monthGan', jiKey: 'monthJi' },
-    { pillar: pillars.year, label: '연주', ganKey: 'yearGan', jiKey: 'yearJi' },
+    { pillar: pillars.hour, label: '시주', ganKey: 'hourGan', jiKey: 'hourJi', posKey: 'hour', sinsalPos: '시주' },
+    { pillar: pillars.day, label: '일주', ganKey: 'dayGan', jiKey: 'dayJi', posKey: 'day', sinsalPos: '일주' },
+    { pillar: pillars.month, label: '월주', ganKey: 'monthGan', jiKey: 'monthJi', posKey: 'month', sinsalPos: '월주' },
+    { pillar: pillars.year, label: '연주', ganKey: 'yearGan', jiKey: 'yearJi', posKey: 'year', sinsalPos: '연주' },
   ];
 
   return (
@@ -124,6 +126,23 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations }: 
                     {jijanggan[col.pillar.ji].join(' ')}
                   </div>
                 )}
+
+                {/* 십이운성 */}
+                {twelveStages && (
+                  <div className="text-[10px] mt-2 font-semibold" style={{ color: '#f0dfad' }}>
+                    {twelveStages[col.posKey as keyof typeof twelveStages] || '-'}
+                  </div>
+                )}
+
+                {/* 신살 */}
+                {sinsalList && sinsalList.length > 0 && (() => {
+                  const matching = sinsalList.filter(s => s.position === col.sinsalPos);
+                  return matching.length > 0 ? (
+                    <div className="text-[9px] mt-1 whitespace-pre-wrap" style={{ color: '#a1c5ac' }}>
+                      {matching.map(s => s.name).join('\n')}
+                    </div>
+                  ) : null;
+                })()}
               </>
             ) : (
               <div className="py-8 text-sm" style={{ color: '#688097' }}>미상</div>
@@ -149,6 +168,13 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations }: 
             </span>
           ))}
         </div>
+      )}
+
+      {/* 참고사항 */}
+      {sinsalList && sinsalList.length > 0 && (
+        <p className="text-[10px] mt-3 px-1 text-center" style={{ color: '#688097' }}>
+          ※ 타 서비스에서 제시하는 신살과 일부 다른 이유는 세부 리포트에서 확인 가능합니다
+        </p>
       )}
     </div>
   );

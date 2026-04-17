@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-15
+최종 업데이트: 2026-04-17
 기술 스택: TypeScript / Node.js / Next.js
 참고 코드: github.com/hjsh200219/fortuneteller (clean-room 참조, LICENSE 확인 전)
 
@@ -163,6 +163,32 @@
 
 > **M14.5 완료 = Phase 2 설계 진입 가능 시점**
 
+### M14.6. 신살(神殺) ✅
+- [x] `src/engine/sinsal.ts` — 33종 신살 계산 모듈
+  - A. 귀인성 9종: 천을귀인, 문창귀인, 문곡귀인, 천복귀인, 천주귀인, 태극귀인, 학당귀인, 천덕귀인, 월덕귀인
+  - B. 살성·특수 10종: 역마살, 화개살, 백호살, 원진살, 괴강살, 양인살, 홍염살, 현침살, 귀문관살, 낙정관살
+  - C. 록 3종: 금여록, 암록, 협록
+  - D. 공망 1종
+  - E. 십이신살 12종 (대운·세운용): 겁살, 재살, 천살, 지살, 연살, 월살, 망신살, 장성살, 반안살, 역마살, 육해살, 화개살
+- [x] `schema.ts` — sinsal 필드 추가 (원국 SinsalEntry[], 대운·세운 SibiiSinsalEntry[])
+- [x] `analyze.ts` — calculateSinsal 통합
+- [x] `daeun.ts` — 대운·세운 각 기간에 십이신살 산출
+- [x] 단위 테스트: 공망·천을귀인·괴강·현침·양인·역마·화개·원진·십이신살·월덕·홍염·금여·통합 (25건)
+
+완료 기준: 단위 테스트 통과 + 기존 전체 테스트 267건 통과 + 사용자 확인 ✅
+
+### M14.7. 십이운성(十二運星) ✅
+- [x] `src/engine/twelve_stages.ts` — 일간 기준 지지별 생왕사절 판정 (10간×12지 매핑)
+  - 12운성: 장생, 목욕, 관대, 건록, 제왕, 쇠, 병, 사, 묘, 절, 태, 양
+  - `getTwelveStage(dayGan, ji)` 개별 조회
+  - `calculateTwelveStages(dayGan, pillars)` 4기둥 일괄 산출
+- [x] `schema.ts` — twelveStages 필드 추가 (year, month, day, hour nullable)
+- [x] `analyze.ts` — calculateTwelveStages 통합
+- [x] 웹 조견표(PillarTable) + page.tsx에 십이운성 행 표시
+- [x] 단위 테스트: 개별 조회 5건 + 4기둥 통합 + 시주 null (9건)
+
+완료 기준: 단위 테스트 통과 + 빌드 성공 ✅
+
 ---
 
 ## Phase 2 — LLM 게이트웨이 연동 ✅ 완료
@@ -200,6 +226,55 @@
 - [x] 캐시 로깅 동작 확인 (토큰 미달로 HIT 미발생, 구조적으로는 정상)
 
 > **M17 완료 = "샘플 입력 → 해석문 포함 전체 결과 출력" 확인 가능 시점**
+
+---
+
+## Phase 2.5 — 통변 후처리 엔진 ⚫
+
+> LLM이 생성한 전문가 수준 농축 텍스트를 tongbyeon/ 지침에 따라
+> 일반인 친화형으로 재작성하는 후처리 파이프라인.
+>
+> LLM 프롬프트에 통변 지침을 넣지 않는다. 통변 지침은 이 단계에서만 사용한다.
+>
+> 파이프라인: 엔진 → LLM(농축 해석) → **통변 후처리** → 최종 리포트
+
+### M17.5. 통변 확장 (LLM Phase 3)
+- [ ] Phase 3 LLM 호출: Phase 2 농축 해석 + 엔진 데이터 → 5원칙 기반 장문 확장
+  - 해석 관점 5원칙:
+    ① 철학적 프레임 — 명리학은 변화의 관조
+    ② 반점술적 태도 — 길흉 부정, 삶의 순환 인정
+    ③ 한자 원의에서 출발하는 개념 전개
+    ④ 개인 사주 데이터와의 유기적 연결
+    ⑤ 투출·지장간 등 구조 개념의 비유 해체
+  - 입력: Phase2 농축 sections + SajuResult (엔진 데이터)
+  - 출력: 동일 구조의 장문 확장 sections
+  - 프롬프트: 5원칙 + 페어 예시 2~3개 (농축→장문 변환 쌍)
+  - 예상: ~60~80초, ~57원/건 추가 (합계 ~102원/건)
+- [ ] `src/gateway/gateway.ts` — `analyzePhase3()` 메서드 추가
+- [ ] `src/gateway/prompts/phase3-system.ts` — Phase 3 전용 프롬프트
+- [ ] `src/gateway/prompts/phase3-examples/` — 페어 예시 파일 (사용자 제공 원고)
+- [ ] PDF 파이프라인 통합: Phase3 장문이 있으면 PDF에 장문 사용
+- [ ] 웹 파이프라인: Phase2 즉시 표시 → Phase3 도착 시 교체
+- [ ] 선행 조건: 사용자가 2~3개 섹션의 페어 예시(농축+장문) 제공
+
+### M17.6. 번외편 — 연애운·금전운·사업운
+- [ ] Phase 2 출력 스키마 확장: `sections`에 번외편 3개 섹션 추가
+  ```
+  extras: {
+    love: "...",           // 연애운
+    finance: "...",        // 금전운
+    business: "..."        // 사업운
+  }
+  ```
+- [ ] Phase 2 프롬프트에 번외편 섹션 지침 추가
+  - 연애운: 일간·일지 궁합 구조, 재성(남)/관성(여) 배치, 도화살·홍염살·원진살 유무, 대운별 인연 시기
+  - 금전운: 편재/정재 분포, 식상생재 여부, 재성 강약, 대운별 재물 흐름
+  - 사업운: 식상생재 구조, 관성과 인성 균형, 역마살·장성살, 적합 업종 방향
+- [ ] `Phase2SectionsSchema` (Zod) 업데이트: extras 필드 추가 (optional — 기존 호환)
+- [ ] PDF 번외편 섹션 컴포넌트: `ExtrasSection.tsx`
+- [ ] PDF 목차 업데이트
+- [ ] 웹 Zone B에 번외편 영역 추가
+- [ ] 엔진 추가 로직 불필요 — 기존 데이터(재성·관성·신살·대운)로 LLM이 재구성
 
 ---
 
@@ -260,9 +335,95 @@
 
 ---
 
-## Phase 5 — 배포 ⚫
+## Phase 2.5 — PDF 리포트 ✅ 완료 (2026-04-17)
 
-> Phase 4 완료 후 진입. 배포 대상 미확정 (Fly.io / Vercel / VPS).
+> Phase 2 게이트웨이 완료 후 별도 착수. 실제 엔진+LLM 파이프라인 연결 완료.
+
+### M-PDF-1. PDF 섹션 전체 구현 ✅
+- [x] `src/pdf/` — react-pdf 기반 리포트 컴포넌트 전체 구축
+  - 01 독자에게 (인트로 서문)
+  - 02 출생시점 태양계 (SVG 행성 배치도)
+  - 03 사주팔자 개요 (원국표·오행 레이더차트)
+  - 04 핵심 판단 (신강약 바·격국·용신 카드)
+  - 05 주별 심층 분석 (4기둥 개별 카드)
+  - 06 오행 분석 (바차트·조후)
+  - 07 십성 분석 (배치 테이블·카테고리 카드)
+  - 08 형충파해합·신살 (관계 카드·신살 칩)
+  - 09 대운 흐름 (대운표·세운표·현재 분석)
+  - 10 종합 해석 (총평 배너·주분석·현대적 적용·유파별 관점)
+- [x] `scripts/test-real-pipeline.tsx` — 엔진→Phase1→Phase2→PDF 통합 스크립트
+- [x] `scripts/dump-engine-result.tsx` — 엔진 결과 JSON 덤프 스크립트
+
+### M-PDF-2. 실제 파이프라인 검증 ✅
+- [x] 실제 엔진 출력 확인 (1986-09-15 01:17 남명 서울)
+  - 4기둥: 丙寅 丁酉 壬戌 庚子
+  - 신강약: 신강 70점 득령
+  - 격국: 편인격 내격 **파격** (재극인, 유술해 약화)
+  - 용신: **木** / 희신: 火 / 방법: 억부+조후 일치
+  - 대운 10개 (8~107세), 세운 10개 (2026~2035)
+- [x] LLM 해석 검증 — 리뷰어 에이전트로 검증 완료
+  - 엔진 데이터 일치율: 100% (4기둥·십성·신살·대운·세운 전수 확인)
+  - 명리학 이론 오류: 없음
+  - 발견 이슈: 콘텐츠 분량 부족 (섹션당 평균 700토큰), 종합해석 누락
+- [x] 비용 측정: Phase1 $0.009 + Phase2 $0.024 = 총 약 $0.033 / 1회
+
+### M-PDF-3. 해석 품질 보강 ✅ (2026-04-17)
+- [x] `src/gateway/chunks.ts` — 교안 청크 로더 신규 구현
+  - `references/rag chunks.json` (94청크, 명리심리상담 교안) 로드
+  - 섹션별 챕터 정적 매핑: pillarAnalysis→Ch7/6, relations→Ch8, daeunReading→Ch12/5, overallReading→Ch10/13 등
+  - 파일 없음 시 빈 문자열 반환 (파이프라인 영향 없음)
+  - 향후 자료 추가 시 CHAPTER_MAP 확장으로 즉시 반영
+- [x] `src/gateway/prompts/system.ts` — Phase 2 분량 기준 추가 및 조정
+  - 초기: 섹션별 최소 분량만 명시 → JSON 절단 문제 발생 (출력 7,450 토큰, max 8,192 초과)
+  - 수정: 섹션별 목표 범위(상한 포함) + 총 출력 6,500 토큰 이내 제한으로 변경
+- [x] `src/gateway/gateway.ts` — Phase 2 메시지에 교안 청크 자동 주입
+  - 추가 입력 토큰: 약 7,300 (14,500자)
+  - 총 Phase 2 입력: ~13,200 토큰 → 1회 비용 약 $0.05
+- [x] `src/gateway/gateway.ts` — JSON 절단 복구 함수 `repairTruncatedJson()` 추가
+  - max_tokens 도달로 JSON이 중간에 끊길 경우 괄호 분석 후 자동 복구 시도
+  - 복구 성공 시 경고 로그 후 계속 진행, 복구 불가 시에만 에러 throw
+- [x] 267개 기존 단위 테스트 전체 통과 확인
+
+> **현재 상태**: 로컬 `npx tsx scripts/test-real-pipeline.tsx` 재실행 후 PDF 품질 검증 대기 중
+
+### 향후 개선 방향 (우선순위 순)
+
+**단기 (다음 세션)**
+- [ ] 분량 보강 후 PDF 재생성 및 섹션별 품질 검토
+- [ ] 통변 지침 보강: DAN이 PDF 해석문을 직접 첨삭 → 첨삭본을 references/ 에 추가
+  → `chunks.ts` CHAPTER_MAP에 신규 챕터 매핑
+  → Phase 2 프롬프트에 "통변 지침" 섹션으로 주입
+- [ ] 종합해석(10번 섹션) 누락 원인 조사 및 수정
+
+**중기**
+- [ ] Phase 2 섹션별 분리 호출 검토 (콘텐츠 품질이 여전히 부족할 경우)
+- [ ] Prompt caching 실효 적용 (교안 청크 캐시 등록으로 반복 비용 절감)
+- [ ] overallReading.perspectives 유파별 관점 3개 이상 생성 유도
+
+**장기**
+- [ ] references/ 자료 확충 → 시맨틱 검색(RAG) 전환 (벡터 DB 도입)
+- [ ] 통변 지침 문서화 (`docs/tongbyeon/`) 체계화
+
+---
+
+## Phase 5 — 배포 & 운영 ⚫
+
+> 하이브리드 배포: Netlify(프론트) + Fly.io(API). 상세: `docs/deployment-plan.md`
+
+### M-GA. GA4 이벤트 추적 (배포 후 즉시)
+- [ ] `gtag.js` 삽입 (Next.js Script 컴포넌트)
+- [ ] 퍼널 이벤트 설계 및 발송:
+  - `opening_start` → `dialogue_start` → `input_name` → `input_gender`
+  - `input_birthdate` → `input_birthtime` → `input_city` → `submit`
+  - `result_view` → `upsell_view` → `purchase_click` → `purchase_complete`
+  - `gungham_click` → `redo_click`
+- [ ] GA4 퍼널 리포트 설정 (단계별 이탈률 확인)
+- [ ] 이탈 구간 분석 → UX 개선 피드백 루프
+
+### M-ADS. 애드센스 (선택)
+- [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입
+- [ ] 유료 결제 후 광고 제거 분기
+- [ ] 애드센스 승인 요건 충족 (개인정보처리방침, 콘텐츠 충분성)
 
 ---
 

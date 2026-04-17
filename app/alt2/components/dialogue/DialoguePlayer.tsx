@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import DialogueBox from '../base/DialogueBox';
 import type { DialogueLine } from '../base/DialogueBox';
 import ChoicePanel from './ChoicePanel';
@@ -37,6 +37,7 @@ interface DialoguePlayerProps {
   onInputSubmit?: (input: SajuInput) => void;
   onBgChange?: (bg: ZoneBg) => void;
   onDotMove?: (state: DotMoveState) => void;
+  onScreenEffect?: (effect: 'shake' | 'flash' | null) => void;
 }
 
 const SUN_PATH = [
@@ -97,6 +98,7 @@ export default function DialoguePlayer({
   onInputSubmit,
   onBgChange,
   onDotMove,
+  onScreenEffect,
 }: DialoguePlayerProps) {
   const [mode, setMode] = useState<'dialogue' | 'input'>('dialogue');
   const [lineIndex, setLineIndex] = useState(0);
@@ -111,6 +113,7 @@ export default function DialoguePlayer({
   const [birthdateStepIndex, setBirthdateStepIndex] = useState(-1);
   const [pendingTempleWalk, setPendingTempleWalk] = useState(false);
   const [isWalking, setIsWalking] = useState(false);
+  const bgPastFiredRef = useRef(false);
 
   // Determine active script and index
   const isProcessingDynamic = dynamicInsertQueue.length > 0;
@@ -176,15 +179,29 @@ export default function DialoguePlayer({
     } else if (action === 'submit_and_transition') {
       onInputSubmit?.(buildSajuInput(collectedInput));
     } else if (action === 'bg_past') {
+      if (bgPastFiredRef.current) return; // 중복 실행 방지
+      bgPastFiredRef.current = true;
       setIsWalking(true);
-      onBgChange?.('past');
       onDotMove?.({ visible: false });
-      setTimeout(() => {
+      (async () => {
+        // 1. 흔들림 시작
+        onScreenEffect?.('shake');
+        await delay(600);
+        // 2. 백색 플래시
+        onScreenEffect?.('flash');
+        await delay(300);
+        // 3. 플래시 중에 배경 전환
+        onBgChange?.('past');
+        await delay(500);
+        // 4. 이펙트 해제
+        onScreenEffect?.(null);
+        await delay(200);
+        // 5. 다음 라인으로 진행 후 대화창 복귀
+        advanceInputFlow();
         setIsWalking(false);
-        setTypingDone(true);
-      }, 700);
+      })();
     }
-  }, [currentLine, collectedInput, onInputSubmit, onBgChange, onDotMove]);
+  }, [currentLine, collectedInput, onInputSubmit, onBgChange, onDotMove, onScreenEffect]);
 
   const handleResponseTypingComplete = useCallback(() => {
     setTypingDone(true);
@@ -260,6 +277,10 @@ export default function DialoguePlayer({
       setMode('input');
       setInputLineIndex(0);
       setTypingDone(false);
+      return;
+    }
+    if (action === 'submit_and_transition') {
+      onInputSubmit?.(buildSajuInput(collectedInput));
       return;
     }
     if (action === 'confirm_birthdate') {

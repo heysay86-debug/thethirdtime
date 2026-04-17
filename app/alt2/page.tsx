@@ -9,16 +9,17 @@ import PillarFrame from './components/base/PillarFrame';
 import DialoguePlayer from './components/dialogue/DialoguePlayer';
 import InputModal from './components/input/InputModal';
 import PillarTable from './components/result/PillarTable';
-import SinsalRow from './components/result/SinsalRow';
+import ParchmentCard from './components/base/ParchmentCard';
 import DaeunTimeline from './components/result/DaeunTimeline';
 import SeunCard from './components/result/SeunCard';
 import OhengRelation from './components/result/OhengRelation';
 import OhengRadar from './components/result/OhengRadar';
 import InlineDialogue from './components/result/InlineDialogue';
-import GunghamTeaser from './components/gungham/GunghamTeaser';
+import GunghamUpsell from './components/gungham/GunghamUpsell';
 import UpsellDialogue from './components/upsell/UpsellDialogue';
 import CtaButton from './components/upsell/CtaButton';
 import type { DialogueLine } from './components/base/DialogueBox';
+import { getCurrentPrices } from './utils/pricing';
 
 type Phase = 'opening' | 'dialogue' | 'transition' | 'result';
 type TransitionPhase = 'idle' | 'zoom-out' | 'loading' | 'zoom-in' | 'done';
@@ -49,7 +50,10 @@ function calcOhengDistribution(pillars: any): Record<string, number> {
   return dist;
 }
 
+const DEFAULT_PRICES = { deep: '₩13,900', g2: '₩18,900', g3: '₩23,900' };
+
 export default function Alt2Page() {
+  const prices = getCurrentPrices();
   const [phase, setPhase] = useState<Phase>('opening');
   const [pillarsOpen, setPillarsOpen] = useState(false);
   const [logoVisible, setLogoVisible] = useState(false);
@@ -60,11 +64,16 @@ export default function Alt2Page() {
   const [core, setCore] = useState<any>(null);
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
+  const [redoScript, setRedoScript] = useState<DialogueLine[]>([]);
+  const [redoAfterInput, setRedoAfterInput] = useState<DialogueLine[]>([]);
+  const [isRedo, setIsRedo] = useState(false);
+  const [redoAfterInputActive, setRedoAfterInputActive] = useState(false);
   const [upsellScript, setUpsellScript] = useState<DialogueLine[]>([]);
   const [resultComments, setResultComments] = useState<any>(null);
   const [bgOpacity, setBgOpacity] = useState(0);
   type ZoneBg = 'before' | 'after' | 'blackout' | 'inside_sun' | 'inside_moon' | 'past';
   const [zonaBg, setZonaBg] = useState<ZoneBg>('before');
+  const [screenEffect, setScreenEffect] = useState<'shake' | 'flash' | null>(null);
   const [dotState, setDotState] = useState({
     direction: 'front' as 'front' | 'back' | 'left' | 'right',
     x: 50,
@@ -76,12 +85,12 @@ export default function Alt2Page() {
   useEffect(() => {
     if (phase !== 'opening') return;
     const t1 = setTimeout(() => setLogoVisible(true), 300);
-    const t2 = setTimeout(() => setLogoFading(true), 2000);
-    const t3 = setTimeout(() => setPillarsOpen(true), 2500);
+    const t2 = setTimeout(() => setLogoFading(true), 2850);
+    const t3 = setTimeout(() => setPillarsOpen(true), 3350);
     const t4 = setTimeout(() => {
       setLogoVisible(false);
       setPhase('dialogue');
-    }, 4200);
+    }, 5050);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [phase]);
 
@@ -92,6 +101,13 @@ export default function Alt2Page() {
       .then(d => {
         setIntroScript(d.lines);
         setIntroInputFlow(d.inputFlow || []);
+      })
+      .catch(() => {});
+    fetch('/content/dialogue-redo.json')
+      .then(r => r.json())
+      .then(d => {
+        setRedoScript(d.lines);
+        setRedoAfterInput(d.afterInput || []);
       })
       .catch(() => {});
     fetch('/content/dialogue-upsell.json')
@@ -124,8 +140,17 @@ export default function Alt2Page() {
     if (action === 'open_input_modal') setModalOpen(true);
   }, []);
 
+  const [redoInput, setRedoInput] = useState<any>(null);
+
   const handleSubmit = useCallback(async (input: any) => {
     setModalOpen(false);
+
+    // redo 모드: 모달 닫고 afterInput 대화 표시
+    if (isRedo) {
+      setRedoInput(input);
+      setRedoAfterInputActive(true);
+      return;
+    }
 
     // Phase 1: zoom out
     setPhase('transition');
@@ -169,22 +194,25 @@ export default function Alt2Page() {
       setPhase('dialogue');
       setTransitionPhase('idle');
     }
-  }, []);
+  }, [isRedo]);
 
   const handleInputSubmit = useCallback(async (input: any) => {
+    // redo 모드에서는 DialoguePlayer가 빈 input을 줄 수 있으므로 redoInput 사용
+    const src = (isRedo && redoInput) ? redoInput : input;
+
     setPhase('transition');
     setTransitionPhase('zoom-out');
     await delay(400);
 
     setTransitionPhase('loading');
     const body: any = {
-      birthDate: input.birthDate,
-      calendar: input.calendar,
+      birthDate: src.birthDate,
+      calendar: src.calendar,
     };
-    if (input.birthTime) body.birthTime = input.birthTime;
-    if (input.calendar === 'lunar') body.isLeapMonth = input.isLeapMonth;
-    if (input.birthCity) body.birthCity = input.birthCity;
-    if (input.gender) body.gender = input.gender;
+    if (src.birthTime) body.birthTime = src.birthTime;
+    if (src.calendar === 'lunar') body.isLeapMonth = src.isLeapMonth;
+    if (src.birthCity) body.birthCity = src.birthCity;
+    if (src.gender) body.gender = src.gender;
 
     try {
       const apiPromise = fetch('/api/saju/analyze', {
@@ -211,15 +239,18 @@ export default function Alt2Page() {
       setPhase('dialogue');
       setTransitionPhase('idle');
     }
-  }, []);
+  }, [isRedo, redoInput]);
 
   const handleReset = useCallback(() => {
     setEngine(null);
     setCore(null);
+    setIsRedo(true);
+    setRedoAfterInputActive(false);
     setPhase('dialogue');
     setBgOpacity(0);
     setZonaBg('before');
     setDotState({ direction: 'front', x: 50, y: 62, visible: true });
+    setScreenEffect(null);
     window.scrollTo({ top: 0 });
   }, []);
 
@@ -227,15 +258,18 @@ export default function Alt2Page() {
   const ohengDistribution = engine?.pillars
     ? calcOhengDistribution(engine.pillars)
     : { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
-  const daeunPeriods = engine?.daeun?.periods || [];
-  const currentAge = engine?.daeun?.currentAge || 0;
+  const daeun = engine?.daeun;
+  const daeunPeriods = daeun?.periods || [];
+  const daeunStartAge = daeun?.startAge || 0;
+  const currentAge = daeun?.currentAge || 0;
   const sinsalList = engine?.sinsal || [];
   const relationsArr = engine?.relations?.summary || [];
 
-  // Seun data
+  // Seun data — engine.seun (최상위, engine.daeun.seun 아님)
+  const seunList = engine?.seun || [];
   const currentYear = new Date().getFullYear();
-  const seunCurrent = engine?.daeun?.seun?.find?.((s: any) => s.year === currentYear);
-  const seunNext = engine?.daeun?.seun?.find?.((s: any) => s.year === currentYear + 1);
+  const seunCurrent = seunList.find?.((s: any) => s.year === currentYear);
+  const seunNext = seunList.find?.((s: any) => s.year === currentYear + 1);
 
   return (
     <div className="relative min-h-screen" style={{ background: '#1a1e24' }}>
@@ -245,7 +279,7 @@ export default function Alt2Page() {
       {/* Opening: logo */}
       {phase === 'opening' && (
         <div
-          className="fixed inset-0 flex items-center justify-center"
+          className="fixed inset-0 flex flex-col items-center justify-center gap-4"
           style={{ zIndex: 60 }}
         >
           <img
@@ -258,12 +292,57 @@ export default function Alt2Page() {
               transition: 'opacity 0.8s ease',
             }}
           />
+          <p
+            style={{
+              color: '#688097',
+              fontSize: 13,
+              letterSpacing: 2,
+              opacity: logoVisible ? (logoFading ? 0 : 1) : 0,
+              transition: 'opacity 0.8s ease',
+            }}
+          >
+            본격 RPG형 사주풀이
+          </p>
         </div>
       )}
 
+      {/* Screen effects CSS */}
+      <style jsx global>{`
+        @keyframes screen-shake {
+          0%, 100% { transform: translate(0, 0); }
+          10% { transform: translate(-3px, 2px); }
+          20% { transform: translate(4px, -2px); }
+          30% { transform: translate(-2px, 3px); }
+          40% { transform: translate(3px, -3px); }
+          50% { transform: translate(-4px, 1px); }
+          60% { transform: translate(2px, -2px); }
+          70% { transform: translate(-3px, 3px); }
+          80% { transform: translate(4px, -1px); }
+          90% { transform: translate(-2px, 2px); }
+        }
+      `}</style>
+
+      {/* Flash overlay */}
+      <div
+        className="fixed inset-0"
+        style={{
+          zIndex: 45,
+          backgroundColor: '#fff',
+          opacity: screenEffect === 'flash' ? 0.9 : 0,
+          transition: screenEffect === 'flash' ? 'opacity 0.15s ease-in' : 'opacity 0.4s ease-out',
+          pointerEvents: 'none',
+        }}
+      />
+
       {/* Fixed background layers */}
       <div className="fixed inset-0 flex justify-center" style={{ zIndex: 0 }}>
-        <div className="relative w-full h-full" style={{ maxWidth: 440 }}>
+        <div
+          className="relative w-full h-full"
+          style={{
+            maxWidth: 440,
+            animation: screenEffect === 'shake' ? 'screen-shake 0.1s linear infinite' : 'none',
+          }}
+        >
           <StarField />
 
           {/* ZONE A: RPG 맵 배경 (4단계) */}
@@ -325,17 +404,55 @@ export default function Alt2Page() {
         </div>
       </div>
 
+      {/* 상단 로고 — dialogue/transition에서만 표시 */}
+      {(phase === 'dialogue' || phase === 'transition') && (
+        <div
+          className="fixed top-0 left-0 right-0 flex justify-center"
+          style={{
+            zIndex: 55,
+            paddingTop: 'max(12px, env(safe-area-inset-top))',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src="/icon/logo.svg"
+            alt=""
+            style={{ width: 80, opacity: 0.15 }}
+          />
+        </div>
+      )}
+
+      {/* ZONE A: 대화창 뒤 하단 로고 워터마크 */}
+      {phase === 'dialogue' && (
+        <div
+          className="fixed bottom-0 left-0 right-0 flex justify-center"
+          style={{
+            zIndex: 5,
+            paddingBottom: 'max(32px, env(safe-area-inset-bottom))',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src="/icon/logo.svg"
+            alt=""
+            style={{ width: 100, opacity: 0.15 }}
+          />
+        </div>
+      )}
+
       {/* ZONE A: RPG Dialogue */}
-      {phase === 'dialogue' && introScript.length > 0 && (
+      {phase === 'dialogue' && (isRedo ? redoScript.length > 0 : introScript.length > 0) && (
         <div className="relative" style={{ zIndex: 10, minHeight: '100vh' }}>
           <DialoguePlayer
-            script={introScript}
-            inputFlow={introInputFlow}
+            key={isRedo ? 'redo' : 'intro'}
+            script={isRedo ? (redoAfterInputActive ? redoAfterInput : redoScript) : introScript}
+            inputFlow={isRedo ? undefined : introInputFlow}
             onComplete={() => {}}
             onAction={handleAction}
             onInputSubmit={handleInputSubmit}
             onBgChange={(bg) => setZonaBg(bg)}
             onDotMove={(state) => setDotState(prev => ({ ...prev, ...state }))}
+            onScreenEffect={setScreenEffect}
           />
         </div>
       )}
@@ -352,120 +469,171 @@ export default function Alt2Page() {
       {/* ZONE B + C: Results */}
       {phase === 'result' && engine && core && (
         <div className="relative" style={{ zIndex: 10 }}>
-          <div className="max-w-[440px] mx-auto pt-8 pb-16 space-y-8" style={{ paddingLeft: 38, paddingRight: 38 }}>
-            {/* Reset button */}
-            <button
-              onClick={handleReset}
-              className="text-sm font-medium"
-              style={{ color: '#688097' }}
-            >
-              ← 다시하기
-            </button>
+          <div style={{ background: '#2d3440', minHeight: '100vh' }}>
+            <div className="max-w-[440px] mx-auto pt-8 pb-16 space-y-8" style={{ paddingLeft: 38, paddingRight: 38 }}>
+              {/* 상단 로고 */}
+              <div className="flex justify-center pt-2 pb-4">
+                <img
+                  src="/icon/logo.svg"
+                  alt="제3의시간"
+                  style={{ width: 100, opacity: 0.3 }}
+                />
+              </div>
 
-            {/* ⑤ Pillar Table */}
-            <PillarTable
-              pillars={engine.pillars}
-              tenGods={engine.tenGods}
-              jijanggan={engine.jijanggan}
-              relations={relationsArr}
-            />
-
-            {/* ⑥ Sinsal */}
-            <SinsalRow sinsalList={sinsalList} />
-
-            {/* Inline comment after pillars + core.summary */}
-            <InlineDialogue
-              lines={[
-                ...(resultComments?.after_pillar_table || []),
-                ...(core?.summary ? [{
-                  character: 'speak',
-                  name: '안내자',
-                  text: core.summary,
-                  style: 'normal' as const,
-                }] : []),
-              ]}
-              autoPlay
-            />
-
-            {/* ⑦ Daeun Timeline */}
-            {daeunPeriods.length > 0 && (
-              <DaeunTimeline periods={daeunPeriods} currentAge={currentAge} />
-            )}
-
-            {/* ⑧ Seun */}
-            <SeunCard currentYear={seunCurrent} nextYear={seunNext} />
-
-            {/* Inline comment after seun */}
-            {resultComments?.after_seun && (
-              <InlineDialogue lines={resultComments.after_seun} autoPlay />
-            )}
-
-            <SectionDivider icon="star" />
-
-            {/* ⑨ Oheng Relation */}
-            <OhengRelation />
-
-            {/* ⑩ Oheng Radar */}
-            <OhengRadar distribution={ohengDistribution} />
-
-            {/* Inline comment after oheng + core.strengthReading */}
-            <InlineDialogue
-              lines={[
-                ...(resultComments?.after_oheng || []),
-                ...(core?.strengthReading ? [{
-                  character: 'flash',
-                  name: '안내자',
-                  text: core.strengthReading,
-                  style: 'emphasis' as const,
-                }] : []),
-              ]}
-              autoPlay
-            />
-
-            <SectionDivider icon="stamp" />
-
-            {/* ⑪-b Gungham Teaser */}
-            <GunghamTeaser onSelect={(mode) => {
-              // TODO: implement gungham modal
-              alert(`궁합 ${mode}인 기능은 준비 중입니다`);
-            }} />
-
-            {/* ZONE C: Upsell */}
-            <div id="upsell-section" className="space-y-6 pt-8">
-              <UpsellDialogue
-                script={upsellScript}
-                previewData={core}
-              />
-              <CtaButton
-                label="구름 너머의 이야기를 만나보세요"
-                price="₩9,900"
-                onClick={() => alert('결제 기능은 준비 중입니다')}
-              />
-            </div>
-
-            {/* Free section end comment */}
-            {resultComments?.free_section_end && (
-              <InlineDialogue lines={resultComments.free_section_end} autoPlay />
-            )}
-
-            {/* Footer */}
-            <footer className="text-center pt-8 pb-16">
-              <p className="text-xs" style={{ color: '#688097' }}>
-                제3의시간 — 사주팔자 분석 서비스
-              </p>
+              {/* Reset button */}
               <button
                 onClick={handleReset}
-                className="mt-4 px-6 py-2.5 text-sm font-medium"
-                style={{
-                  borderRadius: 20,
-                  border: '1px solid rgba(221, 225, 229, 0.4)',
-                  color: '#dde1e5',
-                  backgroundColor: 'transparent',
-                }}
+                className="text-sm font-medium"
+                style={{ color: '#688097' }}
               >
-                다른 사주 분석하기
+                ← 다시하기
               </button>
-            </footer>
+
+              {/* ① PillarTable (신살 통합) */}
+              <PillarTable
+                pillars={engine.pillars}
+                tenGods={engine.tenGods}
+                jijanggan={engine.jijanggan}
+                relations={relationsArr}
+                sinsalList={sinsalList}
+                twelveStages={engine?.twelveStages}
+              />
+
+              {/* 복길 코멘트 + core.summary */}
+              <InlineDialogue
+                lines={[
+                  ...(resultComments?.after_pillar_table || []),
+                  ...(core?.summary ? [{
+                    character: 'speak',
+                    name: '복길',
+                    text: core.summary,
+                    style: 'normal' as const,
+                  }] : []),
+                ]}
+                autoPlay
+              />
+
+              {/* 양피지 해설: 사주 원국 */}
+              {resultComments?.parchment_pillar && (
+                <ParchmentCard title="사주 원국 해설">
+                  {resultComments.parchment_pillar}
+                </ParchmentCard>
+              )}
+
+              {/* ② DaeunTimeline */}
+              {daeunPeriods.length > 0 && (
+                <DaeunTimeline periods={daeunPeriods} currentAge={currentAge} startAge={daeunStartAge} />
+              )}
+
+              {/* 양피지 해설: 대운 */}
+              {resultComments?.parchment_daeun && (
+                <ParchmentCard title="대운 해설">
+                  {resultComments.parchment_daeun}
+                </ParchmentCard>
+              )}
+
+              {/* ③ SeunCard */}
+              <SeunCard currentYear={seunCurrent} nextYear={seunNext} />
+
+              {/* 복길 코멘트: 세운 */}
+              {resultComments?.after_seun && (
+                <InlineDialogue lines={resultComments.after_seun} autoPlay />
+              )}
+
+              {/* 양피지 해설: 세운 */}
+              {resultComments?.parchment_seun && (
+                <ParchmentCard title="세운 해설">
+                  {resultComments.parchment_seun}
+                </ParchmentCard>
+              )}
+
+              <SectionDivider icon="star" />
+
+              {/* ④ OhengRelation + OhengRadar */}
+              <OhengRelation />
+              <OhengRadar distribution={ohengDistribution} />
+
+              {/* 복길 코멘트 + core.strengthReading */}
+              <InlineDialogue
+                lines={[
+                  ...(resultComments?.after_oheng || []),
+                  ...(core?.strengthReading ? [{
+                    character: 'flash',
+                    name: '복길',
+                    text: core.strengthReading,
+                    style: 'emphasis' as const,
+                  }] : []),
+                ]}
+                autoPlay
+              />
+
+              {/* 양피지 해설: 오행 */}
+              {resultComments?.parchment_oheng && (
+                <ParchmentCard title="오행과 신강신약 해설">
+                  {resultComments.parchment_oheng}
+                </ParchmentCard>
+              )}
+
+              <SectionDivider icon="stamp" />
+
+              {/* 궁합 업셀 */}
+              <GunghamUpsell onPurchase={(count) => {
+                alert(`${count}인 궁합 결제 기능은 준비 중입니다`);
+              }} />
+
+              <SectionDivider />
+            </div>
+          </div>
+
+          {/* ZONE C: 심층 해석 업셀 — 투명 배경 (silverlining 비침) */}
+          <div className="max-w-[440px] mx-auto space-y-8" style={{ paddingLeft: 38, paddingRight: 38 }}>
+            <div id="upsell-section" className="space-y-6 pt-4">
+                <UpsellDialogue
+                  script={upsellScript}
+                  previewData={core}
+                />
+                <CtaButton
+                  label="구름 너머의 이야기를 만나보세요"
+                  price={prices.deep}
+                  originalPrice={prices.promotion ? DEFAULT_PRICES.deep : undefined}
+                  promotion={prices.promotion}
+                  onClick={() => alert('결제 기능은 준비 중입니다')}
+                />
+              </div>
+
+              {/* Free section end comment */}
+              {resultComments?.free_section_end && (
+                <InlineDialogue lines={resultComments.free_section_end} autoPlay />
+              )}
+
+              {/* Footer */}
+              <footer className="text-center pt-8 pb-16">
+                <img
+                  src="/icon/logo.svg"
+                  alt="제3의시간"
+                  style={{
+                    width: 120,
+                    opacity: 0.3,
+                    margin: '0 auto 12px',
+                    display: 'block',
+                  }}
+                />
+                <p className="text-xs" style={{ color: '#688097' }}>
+                  시간의 마법사 복길이 분석한 사주팔자입니다
+                </p>
+                <button
+                  onClick={handleReset}
+                  className="mt-4 px-6 py-2.5 text-sm font-medium"
+                  style={{
+                    borderRadius: 20,
+                    border: '1px solid rgba(221, 225, 229, 0.4)',
+                    color: '#dde1e5',
+                    backgroundColor: 'transparent',
+                  }}
+                >
+                  다른 사주 분석하기
+                </button>
+              </footer>
           </div>
         </div>
       )}

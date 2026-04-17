@@ -1,0 +1,68 @@
+/**
+ * PDF 본문 공통 페이지 레이아웃
+ *
+ * 헤더 (stamp 엠블럼 + 브랜드명) + 본문 + 푸터 (유의사항 + 페이지번호)
+ * 모든 본문 페이지에서 이 컴포넌트로 감싼다.
+ */
+
+import React from 'react';
+import { Page, View, Text, Svg, Path } from '@react-pdf/renderer';
+import { commonStyles, colors, fontSize } from '../styles';
+
+interface PageLayoutProps {
+  children: React.ReactNode;
+  /** 챕터 첫 페이지일 때 stamp 엠블럼 표시 */
+  showStamp?: boolean;
+}
+
+/**
+ * stamp 엠블럼 SVG (인라인)
+ * 원본: public/icon/stamp.svg — 타원 테두리 + 브랜드 심볼
+ */
+function StampEmblem({ size = 14 }: { size?: number }) {
+  const scale = size / 45.96; // 원본 viewBox 높이 기준
+  return (
+    <Svg viewBox="0 0 37.77 45.96" style={{ width: size * (37.77 / 45.96), height: size }}>
+      <Path
+        fill={colors.blueGray}
+        d="M21.96,25.47c-1.23.55-1.87,1.48-1.98,2.84-.02.19-.18,1.87,1.48,2.77l.07-.13h0c-.12-.09-1.15-.89-1.22-2.13-.04-.8.27-1.53.92-2.18.91-.9,2.17-.85,2.67-.78,1.72.22,2.92,1.77,2.91,3.76-.01,2.21-1.21,3.98-3.47,5.13-1.9.97-4.74,1.03-7.06.16-1.1-.41-2.51-1.22-3.52-2.8-.71-1.12-1.22-2.64-1.26-4.68-.04-1.89.55-3.49,1.48-4.77.9-1.23,1.91-1.75,2.3-1.92.41-.17.8-.26,1.19-.26h.02c.78,0,1.34.29,1.82.94.13.17.24.37.33.58.32.74.46,2.13.52,3.2h.25c.06-1.07.2-2.46.52-3.2.67-1.54,3.4-1.7,4.64-1.69v-.27c-1.25.01-3.97-.15-4.64-1.69-.26-.61-.44-1.81-.51-3.58h-.27c-.08,1.76-.25,2.97-.51,3.58v.03c-.35.75-.83,1.18-1.5,1.33-.61.13-1.46-.16-1.92-.52-1.75-1.35-2.04-3.41-1.99-4.91.19-5.01,4.62-5.58,5.97-5.64,2.62-.11,5.69.93,6.26,3.49.27,1.22.02,2.36-.71,3.22-1.38,1.64-3.04.87-3.11.83h0s-.14.19-.14.19c.56.34,1.25.43,1.98.25.98-.24,1.91-.93,2.43-1.81.51-.93.71-2.51,0-3.94-.98-1.95-3.16-3.38-5.69-3.72-.48-.07-.96-.1-1.43-.1-2.42,0-4.74.82-6.29,2.28-1.4,1.32-2.13,3.09-2.11,5.13.06,2.61,1.23,4.87,3.05,5.89l.13.08-.13.09c-2.45,1.63-3.89,4.62-3.85,7.99.04,3.67,1.94,7.17,4.82,8.91,1.59.96,3.46,1.26,4.92,1.23,1.77-.03,3.9-.55,5.45-1.76,1.94-1.43,3.32-3.99,3.43-6.37.08-1.79-.53-3.33-1.78-4.45-1.17-1.02-2.96-1.25-4.46-.58Z"
+      />
+      <Path
+        fill={colors.blueGray}
+        d="M18.89,45.96C8.47,45.96,0,35.65,0,22.98S8.47,0,18.89,0s18.89,10.31,18.89,22.98-8.47,22.98-18.89,22.98ZM18.89,1.17C9.11,1.17,1.17,10.95,1.17,22.98s7.95,21.81,17.72,21.81,17.72-9.78,17.72-21.81S28.66,1.17,18.89,1.17Z"
+      />
+    </Svg>
+  );
+}
+
+export { StampEmblem };
+
+export default function PageLayout({ children, showStamp = false }: PageLayoutProps) {
+  return (
+    <Page size="A4" style={commonStyles.bodyPage}>
+      {/* 헤더 */}
+      <View style={commonStyles.pageHeader} fixed>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {showStamp && <StampEmblem size={14} />}
+        </View>
+        <Text style={commonStyles.pageHeaderBrand}>제3의시간</Text>
+      </View>
+
+      {/* 본문 */}
+      <View style={{ flex: 1 }}>
+        {children}
+      </View>
+
+      {/* 푸터 */}
+      <View style={commonStyles.pageFooter} fixed>
+        <Text style={commonStyles.pageFooterText}>
+          본 리포트는 명리학 이론에 기반한 참고 자료입니다
+        </Text>
+        <Text
+          style={commonStyles.pageNumber}
+          render={({ pageNumber }) => `${pageNumber}`}
+        />
+      </View>
+    </Page>
+  );
+}
