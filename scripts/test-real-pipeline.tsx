@@ -26,15 +26,15 @@ if (!fs.existsSync(OUTPUT_DIR)) fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 // ── 테스트 입력 (고정 샘플: 1986-09-15 01:17 남명 서울) ──
 
 const TEST_INPUT = {
-  birthDate: '1986-07-14',
-  birthTime: '02:00',
+  birthDate: '1991-01-08',
+  birthTime: '21:30',
   calendar: 'solar' as const,
   birthCity: '서울',
   gender: 'M' as const,
 };
 
-const USER_NAME = '임태규';
-const ANALYSIS_DATE = '2026. 4. 17';
+const USER_NAME = '샘플3';
+const ANALYSIS_DATE = '2026. 4. 18';
 
 // ── Phase1 + Phase2 결과를 InterpretationResult로 합성 ──
 

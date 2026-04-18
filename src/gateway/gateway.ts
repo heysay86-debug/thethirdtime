@@ -207,24 +207,32 @@ export class SajuGateway {
       .map(b => b.text)
       .join('');
 
-    // JSON 추출: 마크다운 코드블록 제거 + 첫 { ~ 마지막 } 사이만 추출
+    // JSON 추출: 마크다운 코드블록 제거
     let jsonText = finalText.replace(/```(?:json)?\s*/g, '').replace(/\s*```/g, '').trim();
 
-    // LLM이 JSON 앞뒤에 텍스트를 넣거나 두 개의 JSON을 출력하는 경우 방어
-    // 첫 { 부터 depth가 0이 되는 첫 번째 } 까지만 추출
-    jsonText = extractFirstJsonObject(jsonText);
+    // JSON 파싱 시도: 첫 { ~ 끝에서부터 } 하나씩 줄여가며 시도
+    const firstBrace = jsonText.indexOf('{');
+    if (firstBrace > 0) jsonText = jsonText.slice(firstBrace);
 
-    let parsed: any;
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch (e) {
-      // max_tokens 도달로 JSON이 절단됐을 경우 복구 시도
+    // 끝에서부터 } 하나씩 줄여가며 파싱 시도
+    let parsed: any = null;
+    let lastBrace = jsonText.lastIndexOf('}');
+    while (lastBrace >= 0 && !parsed) {
+      try {
+        parsed = JSON.parse(jsonText.slice(0, lastBrace + 1));
+      } catch {
+        lastBrace = jsonText.lastIndexOf('}', lastBrace - 1);
+      }
+    }
+
+    // 위에서 실패하면 repairTruncatedJson 시도
+    if (!parsed) {
       const repaired = repairTruncatedJson(jsonText);
       if (repaired) {
         console.warn('[Phase2] JSON 절단 감지 — 복구 시도 성공');
         parsed = repaired;
       } else {
-        throw new Error(`Phase 2: JSON 파싱 실패 — ${(e as Error).message}\n응답: ${jsonText.slice(0, 500)}`);
+        throw new Error(`Phase 2: JSON 파싱 실패\n응답: ${jsonText.slice(0, 500)}`);
       }
     }
 

@@ -299,7 +299,7 @@ export default function Alt2Page() {
     <div className="relative min-h-screen" style={{ background: '#1a1e24' }}>
       {/* Pillar Frame — always visible */}
       <PillarFrame isOpen={pillarsOpen} />
-      <BgmPlayer />
+      <BgmPlayer show={phase !== 'opening'} />
 
       {/* Opening: logo */}
       {phase === 'opening' && (
