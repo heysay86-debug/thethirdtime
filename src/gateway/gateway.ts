@@ -107,7 +107,13 @@ export class SajuGateway {
       ],
       tool_choice: { type: 'tool', name: 'submit_saju_core' },
       messages: [
-        { role: 'user', content: JSON.stringify(sajuResult) },
+        { role: 'user', content: (() => {
+          const by = sajuResult.birth?.solar ? parseInt(sajuResult.birth.solar.split('-')[0]) : null;
+          const cy = new Date().getFullYear();
+          const age = by ? cy - by : null;
+          const ageNote = age !== null ? `\n현재 ${cy}년. 출생 ${by}년. 만 ${age}세.` : '';
+          return JSON.stringify(sajuResult) + ageNote;
+        })() },
       ],
     });
 
@@ -151,8 +157,15 @@ export class SajuGateway {
     // 교안 청크 로드 (없으면 빈 문자열)
     const chunkContext = buildChunkContext();
 
+    // 출생 연도에서 현재 나이 계산
+    const birthYear = sajuResult.birth?.solar ? parseInt(sajuResult.birth.solar.split('-')[0]) : null;
+    const currentYear = new Date().getFullYear();
+    const currentAge = birthYear ? currentYear - birthYear : null;
+
     const userMessage = [
       JSON.stringify(sajuResult),
+      '',
+      currentAge !== null ? `현재 연도: ${currentYear}년. 출생 연도: ${birthYear}년. 만 나이: ${currentAge}세. 현재 대운·세운 판단 시 반드시 이 나이를 기준으로 하십시오.` : '',
       '',
       '--- Phase 1 핵심 판단 (이미 제공됨, 중복 서술 금지) ---',
       `summary: ${phase1Result.summary}`,
@@ -207,32 +220,39 @@ export class SajuGateway {
       .map(b => b.text)
       .join('');
 
-    // JSON 추출: 마크다운 코드블록 제거
+    // JSON 추출: 마크다운 코드블록 제거 + 첫 { ~ 마지막 } 추출
     let jsonText = finalText.replace(/```(?:json)?\s*/g, '').replace(/\s*```/g, '').trim();
-
-    // JSON 파싱 시도: 첫 { ~ 끝에서부터 } 하나씩 줄여가며 시도
     const firstBrace = jsonText.indexOf('{');
-    if (firstBrace > 0) jsonText = jsonText.slice(firstBrace);
-
-    // 끝에서부터 } 하나씩 줄여가며 파싱 시도
-    let parsed: any = null;
-    let lastBrace = jsonText.lastIndexOf('}');
-    while (lastBrace >= 0 && !parsed) {
-      try {
-        parsed = JSON.parse(jsonText.slice(0, lastBrace + 1));
-      } catch {
-        lastBrace = jsonText.lastIndexOf('}', lastBrace - 1);
-      }
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      jsonText = jsonText.slice(firstBrace, lastBrace + 1);
     }
 
-    // 위에서 실패하면 repairTruncatedJson 시도
-    if (!parsed) {
-      const repaired = repairTruncatedJson(jsonText);
-      if (repaired) {
-        console.warn('[Phase2] JSON 절단 감지 — 복구 시도 성공');
-        parsed = repaired;
-      } else {
-        throw new Error(`Phase 2: JSON 파싱 실패\n응답: ${jsonText.slice(0, 500)}`);
+    let parsed: any = null;
+
+    // 1차: 직접 파싱
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch {
+      // 2차: 문자열 값 내부의 실제 줄바꿈을 \\n으로 치환 (수동 추적)
+      try {
+        const fixed = fixNewlinesInJsonStrings(jsonText);
+        parsed = JSON.parse(fixed);
+      } catch {
+        // 3차: restructureSections (구조 오류 + 줄바꿈 수정)
+        try {
+          const restructured = restructureSections(jsonText);
+          parsed = JSON.parse(restructured);
+        } catch {
+          // 4차: repairTruncatedJson (절단된 경우)
+          const repaired = repairTruncatedJson(jsonText);
+          if (repaired) {
+            console.warn('[Phase2] JSON 절단 감지 — 복구 시도 성공');
+            parsed = repaired;
+          } else {
+            throw new Error(`Phase 2: JSON 파싱 실패\n응답: ${jsonText.slice(0, 500)}`);
+          }
+        }
       }
     }
 
@@ -309,12 +329,113 @@ function extractFirstJsonObject(text: string): string {
 }
 
 /**
+ * JSON 문자열 값 내부의 실제 줄바꿈(\n)을 \\n으로 치환.
+ * 문자 단위로 추적하여 문자열 경계를 정확히 판별.
+ */
+function fixNewlinesInJsonStrings(text: string): string {
+  const chars = [...text];
+  const result: string[] = [];
+  let inString = false;
+  let i = 0;
+
+  while (i < chars.length) {
+    const ch = chars[i];
+
+    if (inString) {
+      if (ch === '\\' && i + 1 < chars.length) {
+        // 이스케이프 시퀀스 — 2글자 그대로 통과
+        result.push(ch, chars[i + 1]);
+        i += 2;
+        continue;
+      }
+      if (ch === '"') {
+        // 문자열 종료
+        inString = false;
+        result.push(ch);
+        i++;
+        continue;
+      }
+      if (ch === '\n') {
+        // 문자열 안의 줄바꿈 → 이스케이프
+        result.push('\\', 'n');
+        i++;
+        continue;
+      }
+      result.push(ch);
+      i++;
+    } else {
+      if (ch === '"') {
+        inString = true;
+      }
+      result.push(ch);
+      i++;
+    }
+  }
+
+  return result.join('');
+}
+
+/**
+ * LLM이 sections 바깥으로 빠뜨린 키를 sections 안으로 재구조화.
+ * 문자열 내 줄바꿈도 함께 치환.
+ */
+function restructureSections(text: string): string {
+  // 줄바꿈 치환
+  let fixed = text.replace(/"(?:[^"\\]|\\.|\n)*"/g, (match) => {
+    return match.replace(/\n/g, '\\n');
+  });
+
+  // sections 객체가 중간에 닫히고 나머지 키가 바깥에 있는 패턴 수정
+  // { "sections": { ... }, "overallReading": { ... } }
+  // → { "sections": { ..., "overallReading": { ... } } }
+  const SECTION_KEYS = ['basics', 'pillarAnalysis', 'ohengAnalysis', 'sipseongAnalysis',
+    'relations', 'daeunReading', 'overallReading'];
+
+  try {
+    const obj = JSON.parse(fixed);
+    // sections 바깥에 있는 섹션 키를 안으로 이동
+    if (obj.sections) {
+      for (const key of SECTION_KEYS) {
+        if (obj[key] && !obj.sections[key]) {
+          obj.sections[key] = obj[key];
+          delete obj[key];
+        }
+      }
+      // pillarAnalysis 바깥으로 빠진 month/day/hour도 처리
+      if (obj.month || obj.day || obj.hour) {
+        if (!obj.sections.pillarAnalysis) obj.sections.pillarAnalysis = {};
+        if (obj.month) { obj.sections.pillarAnalysis.month = obj.month; delete obj.month; }
+        if (obj.day) { obj.sections.pillarAnalysis.day = obj.day; delete obj.day; }
+        if (obj.hour) { obj.sections.pillarAnalysis.hour = obj.hour; delete obj.hour; }
+      }
+    }
+    return JSON.stringify(obj);
+  } catch {
+    return fixed;
+  }
+}
+
+/**
  * LLM이 누락한 섹션을 기본값으로 패치.
  * 잘못된 위치에 들어간 필드(예: sections.upcoming)도 올바른 위치로 이동.
  */
 function patchMissingSections(parsed: any): any {
   if (!parsed?.sections) return parsed;
   const s = parsed.sections;
+
+  // sections 바깥으로 빠진 키를 안으로 이동
+  const SECTION_KEYS = ['basics', 'pillarAnalysis', 'ohengAnalysis', 'sipseongAnalysis',
+    'relations', 'daeunReading', 'overallReading'];
+  for (const key of SECTION_KEYS) {
+    if (parsed[key] && !s[key]) { s[key] = parsed[key]; delete parsed[key]; }
+  }
+  // pillarAnalysis 하위 키가 바깥으로 빠진 경우
+  if (parsed.month || parsed.day || parsed.hour) {
+    if (!s.pillarAnalysis) s.pillarAnalysis = {};
+    for (const k of ['month', 'day', 'hour']) {
+      if (parsed[k] && !s.pillarAnalysis[k]) { s.pillarAnalysis[k] = parsed[k]; delete parsed[k]; }
+    }
+  }
 
   // 기본 구조 보장
   if (!s.basics) s.basics = {};

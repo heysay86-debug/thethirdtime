@@ -88,6 +88,10 @@ export const SAJU_SYSTEM_PROMPT_PHASE2 = SAJU_SYSTEM_PROMPT + `
 /**
  * 사용자 메시지: SajuResult JSON을 그대로 전달
  */
-export function buildUserMessage(sajuResultJson: string): string {
-  return `아래 사주 분석 데이터를 해석해 주십시오.\n\n${sajuResultJson}`;
+export function buildUserMessage(sajuResultJson: string, birthYear?: number): string {
+  const currentYear = new Date().getFullYear();
+  const ageInfo = birthYear
+    ? `\n\n현재 연도: ${currentYear}년. 출생 연도: ${birthYear}년. 만 나이: ${currentYear - birthYear}세. 현재 대운을 판단할 때 반드시 이 나이를 기준으로 하십시오.`
+    : '';
+  return `아래 사주 분석 데이터를 해석해 주십시오.${ageInfo}\n\n${sajuResultJson}`;
 }
