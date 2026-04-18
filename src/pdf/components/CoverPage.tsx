@@ -15,6 +15,7 @@ import { colors, fontSize } from '../styles';
 interface CoverPageProps {
   userName: string;
   analysisDate: string; // "2026. 4. 16" 형식
+  reportNo?: string | null;
 }
 
 const s = StyleSheet.create({
@@ -207,7 +208,7 @@ function Logo() {
   );
 }
 
-export default function CoverPage({ userName, analysisDate }: CoverPageProps) {
+export default function CoverPage({ userName, analysisDate, reportNo }: CoverPageProps) {
   // 유저 이름에 자간 적용 (글자 사이 공백)
   const spacedName = userName.split('').join(' ');
 
@@ -248,8 +249,13 @@ export default function CoverPage({ userName, analysisDate }: CoverPageProps) {
         <Text style={s.userName}>{spacedName}</Text>
       </View>
 
-      {/* 분석일 */}
+      {/* 분석일 + 리포트 번호 */}
       <Text style={s.analysisDate}>분석일  {analysisDate}</Text>
+      {reportNo && (
+        <Text style={[s.analysisDate, { top: 600, fontSize: 9, color: 'rgba(221, 225, 229, 0.35)' }]}>
+          {reportNo}
+        </Text>
+      )}
 
       {/* 유의사항 */}
       <View style={s.disclaimer}>

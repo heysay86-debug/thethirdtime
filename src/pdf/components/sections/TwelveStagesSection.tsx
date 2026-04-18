@@ -54,7 +54,7 @@ const s = StyleSheet.create({
   },
   titleDivider: {
     width: 32, height: 0.5, backgroundColor: colors.goldDim,
-    marginTop: 8, marginBottom: 20,
+    marginTop: 8, marginBottom: 14,
   },
   subTitle: {
     fontFamily: 'Paperlogy', fontSize: fontSize.md, fontWeight: 700,

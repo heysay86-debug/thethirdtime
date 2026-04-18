@@ -31,13 +31,13 @@ export const InterpretationResultSchema = z.object({
       yongSinReading: z.string(),
     }),
 
-    /** [3] 주별 심층 분석 */
+    /** [3] 주별 심층 분석 — 키워드 테이블로 자체 생성 (LLM 불필요) */
     pillarAnalysis: z.object({
       year: z.string(),
       month: z.string(),
       day: z.string(),
       hour: z.string().nullable(),
-    }),
+    }).optional(),
 
     /** [4] 오행 분석 + 조후 */
     ohengAnalysis: z.object({
@@ -87,7 +87,7 @@ export const Phase2SectionsSchema = z.object({
     month: z.string(),
     day: z.string(),
     hour: z.string().nullable(),
-  }),
+  }).optional(),
   ohengAnalysis: z.object({
     distribution: z.string(),
     johu: z.string(),

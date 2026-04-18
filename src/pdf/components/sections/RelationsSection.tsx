@@ -13,6 +13,8 @@ import { commonStyles, colors, fontSize } from '../../styles';
 import { ganToOhaeng, jiToOhaeng } from '../../utils/ohaeng';
 import { computeRelations } from '../../utils/computeRelations';
 
+import { groupSinsalByPillar } from '../../utils/sinsalKeywords';
+
 import type { SajuResult } from '@engine/schema';
 import type { InterpretationResult } from '../../../gateway/prompts/schema';
 
@@ -25,7 +27,7 @@ const s = StyleSheet.create({
   },
   titleDivider: {
     width: 32, height: 0.5, backgroundColor: colors.goldDim,
-    marginTop: 8, marginBottom: 20,
+    marginTop: 8, marginBottom: 14,
   },
 
   subTitle: {
@@ -55,21 +57,24 @@ const s = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // ── 신살 목록 ──
-  sinsalWrap: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 14,
+  // ── 신살 (주별 그룹) ──
+  sinsalGroup: {
+    marginBottom: 8,
   },
-  sinsalChip: {
-    borderWidth: 0.5, borderColor: colors.goldDim, borderRadius: 3,
-    paddingVertical: 4, paddingHorizontal: 10,
+  sinsalGroupTitle: {
+    fontFamily: 'Paperlogy', fontSize: 9, fontWeight: 700,
+    color: colors.blueGray, marginBottom: 3,
+  },
+  sinsalRow: {
+    flexDirection: 'row', marginBottom: 2, paddingLeft: 6,
   },
   sinsalName: {
-    fontFamily: 'Paperlogy', fontSize: fontSize.xs, fontWeight: 500,
-    color: colors.textBody,
+    fontFamily: 'Paperlogy', fontSize: fontSize.xs, fontWeight: 600,
+    color: colors.darkBg, width: 62,
   },
-  sinsalPos: {
-    fontFamily: 'Paperlogy', fontSize: 7, fontWeight: 300,
-    color: colors.textMuted,
+  sinsalDesc: {
+    fontFamily: 'Paperlogy', fontSize: fontSize.xs, fontWeight: 400,
+    color: colors.textBody, flex: 1,
   },
 
   // ── 해석문 ──
@@ -156,11 +161,16 @@ export default function RelationsSection({ sajuResult, interpretation }: Relatio
       <Text style={s.subTitle}>원국 신살</Text>
 
       {sinsal.length > 0 ? (
-        <View style={s.sinsalWrap}>
-          {sinsal.map((ss, i) => (
-            <View key={i} style={s.sinsalChip}>
-              <Text style={s.sinsalName}>{ss.name}</Text>
-              <Text style={s.sinsalPos}>{ss.position}</Text>
+        <View style={{ marginBottom: 10 }}>
+          {groupSinsalByPillar(sinsal).map(group => (
+            <View key={group.position} style={s.sinsalGroup}>
+              <Text style={s.sinsalGroupTitle}>{group.position}</Text>
+              {group.items.map((item, i) => (
+                <View key={i} style={s.sinsalRow}>
+                  <Text style={s.sinsalName}>{item.name}</Text>
+                  <Text style={s.sinsalDesc}>{item.desc}</Text>
+                </View>
+              ))}
             </View>
           ))}
         </View>

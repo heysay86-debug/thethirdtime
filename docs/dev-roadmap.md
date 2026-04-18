@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-18
+최종 업데이트: 2026-04-19
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -366,6 +366,35 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] `scripts/test-real-pipeline.tsx` — 엔진→Phase1→Phase2→PDF 통합 스크립트
 - [x] `scripts/dump-engine-result.tsx` — 엔진 결과 JSON 덤프 스크립트
 
+### M-PDF-1.5. PDF 레이아웃 개선 ✅ (2026-04-19)
+- [x] 주별 심층 분석 — LLM 제거, 키워드 테이블 기반 결정적 생성
+  - `src/pdf/utils/pillarKeywords.ts` — 십성·십이운성 주별 키워드 + 자연어 조립
+  - 연주+월주 / 일주+시주 페어 카드로 합체 (4→2카드)
+  - 지장간 표시 제거 (해석 없이 공간 낭비)
+  - Phase 2 토큰 42% 감소, 생성 시간 38% 단축
+- [x] 대운/세운 타임라인 — 한자+한글 인라인 (庚子 경자, 줄바꿈 제거)
+- [x] 대운 섹션 원래 레이아웃 복원 + 셀 글자 크기 소폭 상향
+- [x] 신살 — 주별(연주/월주/일주/시주) 그룹 정렬 + 한 줄 해설 35종 수록
+- [x] 전체 섹션 간격 축소 (sectionSubtitle 20→10, titleDivider 20→14)
+- [x] 한자 폰트 메트릭 수정 — DroidSans 글리프 advance 900→792 통일 (비뚤거림 해결)
+- [x] 표지에 리포트 번호 표시
+- [x] PDF 파일명에 리포트 번호 사용 (T3-00-260419-A0010000.pdf)
+- [x] 프론트에서 reportNo 전달 (analyze 응답 → PDF 요청)
+
+### M-PDF-1.6. JSON 파서 강화 ✅ (2026-04-19)
+- [x] `robustParsePhase2()` — 5단계 fallback → 단일 함수로 통합
+  - 직접 파싱 → 줄바꿈 수정 → 첫 JSON 추출+나머지 병합 → 절단 복구
+  - LLM이 sections 바깥에 키를 쓰는 패턴 자동 병합
+- [x] `patchMissingSections()` — johu/currentPeriod/upcoming/modernApplication 바깥 이탈 복구
+- [x] Phase 2 콘텐츠 검증 + 자동 재시도 (핵심 2개 이상 누락 시 1회 재시도)
+- [x] 괄호 균형 검사 — 절단된 JSON에서 lastBrace 슬라이싱 건너뛰기
+
+### M-PDF-1.7. 동시접속 제한 ✅ (2026-04-19)
+- [x] `src/middleware/concurrency.ts` — 세마포어 (MAX_CONCURRENT=5)
+- [x] 초과 시 503 + "지금 다른 여행자의 운명을 읽고 있습니다" 안내
+- [x] 캐시 히트 시 슬롯 즉시 반환, finally 블록 안전 해제
+- [x] 어드민 대시보드에 동접 현황 표시
+
 ### M-PDF-2. 실제 파이프라인 검증 ✅
 - [x] 실제 엔진 출력 확인 (1986-09-15 01:17 남명 서울)
   - 4기둥: 丙寅 丁酉 壬戌 庚子
@@ -467,15 +496,26 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 
 ### M-DB. 익명화된 고객정보 데이터베이스 ✅
 - [x] SQLite + better-sqlite3 + Fly.io 영구 볼륨 (/data/reports.db)
-- [x] reports 테이블: report_no(PK), order_id, channel, char_name, keyword1~3, created_at
+- [x] reports 테이블: report_no(PK), channel, char_name(마스킹), keyword1~3, is_paid, created_at
+- [x] payments 테이블 (휘발성): order_id(PK), report_no, created_at — 48시간 자동 삭제
 - [x] counter 테이블: 결제 유저 카운트 관리
+- [x] 이름 마스킹 저장 (이대운→이*운, 이현진→이*진)
+- [x] 결제 ID 분리: reports에서 order_id 제거 → payments 테이블로 분리 (개인정보보호)
 - [x] 리포트번호: T3-XX-YYMMDD-A001XXXX (XX=결제카운트, A001=유입채널, XXXX=순번)
-  - 무료: T3-00-YYMMDD-A001XXXX
-  - 유료: T3-01-YYMMDD-A001XXXX (결제 시 카운트 증가)
 - [x] 유입채널 추적 6종 (A001~A006) + URL ?ch= 파라미터
-- [x] 핵심키워드 자동 추출 (격국, 신강/신약, 용신)
+- [x] 핵심키워드 자동 추출 (격국, 신강/신약, 용신) — 필드명 수정 완료 (type/state/primary)
 - [x] analyze API 연동 (자동 저장, 실패 시 서비스 영향 없음)
 - [x] upgradeToPaid() — 무료→유료 리포트 전환 함수
+
+### M-ADMIN. 어드민 대시보드 ✅
+- [x] `/admin` 페이지 — 토큰 인증 로그인
+- [x] 리포트 탭: 검색(번호/이름/격국), 채널 필터, 유료/무료 필터, 행별 삭제
+- [x] 결제 탭: payments 테이블 조회 (report_no 키로 reports와 연결)
+- [x] 카운터 탭: 일별 전체/무료/유료 통계 + 누적 합산
+- [x] PDF 강제 생성 탭: 명식 입력 → 엔진+LLM+PDF 다운로드 (CS 대응용)
+- [x] 통계 카드: 전체/오늘/유료/동접(current/max) 실시간 표시
+- [x] 5분 자동 새로고침
+- [x] ADMIN_TOKEN 환경변수 인증 (Fly.io secrets)
 
 ### M-LEGAL. 법적 고지 사항
 - [x] 이용약관 페이지 (`/terms`) — 표준약관 제10023호 준용, 11개 조항

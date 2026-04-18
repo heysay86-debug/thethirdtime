@@ -123,7 +123,7 @@ export const commonStyles = StyleSheet.create({
     fontWeight: 300,
     color: colors.blueGray,
     letterSpacing: 1,
-    marginBottom: 20,
+    marginBottom: 10,
   },
 
   // 본문 텍스트

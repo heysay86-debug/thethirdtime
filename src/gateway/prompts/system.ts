@@ -33,12 +33,11 @@ export const SAJU_SYSTEM_PROMPT = `당신은 사주명리학 전문 분석가입
 export const SAJU_SYSTEM_PROMPT_PHASE2 = SAJU_SYSTEM_PROMPT + `
 ## 분량 기준 (필수 준수)
 
-총 JSON 출력은 6,500 토큰(한글 약 9,000자) 이내로 제한하십시오.
+총 JSON 출력은 5,000 토큰(한글 약 7,000자) 이내로 제한하십시오.
 
 | 섹션 | 목표 범위 |
 |---|---|
 | basics.description | 150~220자 |
-| pillarAnalysis.year / month / day / hour | 각 220~300자 |
 | ohengAnalysis.distribution | 220~300자 |
 | ohengAnalysis.johu | 220~300자 |
 | sipseongAnalysis.reading | 300~400자 |
@@ -57,12 +56,6 @@ export const SAJU_SYSTEM_PROMPT_PHASE2 = SAJU_SYSTEM_PROMPT + `
 {
   "sections": {
     "basics": { "description": "..." },
-    "pillarAnalysis": {
-      "year": "...",
-      "month": "...",
-      "day": "...",
-      "hour": "..." (시주 없으면 null)
-    },
     "ohengAnalysis": {
       "distribution": "...",
       "johu": "..."

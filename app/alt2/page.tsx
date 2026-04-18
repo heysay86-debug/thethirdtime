@@ -70,6 +70,7 @@ export default function Alt2Page() {
   const [modalOpen, setModalOpen] = useState(false);
   const [engine, setEngine] = useState<any>(null);
   const [core, setCore] = useState<any>(null);
+  const [reportNo, setReportNo] = useState<string | null>(null);
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
   const [redoScript, setRedoScript] = useState<DialogueLine[]>([]);
@@ -187,6 +188,7 @@ export default function Alt2Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }).then(r => {
+        if (r.status === 503) throw new Error('busy');
         if (!r.ok) throw new Error('API error');
         return r.json();
       });
@@ -194,6 +196,7 @@ export default function Alt2Page() {
       const [data] = await Promise.all([apiPromise, delay(500)]);
       setEngine(data.engine);
       setCore(data.core);
+      setReportNo(data.reportNo || null);
 
       // Phase 3: zoom in
       setTransitionPhase('zoom-in');
@@ -202,8 +205,10 @@ export default function Alt2Page() {
       setPhase('result');
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
-    } catch {
-      alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } catch (e: any) {
+      alert(e?.message === 'busy'
+        ? '지금 다른 여행자의 운명을 읽고 있습니다. 잠시 후 다시 시도해주세요.'
+        : '분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
       setZonaBg('before');
@@ -238,6 +243,7 @@ export default function Alt2Page() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       }).then(r => {
+        if (r.status === 503) throw new Error('busy');
         if (!r.ok) throw new Error('API error');
         return r.json();
       });
@@ -245,6 +251,7 @@ export default function Alt2Page() {
       const [data] = await Promise.all([apiPromise, delay(500)]);
       setEngine(data.engine);
       setCore(data.core);
+      setReportNo(data.reportNo || null);
 
       setTransitionPhase('zoom-in');
       await delay(400);
@@ -252,8 +259,10 @@ export default function Alt2Page() {
       setPhase('result');
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
-    } catch {
-      alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+    } catch (e: any) {
+      alert(e?.message === 'busy'
+        ? '지금 다른 여행자의 운명을 읽고 있습니다. 잠시 후 다시 시도해주세요.'
+        : '분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
       setZonaBg('before');
@@ -265,6 +274,7 @@ export default function Alt2Page() {
   const handleReset = useCallback(() => {
     setEngine(null);
     setCore(null);
+    setReportNo(null);
     setPhase2Sections(null);
     setPhase2Loading(false);
     setIsRedo(true);
@@ -791,6 +801,7 @@ export default function Alt2Page() {
                               core,
                               sections: phase2Sections,
                               userName: '분석 대상자',
+                              reportNo,
                             }),
                           });
                           if (!res.ok) throw new Error('PDF 생성 실패');
@@ -798,7 +809,7 @@ export default function Alt2Page() {
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
-                          a.download = 'saju-report.pdf';
+                          a.download = reportNo ? `${reportNo}.pdf` : 'saju-report.pdf';
                           a.click();
                           URL.revokeObjectURL(url);
                         } catch {

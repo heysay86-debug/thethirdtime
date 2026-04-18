@@ -29,7 +29,6 @@ interface RagChunk {
 // 값: 관련 챕터 번호 배열 (우선순위 순)
 
 const SECTION_CHAPTER_MAP: Record<string, number[]> = {
-  pillarAnalysis:    [7, 6],   // 십신 심리 특징, 십신 구분
   ohengAnalysis:     [3],      // 음양오행과 적용
   sipseongAnalysis:  [7, 6],   // 십신 심리 특징, 십신 구분
   relations:         [8],      // 육친 구분과 심리

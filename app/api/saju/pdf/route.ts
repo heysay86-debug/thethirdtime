@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { engine, core, sections, userName = '분석 대상자' } = body;
+    const { engine, core, sections, userName = '분석 대상자', reportNo = null } = body;
 
     if (!engine || !core) {
       return NextResponse.json(
@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         gender: engine.gender === 'F' ? '여' : '남',
         sajuResult: engine,
         interpretation,
+        reportNo,
       }) as any
     );
 
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
       headers: {
         ...cors,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="saju-report.pdf"; filename*=UTF-8''${encodeURIComponent(`사주리포트-${userName}.pdf`)}`,
+        'Content-Disposition': `attachment; filename="${reportNo || 'saju-report'}.pdf"; filename*=UTF-8''${encodeURIComponent(reportNo ? `${reportNo}.pdf` : `사주리포트-${userName}.pdf`)}`,
       },
     });
   } catch (error) {

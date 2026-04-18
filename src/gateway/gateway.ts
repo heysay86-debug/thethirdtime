@@ -11,6 +11,12 @@
  *   https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
  */
 
+class Phase2ContentError extends Error {
+  constructor(public emptyKeys: string[], public partial: any) {
+    super(`Phase 2 핵심 섹션 누락: ${emptyKeys.join(', ')}`);
+  }
+}
+
 import Anthropic from '@anthropic-ai/sdk';
 import { SAJU_SYSTEM_PROMPT, SAJU_SYSTEM_PROMPT_PHASE2 } from './prompts/system';
 import { sajuCoreTool } from './tools/saju_core';
@@ -48,7 +54,7 @@ export interface Phase1Response {
 
 export interface Phase2Sections {
   basics: { description: string };
-  pillarAnalysis: { year: string; month: string; day: string; hour: string | null };
+  pillarAnalysis?: { year: string; month: string; day: string; hour: string | null };
   ohengAnalysis: { distribution: string; johu: string; perspectives?: any[] };
   sipseongAnalysis: { reading: string; perspectives?: any[] };
   relations: { reading: string };
@@ -140,11 +146,30 @@ export class SajuGateway {
   }
 
   /**
-   * Phase 2 — 전체 해석 (텍스트 스트리밍)
-   * tool use 없이 순수 텍스트로 JSON 반환.
-   * stream.on('text')로 SSE 전송, 완료 시 JSON.parse + Zod 검증.
+   * Phase 2 — 전체 해석 (재시도 포함)
+   * 핵심 섹션 누락 시 최대 1회 재시도.
    */
   async analyzePhase2(
+    sajuResult: SajuResult,
+    phase1Result: CoreJudgment,
+    onChunk?: (text: string) => void,
+  ): Promise<Phase2Response> {
+    const MAX_RETRIES = 1;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        return await this._analyzePhase2(sajuResult, phase1Result, onChunk);
+      } catch (e) {
+        if (e instanceof Phase2ContentError && attempt < MAX_RETRIES) {
+          console.warn(`[Phase2] 재시도 ${attempt + 1}/${MAX_RETRIES} — 누락: ${e.emptyKeys.join(', ')}`);
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw new Error('Phase 2: 재시도 초과');
+  }
+
+  private async _analyzePhase2(
     sajuResult: SajuResult,
     phase1Result: CoreJudgment,
     onChunk?: (text: string) => void,
@@ -177,8 +202,17 @@ export class SajuGateway {
       '',
       '위 핵심 판단은 이미 사용자에게 제공되었습니다.',
       '교안 참고자료를 심리·상담 관점 보강에 활용하되, 이석영 기준 명리 해석이 1차입니다.',
-      '아래 JSON 구조로 나머지 섹션만 작성하십시오. 시스템 프롬프트의 분량 기준을 반드시 준수하십시오:',
-      '{"sections":{"basics":{"description":"..."},"pillarAnalysis":{"year":"...","month":"...","day":"...","hour":"..."},"ohengAnalysis":{"distribution":"...","johu":"..."},"sipseongAnalysis":{"reading":"..."},"relations":{"reading":"..."},"daeunReading":{"overview":"...","currentPeriod":"...","upcoming":"..."},"overallReading":{"primary":"...","modernApplication":"..."}}}',
+      '아래 JSON 구조를 정확히 따르십시오. 모든 키는 필수입니다. pillarAnalysis는 제외(별도 처리):',
+      `{
+  "sections": {
+    "basics": {"description": "..."},
+    "ohengAnalysis": {"distribution": "...", "johu": "..."},
+    "sipseongAnalysis": {"reading": "..."},
+    "relations": {"reading": "..."},
+    "daeunReading": {"overview": "...", "currentPeriod": "...", "upcoming": "..."},
+    "overallReading": {"primary": "...", "modernApplication": "..."}
+  }
+}`,
       '',
       hasDaeun
         ? `대운 데이터 포함(${sajuResult.daeun!.periods.length}개 대운, ${sajuResult.seun.length}개 세운). daeunReading을 반드시 object로 작성.`
@@ -223,38 +257,31 @@ export class SajuGateway {
     // JSON 추출: 마크다운 코드블록 제거 + 첫 { ~ 마지막 } 추출
     let jsonText = finalText.replace(/```(?:json)?\s*/g, '').replace(/\s*```/g, '').trim();
     const firstBrace = jsonText.indexOf('{');
-    const lastBrace = jsonText.lastIndexOf('}');
-    if (firstBrace >= 0 && lastBrace > firstBrace) {
-      jsonText = jsonText.slice(firstBrace, lastBrace + 1);
+    if (firstBrace >= 0) {
+      jsonText = jsonText.slice(firstBrace);
+      // 괄호 균형 확인: 불균형이면 절단된 것이므로 lastBrace 슬라이싱 생략
+      let depth = 0;
+      let inStr = false;
+      let esc = false;
+      for (const ch of jsonText) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\' && inStr) { esc = true; continue; }
+        if (ch === '"') { inStr = !inStr; continue; }
+        if (inStr) continue;
+        if (ch === '{' || ch === '[') depth++;
+        else if (ch === '}' || ch === ']') depth--;
+      }
+      if (depth === 0) {
+        // 균형 잡힌 경우에만 마지막 } 까지 자르기 (뒤쪽 쓰레기 제거)
+        const lastBrace = jsonText.lastIndexOf('}');
+        if (lastBrace >= 0) jsonText = jsonText.slice(0, lastBrace + 1);
+      }
+      // depth > 0 이면 절단된 JSON → repairTruncatedJson이 처리
     }
 
     let parsed: any = null;
 
-    // 1차: 직접 파싱
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch {
-      // 2차: 문자열 값 내부의 실제 줄바꿈을 \\n으로 치환 (수동 추적)
-      try {
-        const fixed = fixNewlinesInJsonStrings(jsonText);
-        parsed = JSON.parse(fixed);
-      } catch {
-        // 3차: restructureSections (구조 오류 + 줄바꿈 수정)
-        try {
-          const restructured = restructureSections(jsonText);
-          parsed = JSON.parse(restructured);
-        } catch {
-          // 4차: repairTruncatedJson (절단된 경우)
-          const repaired = repairTruncatedJson(jsonText);
-          if (repaired) {
-            console.warn('[Phase2] JSON 절단 감지 — 복구 시도 성공');
-            parsed = repaired;
-          } else {
-            throw new Error(`Phase 2: JSON 파싱 실패\n응답: ${jsonText.slice(0, 500)}`);
-          }
-        }
-      }
-    }
+    parsed = robustParsePhase2(jsonText);
 
     // 디버그: LLM이 반환한 실제 키 구조 출력
     if (parsed?.sections) {
@@ -272,8 +299,24 @@ export class SajuGateway {
     const patched = patchMissingSections(parsed);
     const validated = Phase2ResultSchema.parse(patched);
 
+    // ── 콘텐츠 검증: 핵심 섹션에 실제 내용이 있는지 확인 ──
+    const sec = validated.sections as Phase2Sections;
+    const emptyKeys: string[] = [];
+    if (!sec.ohengAnalysis?.distribution && !sec.ohengAnalysis?.johu) emptyKeys.push('ohengAnalysis');
+    if (!sec.sipseongAnalysis?.reading) emptyKeys.push('sipseongAnalysis');
+    if (!sec.daeunReading?.overview && !sec.daeunReading?.currentPeriod) emptyKeys.push('daeunReading');
+    if (!sec.overallReading?.primary) emptyKeys.push('overallReading');
+
+    // 2개 이상 누락이면 재시도, 1개만(overallReading 등) 누락이면 경고 후 진행
+    if (emptyKeys.length >= 2) {
+      console.warn(`[Phase2] 핵심 섹션 다수 누락: ${emptyKeys.join(', ')}`);
+      throw new Phase2ContentError(emptyKeys, sec);
+    } else if (emptyKeys.length === 1) {
+      console.warn(`[Phase2] 경미한 누락(진행): ${emptyKeys[0]}`);
+    }
+
     return {
-      sections: validated.sections as Phase2Sections,
+      sections: sec,
       usage,
       elapsedMs,
       timeToFirstTokenMs,
@@ -326,6 +369,86 @@ function extractFirstJsonObject(text: string): string {
 
   // depth > 0: 닫히지 않은 JSON (절단됨) — 전체 반환하여 repair에 맡김
   return text.slice(start);
+}
+
+/**
+ * Phase 2 JSON 로버스트 파서.
+ * LLM이 만드는 모든 종류의 JSON 오류를 순차적으로 복구:
+ * 1) 직접 파싱
+ * 2) 문자열 내 줄바꿈 수정 후 파싱
+ * 3) sections 바깥 키 병합 (첫 JSON + 나머지 JSON 추출·병합)
+ * 4) 절단 복구
+ */
+function robustParsePhase2(rawText: string): any {
+  // Step 1: 직접 파싱
+  try { return JSON.parse(rawText); } catch {}
+
+  // Step 2: 줄바꿈 수정 후 파싱
+  const nlFixed = fixNewlinesInJsonStrings(rawText);
+  try { return JSON.parse(nlFixed); } catch {}
+
+  // Step 3: 첫 번째 완전한 JSON 객체 추출 + 나머지 병합
+  const firstJson = extractFirstJsonObject(nlFixed);
+  const remainder = nlFixed.slice(firstJson.length).trim();
+
+  let mainObj: any = null;
+  try {
+    mainObj = JSON.parse(firstJson);
+  } catch {
+    // 첫 JSON도 파싱 불가 → 절단 복구 시도
+    const repaired = repairTruncatedJson(firstJson);
+    if (repaired) {
+      console.warn('[Phase2] 첫 JSON 절단 복구 성공');
+      mainObj = repaired;
+    }
+  }
+
+  if (!mainObj) {
+    throw new Error(`Phase 2: JSON 파싱 실패\n응답: ${rawText.slice(0, 500)}`);
+  }
+
+  // 나머지 텍스트에서 추가 키-값 추출하여 sections에 병합
+  if (remainder.length > 2) {
+    console.warn('[Phase2] sections 바깥 데이터 발견, 병합 시도 (길이:', remainder.length, ')');
+    // 나머지가 , "key": ... 형태면 {} 로 감싸서 파싱
+    let restText = remainder.startsWith(',') ? remainder.slice(1).trim() : remainder;
+    if (!restText.startsWith('{')) restText = '{ ' + restText;
+    // 닫는 괄호 보장
+    const restFixed = fixNewlinesInJsonStrings(restText);
+    let restObj: any = null;
+    try {
+      restObj = JSON.parse(restFixed);
+    } catch {
+      const repaired = repairTruncatedJson(restFixed);
+      if (repaired) restObj = repaired;
+    }
+    if (restObj) {
+      // restObj의 키를 mainObj.sections로 이동
+      if (!mainObj.sections) mainObj.sections = {};
+      const SECTION_KEYS = ['basics', 'pillarAnalysis', 'ohengAnalysis', 'sipseongAnalysis',
+        'relations', 'daeunReading', 'overallReading'];
+      for (const key of Object.keys(restObj)) {
+        if (SECTION_KEYS.includes(key) && !mainObj.sections[key]) {
+          mainObj.sections[key] = restObj[key];
+        } else if (key === 'sections' && typeof restObj[key] === 'object') {
+          Object.assign(mainObj.sections, restObj[key]);
+        }
+      }
+      // pillarAnalysis 하위 키
+      const PA_KEYS = ['year', 'month', 'day', 'hour'];
+      for (const pk of PA_KEYS) {
+        if (restObj[pk] && typeof restObj[pk] === 'string') {
+          if (!mainObj.sections.pillarAnalysis) mainObj.sections.pillarAnalysis = {};
+          if (!mainObj.sections.pillarAnalysis[pk]) {
+            mainObj.sections.pillarAnalysis[pk] = restObj[pk];
+          }
+        }
+      }
+      console.warn('[Phase2] 병합 완료');
+    }
+  }
+
+  return mainObj;
 }
 
 /**
@@ -429,51 +552,57 @@ function patchMissingSections(parsed: any): any {
   for (const key of SECTION_KEYS) {
     if (parsed[key] && !s[key]) { s[key] = parsed[key]; delete parsed[key]; }
   }
-  // pillarAnalysis 하위 키가 바깥으로 빠진 경우
-  if (parsed.month || parsed.day || parsed.hour) {
-    if (!s.pillarAnalysis) s.pillarAnalysis = {};
-    for (const k of ['month', 'day', 'hour']) {
-      if (parsed[k] && !s.pillarAnalysis[k]) { s.pillarAnalysis[k] = parsed[k]; delete parsed[k]; }
-    }
-  }
-
   // 기본 구조 보장
   if (!s.basics) s.basics = {};
   if (!s.basics.description) s.basics.description = '';
 
-  if (!s.pillarAnalysis) s.pillarAnalysis = {};
-  for (const k of ['year', 'month', 'day']) {
-    if (!s.pillarAnalysis[k]) s.pillarAnalysis[k] = '';
-  }
-  if (s.pillarAnalysis.hour === undefined) s.pillarAnalysis.hour = null;
+  // pillarAnalysis — LLM이 보내면 유지, 안 보내도 무방 (키워드 테이블로 대체)
 
+  // ohengAnalysis — johu가 바깥으로 빠진 경우 복구
   if (!s.ohengAnalysis) s.ohengAnalysis = {};
   if (!s.ohengAnalysis.distribution) s.ohengAnalysis.distribution = '';
+  if (s.johu) { s.ohengAnalysis.johu = typeof s.johu === 'string' ? s.johu : (s.johu?.reading ?? ''); delete s.johu; }
   if (!s.ohengAnalysis.johu) s.ohengAnalysis.johu = '';
 
   if (!s.sipseongAnalysis) s.sipseongAnalysis = {};
-  if (!s.sipseongAnalysis.reading) s.sipseongAnalysis.reading = '';
-
-  if (!s.relations) s.relations = {};
-  if (!s.relations.reading) s.relations.reading = '';
-
-  // daeunReading — 누락 또는 upcoming이 밖으로 빠진 경우 복구
-  if (!s.daeunReading) {
-    s.daeunReading = { overview: '', currentPeriod: '', upcoming: s.upcoming || '' };
-    delete s.upcoming;
-  } else {
-    if (!s.daeunReading.overview) s.daeunReading.overview = '';
-    if (!s.daeunReading.currentPeriod) s.daeunReading.currentPeriod = '';
-    if (!s.daeunReading.upcoming) {
-      s.daeunReading.upcoming = s.upcoming || '';
-      delete s.upcoming;
-    }
+  if (!s.sipseongAnalysis.reading) {
+    // description 키로 들어온 경우 복구
+    s.sipseongAnalysis.reading = s.sipseongAnalysis.description ?? '';
+    delete s.sipseongAnalysis.description;
   }
 
-  // overallReading
+  if (!s.relations) s.relations = {};
+  if (!s.relations.reading) {
+    s.relations.reading = s.relations.description ?? '';
+    delete s.relations.description;
+  }
+
+  // daeunReading — 하위키(currentPeriod, upcoming, overview)가 바깥으로 빠진 경우 복구
+  if (!s.daeunReading) s.daeunReading = {};
+  const DR_KEYS = ['overview', 'currentPeriod', 'upcoming'];
+  for (const dk of DR_KEYS) {
+    if (s[dk] && !s.daeunReading[dk]) {
+      s.daeunReading[dk] = typeof s[dk] === 'string' ? s[dk] : (s[dk]?.reading ?? '');
+      delete s[dk];
+    }
+    if (!s.daeunReading[dk]) s.daeunReading[dk] = '';
+  }
+
+  // overallReading — 하위키(primary, modernApplication)가 바깥으로 빠진 경우 복구
   if (!s.overallReading) s.overallReading = {};
-  if (!s.overallReading.primary) s.overallReading.primary = '';
-  if (!s.overallReading.modernApplication) s.overallReading.modernApplication = '';
+  const OR_KEYS = ['primary', 'modernApplication'];
+  for (const ok of OR_KEYS) {
+    if (s[ok] && !s.overallReading[ok]) {
+      s.overallReading[ok] = typeof s[ok] === 'string' ? s[ok] : (s[ok]?.reading ?? s[ok]?.description ?? '');
+      delete s[ok];
+    }
+    if (!s.overallReading[ok]) s.overallReading[ok] = '';
+  }
+  // overallReading이 { reading: "..." } 형태로 온 경우 → primary로 이동
+  if (s.overallReading.reading && !s.overallReading.primary) {
+    s.overallReading.primary = s.overallReading.reading;
+    delete s.overallReading.reading;
+  }
 
   // 패치 적용 로그
   console.warn('[Phase2] 누락 섹션 패치 적용됨');
@@ -487,38 +616,14 @@ function patchMissingSections(parsed: any): any {
  * 복구 불가 시 null 반환.
  */
 function repairTruncatedJson(text: string): any | null {
-  // 마지막 완전한 문자열 값 뒤에서 절단된 경우: 열린 괄호 수를 세어 닫는다
-  let depth = 0;
-  let lastValidPos = -1;
+  // 1단계: fixNewlines 후에도 열린 문자열이 있으면 닫고, 괄호도 닫는 전략
+  // 먼저 현재 상태 파악
+  let inString = false;
+  let escape = false;
+  const stack: string[] = [];
 
   for (let i = 0; i < text.length; i++) {
     const ch = text[i];
-    if (ch === '{' || ch === '[') {
-      depth++;
-    } else if (ch === '}' || ch === ']') {
-      depth--;
-      if (depth === 0) lastValidPos = i;
-    }
-  }
-
-  if (depth === 0) return null; // 이미 닫혀 있으면 파싱 실패가 다른 이유
-
-  // depth > 0 : 닫히지 않은 괄호가 있음
-  // 마지막 완전한 값 뒤의 trailing comma/불완전 필드를 제거하고 닫기
-  // 전략: 마지막 완전한 ': "..."' 또는 ': {...}' 뒤까지 자르고 나머지를 닫는다
-  const trimmed = text
-    .replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/, '')   // 절단된 마지막 문자열 필드 제거
-    .replace(/,\s*"[^"]*"\s*:\s*\{[^}]*$/, '')   // 절단된 마지막 객체 필드 제거
-    .replace(/,\s*$/, '');                         // trailing comma 제거
-
-  // 닫아야 할 괄호 계산
-  let d = 0;
-  const closers: string[] = [];
-  const stack: string[] = [];
-  let inString = false;
-  let escape = false;
-
-  for (const ch of trimmed) {
     if (escape) { escape = false; continue; }
     if (ch === '\\' && inString) { escape = true; continue; }
     if (ch === '"') { inString = !inString; continue; }
@@ -528,7 +633,36 @@ function repairTruncatedJson(text: string): any | null {
     else if (ch === '}' || ch === ']') stack.pop();
   }
 
-  const repaired = trimmed + stack.reverse().join('');
+  if (stack.length === 0 && !inString) return null; // 이미 닫혀 있으면 파싱 실패가 다른 이유
+
+  // 2단계: 열린 문자열이 있으면 닫기
+  let repaired = text;
+  if (inString) {
+    repaired += '"';
+  }
+
+  // 3단계: trailing comma/미완성 키 제거 후 괄호 닫기
+  // 미완성 키 패턴: , "key": (값 없이 끝남) 또는 , "key" (콜론 없이)
+  repaired = repaired
+    .replace(/,\s*"[^"]*"\s*:\s*$/, '')  // , "key":  (값 시작 전 절단)
+    .replace(/,\s*"[^"]*"\s*$/, '')      // , "key"  (콜론 전 절단)
+    .replace(/,\s*$/, '');                // trailing comma
+
+  // 4단계: 괄호 재계산 후 닫기
+  const closeStack: string[] = [];
+  let inStr2 = false;
+  let esc2 = false;
+  for (const ch of repaired) {
+    if (esc2) { esc2 = false; continue; }
+    if (ch === '\\' && inStr2) { esc2 = true; continue; }
+    if (ch === '"') { inStr2 = !inStr2; continue; }
+    if (inStr2) continue;
+    if (ch === '{') closeStack.push('}');
+    else if (ch === '[') closeStack.push(']');
+    else if (ch === '}' || ch === ']') closeStack.pop();
+  }
+
+  repaired += closeStack.reverse().join('');
 
   try {
     return JSON.parse(repaired);

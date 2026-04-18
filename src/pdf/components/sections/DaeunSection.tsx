@@ -9,8 +9,7 @@ import { View, Text } from '@react-pdf/renderer';
 import { StyleSheet } from '@react-pdf/renderer';
 import PageLayout from '../PageLayout';
 import { commonStyles, colors, fontSize } from '../../styles';
-import { ohaengColor } from '../../utils/ohaeng';
-import { ganjiLabel, ganToKorean, jiToKorean, ohaengToKorean } from '../../utils/koreanReading';
+import { ganToKorean, jiToKorean } from '../../utils/koreanReading';
 import { sipseongColor } from '../../utils/ohaeng';
 
 import type { SajuResult } from '@engine/schema';
@@ -35,7 +34,7 @@ const s = StyleSheet.create({
   },
   titleDivider: {
     width: 32, height: 0.5, backgroundColor: colors.goldDim,
-    marginTop: 8, marginBottom: 20,
+    marginTop: 8, marginBottom: 14,
   },
   subTitle: {
     fontFamily: 'Paperlogy', fontSize: fontSize.md, fontWeight: 700,
@@ -65,7 +64,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(104,128,151,0.06)',
   },
   headerText: {
-    fontFamily: 'Paperlogy', fontSize: 7.5, fontWeight: 600,
+    fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 600,
     color: colors.blueGray, letterSpacing: 0.3,
   },
   cell: {
@@ -76,18 +75,18 @@ const s = StyleSheet.create({
     color: colors.darkBg,
   },
   cellAge: {
-    fontFamily: 'Paperlogy', fontSize: 7.5, fontWeight: 300,
+    fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 300,
     color: colors.textMuted,
   },
   cellRating: {
-    fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 600,
+    fontFamily: 'Paperlogy', fontSize: 8.5, fontWeight: 600,
   },
   cellScore: {
-    fontFamily: 'Paperlogy', fontSize: 7.5, fontWeight: 400,
+    fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 400,
     color: colors.textMuted,
   },
   cellRelation: {
-    fontFamily: 'Paperlogy', fontSize: 7.5, fontWeight: 500,
+    fontFamily: 'Paperlogy', fontSize: 8.5, fontWeight: 500,
   },
 
   // ── 세운 테이블 ──
@@ -158,8 +157,7 @@ export default function DaeunSection({ sajuResult, interpretation }: DaeunSectio
             return (
               <View key={i} style={RowStyle}>
                 <View style={s.cell}>
-                  <Text style={s.cellGanji}>{p.gan}{p.ji}</Text>
-                  <Text style={s.cellAge}>({ganToKorean(p.gan)}{jiToKorean(p.ji)})</Text>
+                  <Text style={s.cellGanji}>{p.gan}{p.ji} {ganToKorean(p.gan)}{jiToKorean(p.ji)}</Text>
                 </View>
                 <View style={s.cell}>
                   <Text style={s.cellAge}>{p.startAge}~{p.endAge}세</Text>
@@ -185,16 +183,16 @@ export default function DaeunSection({ sajuResult, interpretation }: DaeunSectio
         </View>
 
         {/* 대운 해석 */}
-        {toParagraphs(daeunReading.overview).map((p, i) => (
-          <Text key={i} style={s.interpretText}>{p}</Text>
+        {daeunReading.overview && toParagraphs(daeunReading.overview).map((p, i) => (
+          <Text key={`ov-${i}`} style={s.interpretText}>{p}</Text>
         ))}
 
         <View style={s.subDivider} />
 
         {/* ═══ 현재 대운 ═══ */}
         <Text style={s.subTitle}>현재 대운</Text>
-        {toParagraphs(daeunReading.currentPeriod).map((p, i) => (
-          <Text key={i} style={s.interpretText}>{p}</Text>
+        {daeunReading.currentPeriod && toParagraphs(daeunReading.currentPeriod).map((p, i) => (
+          <Text key={`cp-${i}`} style={s.interpretText}>{p}</Text>
         ))}
       </PageLayout>
 
@@ -224,8 +222,7 @@ export default function DaeunSection({ sajuResult, interpretation }: DaeunSectio
                 <View key={i} style={RowStyle}>
                   <View style={s.cell}><Text style={s.cellGanji}>{sy.year}</Text></View>
                   <View style={s.cell}>
-                    <Text style={s.cellGanji}>{sy.gan}{sy.ji}</Text>
-                    <Text style={s.cellAge}>({ganToKorean(sy.gan)}{jiToKorean(sy.ji)})</Text>
+                    <Text style={s.cellGanji}>{sy.gan}{sy.ji} {ganToKorean(sy.gan)}{jiToKorean(sy.ji)}</Text>
                   </View>
                   <View style={s.cell}>
                     <Text style={[s.cellRating, { color: sipseongColor(sy.analysis.ganTenGod) }]}>{sy.analysis.ganTenGod}</Text>
@@ -250,8 +247,8 @@ export default function DaeunSection({ sajuResult, interpretation }: DaeunSectio
 
         {/* 향후 전망 해석 */}
         <Text style={s.subTitle}>향후 전망</Text>
-        {toParagraphs(daeunReading.upcoming).map((p, i) => (
-          <Text key={i} style={s.interpretText}>{p}</Text>
+        {daeunReading.upcoming && toParagraphs(daeunReading.upcoming).map((p, i) => (
+          <Text key={`up-${i}`} style={s.interpretText}>{p}</Text>
         ))}
       </PageLayout>
     </>

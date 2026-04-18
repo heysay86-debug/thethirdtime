@@ -53,6 +53,8 @@ export interface SajuReportProps {
   sajuResult?: SajuResult | null;
   /** LLM 해석 결과. 본문 섹션 렌더링에 필요. null이면 본문 섹션 생략 */
   interpretation?: InterpretationResult | null;
+  /** 리포트 번호 (예: T3-00-260418-A0010005) */
+  reportNo?: string | null;
 }
 
 export default function SajuReport({
@@ -63,6 +65,7 @@ export default function SajuReport({
   gender = '남',
   sajuResult = null,
   interpretation = null,
+  reportNo = null,
 }: SajuReportProps) {
   const hasBody = sajuResult != null && interpretation != null;
 
@@ -74,7 +77,7 @@ export default function SajuReport({
       creator="제3의시간 (thethirdtime.com)"
     >
       {/* 1. 표지 */}
-      <CoverPage userName={userName} analysisDate={analysisDate} />
+      <CoverPage userName={userName} analysisDate={analysisDate} reportNo={reportNo} />
 
       {/* 2. 목차 */}
       <TocPage />
@@ -95,7 +98,7 @@ export default function SajuReport({
           <CoreJudgmentSection sajuResult={sajuResult} interpretation={interpretation} />
 
           {/* 07. 주별 심층 분석 */}
-          <PillarAnalysisSection sajuResult={sajuResult} interpretation={interpretation} />
+          <PillarAnalysisSection sajuResult={sajuResult} />
 
           {/* 08. 오행 분석 */}
           <OhengAnalysisSection sajuResult={sajuResult} interpretation={interpretation} />

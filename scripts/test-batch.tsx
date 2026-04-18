@@ -24,7 +24,7 @@ async function run(s: typeof SAMPLES[0]) {
   console.log('Phase 2...');
   const p2 = await gw.analyzePhase2(engine, p1.core);
 
-  const interp = { summary: p1.core.summary, sections: { basics: p2.sections.basics, coreJudgment: { strengthReading: p1.core.strengthReading, gyeokGukReading: p1.core.gyeokGukReading, yongSinReading: p1.core.yongSinReading }, pillarAnalysis: p2.sections.pillarAnalysis, ohengAnalysis: p2.sections.ohengAnalysis, sipseongAnalysis: p2.sections.sipseongAnalysis, relations: p2.sections.relations, daeunReading: p2.sections.daeunReading, overallReading: p2.sections.overallReading } } as InterpretationResult;
+  const interp = { summary: p1.core.summary, sections: { basics: p2.sections.basics, coreJudgment: { strengthReading: p1.core.strengthReading, gyeokGukReading: p1.core.gyeokGukReading, yongSinReading: p1.core.yongSinReading }, ohengAnalysis: p2.sections.ohengAnalysis, sipseongAnalysis: p2.sections.sipseongAnalysis, relations: p2.sections.relations, daeunReading: p2.sections.daeunReading, overallReading: p2.sections.overallReading } } as InterpretationResult;
 
   const [y,m,d] = s.input.birthDate.split('-').map(Number);
   const [hh,mm] = s.input.birthTime.split(':').map(Number);

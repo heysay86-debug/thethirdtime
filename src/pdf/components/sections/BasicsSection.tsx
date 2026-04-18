@@ -67,7 +67,7 @@ const s = StyleSheet.create({
   },
   titleDivider: {
     width: 32, height: 0.5, backgroundColor: colors.goldDim,
-    marginTop: 8, marginBottom: 16,
+    marginTop: 8, marginBottom: 14,
   },
 
   // ── 표 ──
