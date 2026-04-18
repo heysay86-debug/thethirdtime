@@ -11,6 +11,7 @@ interface SajuInput {
   isLeapMonth: boolean;
   birthCity: string;
   gender: 'M' | 'F' | '';
+  name: string;
 }
 
 interface InputModalProps {
@@ -35,13 +36,14 @@ const inputStyle: React.CSSProperties = {
   backgroundColor: 'rgba(104, 128, 151, 0.12)',
   border: '1px solid rgba(104, 128, 151, 0.30)',
   color: '#dde1e5',
-  fontSize: 14,
+  fontSize: 16,
   outline: 'none',
 };
 
 export default function InputModal({ isOpen, onClose, onSubmit }: InputModalProps) {
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState<SajuInput>({
+    name: '',
     birthDate: '',
     birthTime: '',
     calendar: 'solar',
@@ -61,7 +63,11 @@ export default function InputModal({ isOpen, onClose, onSubmit }: InputModalProp
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.birthDate) return;
-    onSubmit(form);
+    const submitted = {
+      ...form,
+      birthTime: form.birthTime === 'unknown' ? '' : form.birthTime,
+    };
+    onSubmit(submitted);
   };
 
   const toggleActive: React.CSSProperties = { backgroundColor: '#dde1e5', color: '#3e4857' };
@@ -108,6 +114,17 @@ export default function InputModal({ isOpen, onClose, onSubmit }: InputModalProp
             </button>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name */}
+              <input
+                type="text"
+                value={form.name}
+                onChange={e => update('name', e.target.value)}
+                placeholder="이름 (선택)"
+                style={inputStyle}
+                onFocus={e => (e.target.style.borderColor = '#f0dfad')}
+                onBlur={e => (e.target.style.borderColor = 'rgba(104, 128, 151, 0.30)')}
+              />
+
               {/* Calendar toggle */}
               <div className="flex gap-2">
                 {(['solar', 'lunar'] as const).map(cal => (
@@ -150,18 +167,30 @@ export default function InputModal({ isOpen, onClose, onSubmit }: InputModalProp
               />
 
               {/* Birth time */}
-              <div className="relative">
-                <input
-                  type="time"
-                  value={form.birthTime}
-                  onChange={e => update('birthTime', e.target.value)}
-                  style={inputStyle}
-                  onFocus={e => (e.target.style.borderColor = '#f0dfad')}
-                  onBlur={e => (e.target.style.borderColor = 'rgba(104, 128, 151, 0.30)')}
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs" style={{ color: '#688097' }}>
-                  선택
-                </span>
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type="time"
+                    value={form.birthTime === 'unknown' ? '' : form.birthTime}
+                    onChange={e => update('birthTime', e.target.value)}
+                    disabled={form.birthTime === 'unknown'}
+                    style={{
+                      ...inputStyle,
+                      opacity: form.birthTime === 'unknown' ? 0.4 : 1,
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#f0dfad')}
+                    onBlur={e => (e.target.style.borderColor = 'rgba(104, 128, 151, 0.30)')}
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-xs" style={{ color: '#688097' }}>
+                  <input
+                    type="checkbox"
+                    checked={form.birthTime === 'unknown'}
+                    onChange={e => update('birthTime', e.target.checked ? 'unknown' : '')}
+                    className="rounded"
+                  />
+                  생시를 모릅니다
+                </label>
               </div>
 
               {/* Gender */}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import DialogueBox from '../base/DialogueBox';
 import type { DialogueLine } from '../base/DialogueBox';
 import ChoicePanel from './ChoicePanel';
@@ -37,7 +37,7 @@ interface DialoguePlayerProps {
   onInputSubmit?: (input: SajuInput) => void;
   onBgChange?: (bg: ZoneBg) => void;
   onDotMove?: (state: DotMoveState) => void;
-  onScreenEffect?: (effect: 'shake' | 'flash' | null) => void;
+  onScreenEffect?: (effect: 'shake' | 'flash' | 'cast' | null) => void;
 }
 
 const SUN_PATH = [
@@ -114,6 +114,19 @@ export default function DialoguePlayer({
   const [pendingTempleWalk, setPendingTempleWalk] = useState(false);
   const [isWalking, setIsWalking] = useState(false);
   const bgPastFiredRef = useRef(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  // 모바일 키보드 올라올 때 대화창 위치 보정
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handleResize = () => {
+      const offset = window.innerHeight - vv.height;
+      setKeyboardOffset(offset > 50 ? offset : 0);
+    };
+    vv.addEventListener('resize', handleResize);
+    return () => vv.removeEventListener('resize', handleResize);
+  }, []);
 
   // Determine active script and index
   const isProcessingDynamic = dynamicInsertQueue.length > 0;
@@ -179,27 +192,37 @@ export default function DialoguePlayer({
     } else if (action === 'submit_and_transition') {
       onInputSubmit?.(buildSajuInput(collectedInput));
     } else if (action === 'bg_past') {
-      if (bgPastFiredRef.current) return; // 중복 실행 방지
+      if (bgPastFiredRef.current) return;
       bgPastFiredRef.current = true;
       setIsWalking(true);
       onDotMove?.({ visible: false });
-      (async () => {
-        // 1. 흔들림 시작
-        onScreenEffect?.('shake');
-        await delay(600);
-        // 2. 백색 플래시
-        onScreenEffect?.('flash');
-        await delay(300);
-        // 3. 플래시 중에 배경 전환
-        onBgChange?.('past');
-        await delay(500);
-        // 4. 이펙트 해제
-        onScreenEffect?.(null);
-        await delay(200);
-        // 5. 다음 라인으로 진행 후 대화창 복귀
-        advanceInputFlow();
-        setIsWalking(false);
-      })();
+      // requestAnimationFrame으로 감싸 모바일 렌더링 보장
+      requestAnimationFrame(() => {
+        (async () => {
+          // 1. cast 오버레이 먼저 표시
+          onScreenEffect?.('cast');
+          await delay(200);
+          // 2. 캐릭터 회전 연출
+          const sprites = ['back', '45angle', 'right', 'dance2', 'front'];
+          for (const sprite of sprites) {
+            onDotMove?.({ direction: sprite as any, visible: false });
+            await delay(150);
+          }
+          // front 유지
+          await delay(500);
+          // 3. 밝아지는 효과 + 배경 전환
+          onScreenEffect?.('flash');
+          await delay(500);
+          onBgChange?.('past');
+          await delay(600);
+          // 4. 이펙트 해제
+          onScreenEffect?.(null);
+          await delay(300);
+          // 5. 다음 라인
+          advanceInputFlow();
+          setIsWalking(false);
+        })();
+      });
     }
   }, [currentLine, collectedInput, onInputSubmit, onBgChange, onDotMove, onScreenEffect]);
 
@@ -239,7 +262,7 @@ export default function DialoguePlayer({
           onBgChange?.(calendar === 'lunar' ? 'inside_moon' : 'inside_sun');
           await delay(500);
 
-          onDotMove?.({ direction: 'front', x: 50, y: 60, visible: true });
+          onDotMove?.({ direction: 'front', x: 50, y: 50, visible: true });
           setIsWalking(false);
           advanceInputFlow();
         })();
@@ -295,6 +318,8 @@ export default function DialoguePlayer({
         setInputLineIndex(birthdateStepIndex);
         setTypingDone(false);
         setShowInput(false);
+        setPendingTempleWalk(false);
+        bgPastFiredRef.current = false; // cast+past 재실행 허용
         // calendar는 유지, birthDate와 isLeapMonth만 초기화
         setCollectedInput(prev => {
           const { birthDate, isLeapMonth, ...rest } = prev;
@@ -303,7 +328,7 @@ export default function DialoguePlayer({
         // 신전 내부로 복귀
         const calendar = collectedInput.calendar;
         onBgChange?.(calendar === 'lunar' ? 'inside_moon' : 'inside_sun');
-        onDotMove?.({ direction: 'front', x: 50, y: 60, visible: true });
+        onDotMove?.({ direction: 'front', x: 50, y: 50, visible: true });
       }
       return;
     }
@@ -426,9 +451,10 @@ export default function DialoguePlayer({
         <div
           className="w-full max-w-[440px] mx-auto space-y-2"
           style={{
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            paddingBottom: keyboardOffset > 0 ? keyboardOffset + 8 : 'max(16px, env(safe-area-inset-bottom))',
             paddingLeft: 38,
             paddingRight: 38,
+            transition: 'padding-bottom 0.15s ease',
           }}
         >
           {/* Choice panel */}

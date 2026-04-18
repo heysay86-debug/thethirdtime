@@ -9,6 +9,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { analyzeSaju } from '@/src/engine/analyze';
 import { SajuGateway } from '@/src/gateway/gateway';
+import { saveReport } from '@/src/db';
+import { corsHeaders, handleOptions } from '../../cors';
+
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
 import { checkRateLimit } from '@/src/middleware/rate-limit';
 import { sanitizeSections } from '@/src/middleware/sanitize';
 import { getOrCreateSession, updateSession, hashInput, SESSION_COOKIE_NAME } from '@/src/middleware/session';
@@ -20,9 +26,14 @@ const InputSchema = z.object({
   isLeapMonth: z.boolean().optional(),
   birthCity: z.string().optional(),
   gender: z.enum(['M', 'F']).optional(),
+  name: z.string().optional(),
+  channel: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const cors = corsHeaders(origin);
+
   // Rate Limiting
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? request.headers.get('x-real-ip')
@@ -62,6 +73,14 @@ export async function POST(request: NextRequest) {
     // 엔진 분석
     const engine = analyzeSaju(input);
 
+    // 익명화된 리포트 저장
+    let reportInfo;
+    try {
+      reportInfo = saveReport(input.name || '여행자', engine, input.channel);
+    } catch (e) {
+      console.warn('[DB] 리포트 저장 실패 (서비스 영향 없음):', e);
+    }
+
     // Phase 1 LLM 호출
     const gw = new SajuGateway();
     const phase1 = await gw.analyzePhase1(engine);
@@ -79,6 +98,7 @@ export async function POST(request: NextRequest) {
       engine,
       core: sanitizedCore,
       sessionId: session.id,
+      reportNo: reportInfo?.reportNo || null,
       cached: false,
       usage: phase1.usage,
       elapsedMs: phase1.elapsedMs,

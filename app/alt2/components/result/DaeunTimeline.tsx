@@ -55,18 +55,16 @@ export default function DaeunTimeline({ periods, currentAge, startAge = 0 }: Dae
 
   return (
     <div className="space-y-3">
-      {/* 대운수 + 길운 요약 */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold" style={{ color: '#dde1e5' }}>
-          대운수 : <span style={{ color: '#f0dfad' }}>{startAge}</span>
-        </div>
-        {luckyPeriods.length > 0 && (
-          <div className="text-xs" style={{ color: '#a1c5ac' }}>
-            길운 :{' '}
-            {luckyPeriods.map(p => `${p.startAge}~${p.endAge}세`).join(', ')}
-          </div>
-        )}
+      {/* 대운수 */}
+      <div className="text-sm font-semibold" style={{ color: '#dde1e5' }}>
+        대운수 : <span style={{ color: '#f0dfad' }}>{startAge}</span>
       </div>
+      {/* 길운 요약 */}
+      {luckyPeriods.length > 0 && (
+        <div className="text-xs mt-1" style={{ color: '#a1c5ac' }}>
+          길운 : {luckyPeriods.map(p => `${p.startAge}~${p.endAge}세`).join(', ')}
+        </div>
+      )}
 
       {/* 타임라인 */}
       <div className="w-full overflow-x-auto pb-2 -mx-2 px-2">

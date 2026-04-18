@@ -1,0 +1,18 @@
+{
+  "name": "제3의시간",
+  "short_name": "제3의시간",
+  "description": "본격 RPG형 사주풀이",
+  "start_url": "/alt2",
+  "display": "standalone",
+  "background_color": "#1a1e24",
+  "theme_color": "#1a1e24",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

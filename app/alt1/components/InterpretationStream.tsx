@@ -18,7 +18,7 @@ export default function InterpretationStream({ engine, core, onComplete }: Inter
 
     async function fetchStream() {
       try {
-        const res = await fetch('/api/saju/interpret', {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/interpret`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ engine, core }),

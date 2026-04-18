@@ -24,13 +24,10 @@
     ],
     "free_section_end": [
       {
-        "character": "normal",
-        "text": "여기까지가 당신의 사주에서\n보이는 겉모습이에요."
-      },
-      {
-        "character": "speak",
-        "text": "더 깊은 이야기가 궁금하다면...",
-        "style": "whisper"
+        "character": "excite",
+        "name": "복길",
+        "text": "한 번만 선택해보면\n후회없을걸세!",
+        "style": "emphasis"
       }
     ],
 

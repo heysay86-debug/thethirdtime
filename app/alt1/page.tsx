@@ -26,7 +26,7 @@ export default function Home() {
       if (data.birthCity) body.birthCity = data.birthCity;
       if (data.gender) body.gender = data.gender;
 
-      const res = await fetch('/api/saju/analyze', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),

@@ -8,12 +8,17 @@
  *   - event: error → data: { error: "..." }
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { SajuResultSchema } from '@/src/engine/schema';
 import { SajuGateway } from '@/src/gateway/gateway';
 import { checkRateLimit } from '@/src/middleware/rate-limit';
 import { sanitizePersonalInfo, sanitizeSections } from '@/src/middleware/sanitize';
+import { corsHeaders, handleOptions } from '../../cors';
+
+export async function OPTIONS(request: NextRequest) {
+  return handleOptions(request);
+}
 
 const InputSchema = z.object({
   engine: SajuResultSchema,

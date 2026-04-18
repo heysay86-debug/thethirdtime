@@ -231,13 +231,13 @@
       ]
     },
     {
-      "character": "doin",
+      "character": "magician",
       "text": "좋아. 이제 저 시계를 보게.\n자네가 이 세상에 첫 울음을 터뜨린\n바로 그 시각이 적혀 있을 거야.",
       "style": "normal"
     },
     {
       "character": "magician",
-      "text": "자네는 자네 출생에 대한\n비밀을 들은 적이 있는가?",
+      "text": "눈에 보이는 시간이 아닐세.\n자네 기억에 있는\n자네의 출생시간을 읽어내 주게",
       "action": "input_birthtime",
       "icon": "ques",
       "inputConfig": {

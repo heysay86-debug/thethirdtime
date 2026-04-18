@@ -6,6 +6,7 @@ import ZoneTransition from './components/base/ZoneTransition';
 import SectionDivider from './components/base/SectionDivider';
 import DotCharacter from './components/base/DotCharacter';
 import PillarFrame from './components/base/PillarFrame';
+import BgmPlayer from './components/base/BgmPlayer';
 import DialoguePlayer from './components/dialogue/DialoguePlayer';
 import InputModal from './components/input/InputModal';
 import PillarTable from './components/result/PillarTable';
@@ -54,6 +55,13 @@ const DEFAULT_PRICES = { deep: '₩13,900', g2: '₩18,900', g3: '₩23,900' };
 
 export default function Alt2Page() {
   const prices = getCurrentPrices();
+  // URL 파라미터에서 유입채널 코드 추출 (?ch=A002)
+  const [channel, setChannel] = useState('A001');
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ch = params.get('ch');
+    if (ch) setChannel(ch);
+  }, []);
   const [phase, setPhase] = useState<Phase>('opening');
   const [pillarsOpen, setPillarsOpen] = useState(false);
   const [logoVisible, setLogoVisible] = useState(false);
@@ -67,13 +75,16 @@ export default function Alt2Page() {
   const [redoScript, setRedoScript] = useState<DialogueLine[]>([]);
   const [redoAfterInput, setRedoAfterInput] = useState<DialogueLine[]>([]);
   const [isRedo, setIsRedo] = useState(false);
+  const [redoKey, setRedoKey] = useState(0);
   const [redoAfterInputActive, setRedoAfterInputActive] = useState(false);
   const [upsellScript, setUpsellScript] = useState<DialogueLine[]>([]);
   const [resultComments, setResultComments] = useState<any>(null);
+  const [phase2Sections, setPhase2Sections] = useState<any>(null);
+  const [phase2Loading, setPhase2Loading] = useState(false);
   const [bgOpacity, setBgOpacity] = useState(0);
   type ZoneBg = 'before' | 'after' | 'blackout' | 'inside_sun' | 'inside_moon' | 'past';
   const [zonaBg, setZonaBg] = useState<ZoneBg>('before');
-  const [screenEffect, setScreenEffect] = useState<'shake' | 'flash' | null>(null);
+  const [screenEffect, setScreenEffect] = useState<'shake' | 'flash' | 'cast' | null>(null);
   const [dotState, setDotState] = useState({
     direction: 'front' as 'front' | 'back' | 'left' | 'right',
     x: 50,
@@ -167,9 +178,11 @@ export default function Alt2Page() {
     if (input.calendar === 'lunar') body.isLeapMonth = input.isLeapMonth;
     if (input.birthCity) body.birthCity = input.birthCity;
     if (input.gender) body.gender = input.gender;
+    if (input.name) body.name = input.name;
+    body.channel = channel;
 
     try {
-      const apiPromise = fetch('/api/saju/analyze', {
+      const apiPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -193,6 +206,9 @@ export default function Alt2Page() {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
+      setZonaBg('before');
+      setScreenEffect(null);
+      setDotState({ direction: 'front', x: 50, y: 62, visible: true });
     }
   }, [isRedo]);
 
@@ -213,9 +229,11 @@ export default function Alt2Page() {
     if (src.calendar === 'lunar') body.isLeapMonth = src.isLeapMonth;
     if (src.birthCity) body.birthCity = src.birthCity;
     if (src.gender) body.gender = src.gender;
+    if (src.name) body.name = src.name;
+    body.channel = channel;
 
     try {
-      const apiPromise = fetch('/api/saju/analyze', {
+      const apiPromise = fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -238,13 +256,19 @@ export default function Alt2Page() {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
+      setZonaBg('before');
+      setScreenEffect(null);
+      setDotState({ direction: 'front', x: 50, y: 62, visible: true });
     }
   }, [isRedo, redoInput]);
 
   const handleReset = useCallback(() => {
     setEngine(null);
     setCore(null);
+    setPhase2Sections(null);
+    setPhase2Loading(false);
     setIsRedo(true);
+    setRedoKey(prev => prev + 1);
     setRedoAfterInputActive(false);
     setPhase('dialogue');
     setBgOpacity(0);
@@ -275,6 +299,7 @@ export default function Alt2Page() {
     <div className="relative min-h-screen" style={{ background: '#1a1e24' }}>
       {/* Pillar Frame — always visible */}
       <PillarFrame isOpen={pillarsOpen} />
+      <BgmPlayer />
 
       {/* Opening: logo */}
       {phase === 'opening' && (
@@ -319,6 +344,37 @@ export default function Alt2Page() {
           70% { transform: translate(-3px, 3px); }
           80% { transform: translate(4px, -1px); }
           90% { transform: translate(-2px, 2px); }
+        }
+      `}</style>
+
+      {/* Cast overlay — 캐릭터 회전 + 방사형 밝기 */}
+      {screenEffect === 'cast' && (
+        <div
+          className="fixed inset-0 flex items-center justify-center"
+          style={{
+            zIndex: 46,
+            background: 'radial-gradient(circle, rgba(240,223,173,0.3) 0%, rgba(26,30,36,0) 70%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <img
+            src={`/character/${dotState.direction}.png`}
+            alt=""
+            style={{
+              height: '30vh',
+              width: 'auto',
+              imageRendering: 'pixelated',
+              filter: 'drop-shadow(0 0 40px rgba(240,223,173,0.6))',
+              opacity: 1,
+              animation: dotState.direction === 'back' ? 'cast-dissolve-in 0.3s ease-out' : 'none',
+            }}
+          />
+        </div>
+      )}
+      <style jsx global>{`
+        @keyframes cast-dissolve-in {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
         }
       `}</style>
 
@@ -417,7 +473,11 @@ export default function Alt2Page() {
           <img
             src="/icon/logo.svg"
             alt=""
-            style={{ width: 80, opacity: 0.15 }}
+            style={{
+              width: 90,
+              opacity: phase === 'transition' ? 0.3 : 0.5,
+              filter: phase === 'transition' ? 'none' : 'brightness(0.7)',
+            }}
           />
         </div>
       )}
@@ -444,7 +504,7 @@ export default function Alt2Page() {
       {phase === 'dialogue' && (isRedo ? redoScript.length > 0 : introScript.length > 0) && (
         <div className="relative" style={{ zIndex: 10, minHeight: '100vh' }}>
           <DialoguePlayer
-            key={isRedo ? 'redo' : 'intro'}
+            key={isRedo ? `redo-${redoKey}` : 'intro'}
             script={isRedo ? (redoAfterInputActive ? redoAfterInput : redoScript) : introScript}
             inputFlow={isRedo ? undefined : introInputFlow}
             onComplete={() => {}}
@@ -476,7 +536,7 @@ export default function Alt2Page() {
                 <img
                   src="/icon/logo.svg"
                   alt="제3의시간"
-                  style={{ width: 100, opacity: 0.3 }}
+                  style={{ width: 100, opacity: 0.4 }}
                 />
               </div>
 
@@ -597,12 +657,163 @@ export default function Alt2Page() {
                   price={prices.deep}
                   originalPrice={prices.promotion ? DEFAULT_PRICES.deep : undefined}
                   promotion={prices.promotion}
-                  onClick={() => alert('결제 기능은 준비 중입니다')}
+                  onClick={async () => {
+                    if (phase2Sections) return;
+                    if (phase2Loading) { alert('리포트를 준비하고 있습니다. 잠시만 기다려주세요.'); return; }
+                    setPhase2Loading(true);
+                    try {
+                      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/interpret`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ engine, core }),
+                      });
+                      if (!res.ok || !res.body) throw new Error('API error');
+                      const reader = res.body.getReader();
+                      const decoder = new TextDecoder();
+                      let buffer = '';
+                      let eventType = '';
+                      while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() ?? '';
+                        for (const line of lines) {
+                          if (line.startsWith('event: ')) eventType = line.slice(7).trim();
+                          else if (line.startsWith('data: ') && eventType) {
+                            const data = JSON.parse(line.slice(6));
+                            if (eventType === 'done' && data.sections) {
+                              setPhase2Sections(data.sections);
+                            }
+                            eventType = '';
+                          }
+                        }
+                      }
+                    } catch { alert('해석 생성 중 오류가 발생했습니다.'); }
+                    setPhase2Loading(false);
+                  }}
                 />
               </div>
 
+              {/* Phase 2 로딩 중 */}
+              {phase2Loading && !phase2Sections && (
+                <div className="text-center py-8">
+                  <div className="w-8 h-8 rounded-full animate-spin mx-auto mb-3"
+                    style={{ border: '2px solid rgba(221,225,229,0.2)', borderTopColor: '#dde1e5' }} />
+                  <p className="text-sm" style={{ color: '#688097' }}>심층 해석을 생성하고 있습니다...</p>
+                </div>
+              )}
+
+              {/* Phase 2 전체 해석 결과 */}
+              {phase2Sections && (
+                <div className="space-y-6 pt-4">
+                  <InlineDialogue lines={[{
+                    character: 'excite', name: '복길',
+                    text: '구름 너머의 이야기가\n펼쳐지고 있네!',
+                    style: 'emphasis' as const,
+                  }]} autoPlay />
+
+                  {phase2Sections.basics?.description && (
+                    <ParchmentCard title="사주팔자 개요">
+                      {phase2Sections.basics.description}
+                    </ParchmentCard>
+                  )}
+
+                  {phase2Sections.pillarAnalysis && (
+                    <>
+                      {phase2Sections.pillarAnalysis.year && (
+                        <ParchmentCard title="연주 분석">{phase2Sections.pillarAnalysis.year}</ParchmentCard>
+                      )}
+                      {phase2Sections.pillarAnalysis.month && (
+                        <ParchmentCard title="월주 분석">{phase2Sections.pillarAnalysis.month}</ParchmentCard>
+                      )}
+                      {phase2Sections.pillarAnalysis.day && (
+                        <ParchmentCard title="일주 분석">{phase2Sections.pillarAnalysis.day}</ParchmentCard>
+                      )}
+                      {phase2Sections.pillarAnalysis.hour && (
+                        <ParchmentCard title="시주 분석">{phase2Sections.pillarAnalysis.hour}</ParchmentCard>
+                      )}
+                    </>
+                  )}
+
+                  {phase2Sections.ohengAnalysis?.distribution && (
+                    <ParchmentCard title="오행 분포 분석">{phase2Sections.ohengAnalysis.distribution}</ParchmentCard>
+                  )}
+                  {phase2Sections.ohengAnalysis?.johu && (
+                    <ParchmentCard title="조후 분석">{phase2Sections.ohengAnalysis.johu}</ParchmentCard>
+                  )}
+
+                  {phase2Sections.sipseongAnalysis?.reading && (
+                    <ParchmentCard title="십성 분석">{phase2Sections.sipseongAnalysis.reading}</ParchmentCard>
+                  )}
+
+                  {phase2Sections.relations?.reading && (
+                    <ParchmentCard title="형충파해합 · 신살">{phase2Sections.relations.reading}</ParchmentCard>
+                  )}
+
+                  {phase2Sections.daeunReading && (
+                    <>
+                      {phase2Sections.daeunReading.overview && (
+                        <ParchmentCard title="대운 흐름">{phase2Sections.daeunReading.overview}</ParchmentCard>
+                      )}
+                      {phase2Sections.daeunReading.currentPeriod && (
+                        <ParchmentCard title="현재 대운 · 세운">{phase2Sections.daeunReading.currentPeriod}</ParchmentCard>
+                      )}
+                      {phase2Sections.daeunReading.upcoming && (
+                        <ParchmentCard title="향후 전망">{phase2Sections.daeunReading.upcoming}</ParchmentCard>
+                      )}
+                    </>
+                  )}
+
+                  {phase2Sections.overallReading?.primary && (
+                    <ParchmentCard title="종합 분석">{phase2Sections.overallReading.primary}</ParchmentCard>
+                  )}
+                  {phase2Sections.overallReading?.modernApplication && (
+                    <ParchmentCard title="현대적 적용">{phase2Sections.overallReading.modernApplication}</ParchmentCard>
+                  )}
+
+                  {/* PDF 다운로드 버튼 */}
+                  <div className="text-center pt-4">
+                    <button
+                      className="px-8 py-3 text-sm font-semibold"
+                      style={{
+                        backgroundColor: '#f0dfad',
+                        color: '#1a1e24',
+                        borderRadius: 20,
+                      }}
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/pdf`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              engine,
+                              core,
+                              sections: phase2Sections,
+                              userName: '분석 대상자',
+                            }),
+                          });
+                          if (!res.ok) throw new Error('PDF 생성 실패');
+                          const blob = await res.blob();
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'saju-report.pdf';
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } catch {
+                          alert('PDF 생성 중 오류가 발생했습니다.');
+                        }
+                      }}
+                    >
+                      📄 PDF 리포트 다운로드
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Free section end comment */}
-              {resultComments?.free_section_end && (
+              {!phase2Sections && resultComments?.free_section_end && (
                 <InlineDialogue lines={resultComments.free_section_end} autoPlay />
               )}
 
@@ -633,6 +844,15 @@ export default function Alt2Page() {
                 >
                   다른 사주 분석하기
                 </button>
+
+                {/* 사업자 정보 링크 — 사업자 등록 후 opacity 조정 */}
+                <div className="mt-6 flex justify-center gap-3" style={{ opacity: 0.01 }}>
+                  <a href="/business" className="text-[9px]" style={{ color: '#688097' }}>사업자 정보</a>
+                  <span className="text-[9px]" style={{ color: '#688097' }}>·</span>
+                  <a href="/terms" className="text-[9px]" style={{ color: '#688097' }}>이용약관</a>
+                  <span className="text-[9px]" style={{ color: '#688097' }}>·</span>
+                  <a href="/privacy" className="text-[9px]" style={{ color: '#688097' }}>개인정보처리방침</a>
+                </div>
               </footer>
           </div>
         </div>

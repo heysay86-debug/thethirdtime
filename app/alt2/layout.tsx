@@ -5,7 +5,22 @@ const notoSansKR = Noto_Sans_KR({ weight: ['400', '500', '600', '700'], subsets:
 
 export const metadata = {
   title: '제3의시간 — 당신의 시간 속 이야기',
-  description: '밤하늘 아래, 도인이 풀어주는 당신의 사주팔자',
+  description: '밤하늘 아래, 시간의 마법사가 들려주는 당신의 사주팔자',
+  manifest: '/manifest.json',
+  themeColor: '#1a1e24',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    minimumScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    interactiveWidget: 'overlays-content',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '제3의시간',
+  },
 };
 
 export default function Alt2Layout({ children }: { children: React.ReactNode }) {

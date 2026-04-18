@@ -46,7 +46,7 @@ const inputStyle: React.CSSProperties = {
   backgroundColor: 'rgba(104,128,151,0.12)',
   border: '1px solid rgba(104,128,151,0.30)',
   color: '#dde1e5',
-  fontSize: 14,
+  fontSize: 16,
   outline: 'none',
 };
 
