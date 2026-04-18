@@ -1,13 +1,16 @@
 /**
  * 신살(神殺) 계산 모듈 — M14.6
  *
- * 이석영『사주첩경』기준 33종 신살 판정.
+ * 이석영『사주첩경』기준 33종 신살 판정 (Layer 1: Engine/LLM용)
+ * + 통용 기준 확장 + 추가 신살 (Layer 2: Display/UI용)
  *
  * A. 귀인성 8종: 천을귀인, 문창귀인, 문곡귀인, 천복귀인, 천주귀인, 태극귀인, 학당귀인, 천덕귀인, 월덕귀인
  * B. 살성·특수 10종: 역마살, 화개살, 백호살, 원진살, 괴강살, 양인살, 홍염살, 현침살, 귀문관살, 낙정관살
  * C. 록 관련 3종: 금여록, 암록, 협록
  * D. 공망 1종
  * E. 십이신살 12종 (대운·세운용): 겁살, 재살, 천살, 지살, 연살, 월살, 망신살, 장성살, 반안살, 역마살, 육해살, 화개살
+ *
+ * Layer 2 추가: 도화살, 고란살, 과숙살, 급각살
  */
 
 // ── 상수 ──
@@ -26,6 +29,16 @@ type Pillars = {
 export interface SinsalEntry {
   name: string;
   position: string; // '연주' | '월주' | '일주' | '시주'
+}
+
+// ── Layer 2 types ──
+
+export type SinsalCategory = 'sibiiSinsal' | 'gilsin' | 'hyungsin' | 'gita';
+
+export interface DisplaySinsalEntry {
+  name: string;
+  position: string; // '연주' | '월주' | '일주' | '시주'
+  category: SinsalCategory;
 }
 
 // ── 유틸 ──
@@ -57,6 +70,23 @@ function allGan(pillars: Pillars): { gan: string; pos: string }[] {
     { gan: pillars.day.gan, pos: '일주' },
   ];
   if (pillars.hour) arr.push({ gan: pillars.hour.gan, pos: '시주' });
+  return arr;
+}
+
+/** 4주의 모든 천간·지지 문자를 반환 */
+function allGanJiChars(pillars: Pillars): { char: string; pos: string }[] {
+  const arr: { char: string; pos: string }[] = [];
+  const positions = [
+    { pillar: pillars.year, pos: '연주' },
+    { pillar: pillars.month, pos: '월주' },
+    { pillar: pillars.day, pos: '일주' },
+  ];
+  if (pillars.hour) positions.push({ pillar: pillars.hour, pos: '시주' });
+
+  for (const { pillar, pos } of positions) {
+    arr.push({ char: pillar.gan, pos });
+    arr.push({ char: pillar.ji, pos });
+  }
   return arr;
 }
 
@@ -137,8 +167,6 @@ function findCheonbokGwiin(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
 /**
  * 천주귀인(天廚貴人) — 일간 기준, 4주 지지 조회
- * 甲→巳, 乙→午, 丙→巳(또는 未), 丁→申, 戊→巳, 己→午, 庚→寅(또는 申), 辛→酉, 壬→亥, 癸→子
- * (일부 이설 있으나 사주첩경 주류 해석 따름)
  * 실제로 천주귀인 = 식신이 건록하는 지지
  * 甲→丙의 록 巳, 乙→丁의 록 午, 丙→戊의 록 巳, 丁→己의 록 午,
  * 戊→庚의 록 申, 己→辛의 록 酉, 庚→壬의 록 亥, 辛→癸의 록 子,
@@ -160,8 +188,6 @@ function findCheonjuGwiin(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
 /**
  * 태극귀인(太極貴人) — 일간 기준, 4주 지지 조회
- * 甲己→子午(또는 寅午), 乙庚→辰戌(또는 卯酉), 丙辛→卯酉(또는 寅亥),
- * 丁壬→巳酉(또는 巳午), 戊癸→辰戌(또는 丑未)
  * (사주첩경 기준: 일간의 오행이 장생·제왕하는 지지)
  */
 const TAEGEUK_TABLE: Record<string, string[]> = {
@@ -199,11 +225,7 @@ function findHakdangGwiin(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
 /**
  * 천덕귀인(天德貴人) — 월지 기준, 4주 천간 조회
- * 寅월→丁, 卯월→申(→庚으로 보는 설도 있으나 천간이므로 丙辛 중 辛),
- * 정통: 寅→丁, 卯→辛, 辰→壬, 巳→辛, 午→甲(또는 亥), 未→癸,
- *       申→壬, 酉→丙(또는 辛), 戌→丙(또는 乙), 亥→乙(또는 甲),
- *       子→己(또는 巳), 丑→庚
- * 사주첩경 기준 천간만 조회:
+ * 사주첩경 기준 천간만 조회
  */
 const CHEONDEOK_TABLE: Record<string, string> = {
   '寅': '丁', '卯': '辛', '辰': '壬', '巳': '辛',
@@ -281,14 +303,17 @@ function findHwagaeSal(dayJi: string, pillars: Pillars): SinsalEntry[] {
 }
 
 /**
- * 백호살(白虎殺) — 일지 기준
- * 子→午, 丑→未, 寅→申, 卯→辰, 辰→戌, 巳→酉, 午→子, 未→丑, 申→寅, 酉→巳, 戌→辰, 亥→卯
- * (일부 이설: 일지의 충 지지를 백호로 보는 설도 있음)
- * 사주첩경 기준: 甲辰·乙巳·丙申·丁未·戊午·庚寅·辛卯·壬子·癸丑·己酉(일주 조합)
- * → 일주 간지 조합으로 판정하는 방식 채택
+ * 백호살(白虎殺) — 일주 간지 조합 (Layer 1: 사주첩경 기준 10개)
  */
 const BAEKHO_ILJU: string[] = [
   '甲辰', '乙巳', '丙申', '丁未', '戊午', '己酉', '庚寅', '辛卯', '壬子', '癸丑',
+];
+
+/**
+ * 백호살 확장 목록 (Layer 2: 통용 기준, 壬戌 포함)
+ */
+const BAEKHO_ILJU_EXTENDED: string[] = [
+  '甲辰', '乙未', '丙戌', '丁丑', '戊辰', '壬戌', '癸丑',
 ];
 
 function findBaekhoSal(pillars: Pillars): SinsalEntry[] {
@@ -299,9 +324,17 @@ function findBaekhoSal(pillars: Pillars): SinsalEntry[] {
   return [];
 }
 
+function findBaekhoSalExtended(pillars: Pillars): SinsalEntry[] {
+  const ilju = pillars.day.gan + pillars.day.ji;
+  // Layer 2: either original or extended list
+  if (BAEKHO_ILJU.includes(ilju) || BAEKHO_ILJU_EXTENDED.includes(ilju)) {
+    return [{ name: '백호살', position: '일주' }];
+  }
+  return [];
+}
+
 /**
  * 원진살(怨嗔殺) — 일지 기준, 나머지 지지 조회
- * 子→未, 丑→午, 寅→巳, 卯→辰, 辰→卯, 巳→寅, 午→丑, 未→子, 申→亥, 酉→戌, 戌→酉, 亥→申
  */
 const WONJIN_TABLE: Record<string, string> = {
   '子': '未', '丑': '午', '寅': '巳', '卯': '辰',
@@ -318,10 +351,14 @@ function findWonjinSal(dayJi: string, pillars: Pillars): SinsalEntry[] {
 }
 
 /**
- * 괴강살(魁罡殺) — 일주 간지 조합
- * 庚辰, 壬辰, 庚戌, 戊戌 (4개)
+ * 괴강살(魁罡殺) — 일주 간지 조합 (Layer 1: 사주첩경 기준 4개)
  */
 const GOEGANG_ILJU: string[] = ['庚辰', '壬辰', '庚戌', '戊戌'];
+
+/**
+ * 괴강살 확장 목록 (Layer 2: 壬戌 추가)
+ */
+const GOEGANG_ILJU_EXTENDED: string[] = ['庚辰', '壬辰', '庚戌', '戊戌', '壬戌'];
 
 function findGoegangSal(pillars: Pillars): SinsalEntry[] {
   const ilju = pillars.day.gan + pillars.day.ji;
@@ -331,12 +368,17 @@ function findGoegangSal(pillars: Pillars): SinsalEntry[] {
   return [];
 }
 
+function findGoegangSalExtended(pillars: Pillars): SinsalEntry[] {
+  const ilju = pillars.day.gan + pillars.day.ji;
+  if (GOEGANG_ILJU_EXTENDED.includes(ilju)) {
+    return [{ name: '괴강살', position: '일주' }];
+  }
+  return [];
+}
+
 /**
  * 양인살(羊刃殺) — 일간 기준, 4주 지지 조회
  * 일간의 록(祿)에서 한 자리 더 진행한 지지
- * 甲→卯, 乙→辰(또는 寅), 丙→午, 丁→未(또는 巳), 戊→午, 己→未(또는 巳),
- * 庚→酉, 辛→戌(또는 申), 壬→子, 癸→丑(또는 亥)
- * 사주첩경 기준 양간만 적용하는 설도 있으나, 음간도 포함하는 확장 해석 채택
  */
 const YANGIN_TABLE: Record<string, string> = {
   '甲': '卯', '乙': '辰', '丙': '午', '丁': '未', '戊': '午',
@@ -369,22 +411,27 @@ function findHongyeomSal(dayStem: string, pillars: Pillars): SinsalEntry[] {
 }
 
 /**
- * 현침살(懸針殺) — 일간 특정 글자
- * 甲, 壬 (세로 획이 뚫는 형상)
- * 일간이 甲 또는 壬이면 현침살
+ * 현침살(懸針殺) — 4주 천간·지지 중 甲, 辛, 卯, 午, 申이 있으면 해당
+ * (세로 획이 뚫는 형상의 글자)
  */
-const HYEONCHIM_STEMS = ['甲', '壬'];
+const HYEONCHIM_CHARS = ['甲', '辛', '卯', '午', '申'];
 
-function findHyeonchimSal(dayStem: string): SinsalEntry[] {
-  if (HYEONCHIM_STEMS.includes(dayStem)) {
-    return [{ name: '현침살', position: '일주' }];
+function findHyeonchimSal(pillars: Pillars): SinsalEntry[] {
+  const results: SinsalEntry[] = [];
+  const seen = new Set<string>();
+
+  for (const { char, pos } of allGanJiChars(pillars)) {
+    if (HYEONCHIM_CHARS.includes(char) && !seen.has(pos)) {
+      seen.add(pos);
+      results.push({ name: '현침살', position: pos });
+    }
   }
-  return [];
+
+  return results;
 }
 
 /**
  * 귀문관살(鬼門關殺) — 일지 기준
- * 子→酉, 丑→午, 寅→未, 卯→申, 辰→巳, 巳→辰, 午→丑, 未→寅, 申→卯, 酉→子, 戌→亥, 亥→戌
  */
 const GWIMUNGWAN_TABLE: Record<string, string> = {
   '子': '酉', '丑': '午', '寅': '未', '卯': '申',
@@ -401,25 +448,23 @@ function findGwimungwanSal(dayJi: string, pillars: Pillars): SinsalEntry[] {
 }
 
 /**
- * 낙정관살(落井關殺) — 일지 기준
- * 寅→巳, 巳→申, 申→寅 (삼합 역방향 충돌)
- * 卯→午, 午→酉, 酉→卯
- * 辰→未, 未→戌, 戌→辰
- * 丑→辰, 子→卯(또는 酉)
- * (사주첩경 기준: 일지와 시지의 특정 조합)
- * 간략화 조견표:
+ * 낙정관살(落井關殺) — 일간(天干) 기준
+ * 甲己→巳, 乙庚→子, 丙辛→申, 丁壬→戌, 戊癸→卯
+ * 4주 지지 중 해당 지지가 있으면 낙정관살
  */
-const NAKJEONG_TABLE: Record<string, string[]> = {
-  '寅': ['巳', '申'], '巳': ['申', '寅'], '申': ['寅', '巳'],
-  '卯': ['午', '酉'], '午': ['酉', '卯'], '酉': ['卯', '午'],
-  '辰': ['未', '戌'], '未': ['戌', '辰'], '戌': ['辰', '未'],
-  '丑': ['辰', '戌'], '子': ['卯', '酉'], '亥': ['寅', '午'],
+const NAKJEONG_TABLE: Record<string, string> = {
+  '甲': '巳', '己': '巳',
+  '乙': '子', '庚': '子',
+  '丙': '申', '辛': '申',
+  '丁': '戌', '壬': '戌',
+  '戊': '卯', '癸': '卯',
 };
 
-function findNakjeongSal(dayJi: string, pillars: Pillars): SinsalEntry[] {
-  const targets = NAKJEONG_TABLE[dayJi] || [];
+function findNakjeongSal(dayStem: string, pillars: Pillars): SinsalEntry[] {
+  const target = NAKJEONG_TABLE[dayStem];
+  if (!target) return [];
   return allJi(pillars)
-    .filter(({ ji, pos }) => targets.includes(ji) && pos !== '일주')
+    .filter(({ ji }) => ji === target)
     .map(({ pos }) => ({ name: '낙정관살', position: pos }));
 }
 
@@ -445,14 +490,8 @@ function findGeumyeorok(dayStem: string, pillars: Pillars): SinsalEntry[] {
 }
 
 /**
- * 암록(暗祿) — 일간의 록(건록) 지지에 암합하는 지지
- * 건록: 甲→寅, 乙→卯, 丙→巳, 丁→午, 戊→巳, 己→午, 庚→申, 辛→酉, 壬→亥, 癸→子
- * 암록은 건록 지지와 암합(지지 속 천간끼리 합)하는 지지
- * 甲(록=寅)→亥(寅중甲과 亥중壬의 관계? → 이설 다양)
- * 실전 통용 조견표:
- * 甲→亥, 乙→申, 丙→寅(또는 申?), 丁→亥, 戊→寅, 己→亥, 庚→巳, 辛→寅, 壬→巳, 癸→午
- * (사주첩경 기준: 일간 기준 정록이 지지 속에 숨어 있는 경우)
- * 정확한 조견표 — 일간의 건록 천간이 지장간에 포함된 지지:
+ * 암록(暗祿) — 일간의 건록 지지와 암합(지지 속 천간끼리 합)하는 지지
+ * 정확한 조견표 — 일간의 건록 천간이 지장간에 포함된 지지
  */
 const AMROK_TABLE: Record<string, string[]> = {
   '甲': ['亥'],       // 亥 중 甲木 여기
@@ -476,7 +515,6 @@ function findAmrok(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
 /**
  * 협록(夾祿) — 일간의 건록 지지를 양옆에서 끼고 있는 지지
- * 건록: 甲→寅, 乙→卯, 丙→巳, 丁→午, 戊→巳, 己→午, 庚→申, 辛→酉, 壬→亥, 癸→子
  * 협록 = 건록의 앞뒤 지지가 4주에 모두 있을 때 성립
  */
 const ROK_TABLE: Record<string, number> = {
@@ -497,7 +535,6 @@ function findHyeoprok(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
   // 협록은 건록의 양옆 지지가 모두 있어야 성립
   if (jiList.includes(prevJi) && jiList.includes(nextJi)) {
-    // 협록이 성립하는 주를 찾아서 반환 (양옆 지지가 있는 주 모두)
     const results: SinsalEntry[] = [];
     for (const { ji, pos } of allJi(pillars)) {
       if (ji === prevJi || ji === nextJi) {
@@ -515,15 +552,12 @@ function findHyeoprok(dayStem: string, pillars: Pillars): SinsalEntry[] {
 
 /**
  * 공망(空亡) — 일주의 60갑자 순(旬)에서 빠진 2개 지지
- * 60갑자를 10개씩 6순으로 나누면, 각 순에서 12지 중 2개가 빠짐
  */
 export function getGongmang(dayGan: string, dayJi: string): [string, string] {
   const gIdx = ganIdx(dayGan);
   const jIdx = jiIdx(dayJi);
 
   // 순두(旬頭): 해당 순의 시작 간지 인덱스
-  // 일간 인덱스 - (간인덱스 차이) = 순두의 지지 인덱스
-  // 순두 간 = 甲, 순두 지지 = dayJi - (dayGan - 甲) = jIdx - gIdx
   const startJiIdx = ((jIdx - gIdx) % 12 + 12) % 12;
 
   // 공망 = 순두 지지에서 10, 11번째 지지
@@ -577,9 +611,6 @@ export interface SibiiSinsalEntry {
 
 /**
  * 특정 지지(대운/세운)에 대해 연지 기준 십이신살 판정
- * @param yearJi 연지 (원국의 연지)
- * @param targetJi 대운/세운의 지지
- * @returns 해당하는 십이신살 이름 배열
  */
 export function getSibiiSinsal(yearJi: string, targetJi: string): SibiiSinsalEntry[] {
   const startIdx = SIBII_START[yearJi];
@@ -622,15 +653,147 @@ function findSibiiSinsalInWonguk(pillars: Pillars): SinsalEntry[] {
 }
 
 // ══════════════════════════════════════════════
+// F. Layer 2 추가 신살
+// ══════════════════════════════════════════════
+
+/**
+ * 도화살(桃花殺) — 년지 또는 일지 기준 삼합의 목욕지
+ * 寅午戌→卯, 巳酉丑→午, 申子辰→酉, 亥卯未→子
+ */
+const DOHWA_TABLE: Record<string, string> = {
+  '寅': '卯', '午': '卯', '戌': '卯',
+  '巳': '午', '酉': '午', '丑': '午',
+  '申': '酉', '子': '酉', '辰': '酉',
+  '亥': '子', '卯': '子', '未': '子',
+};
+
+function findDohwaSal(pillars: Pillars): SinsalEntry[] {
+  const results: SinsalEntry[] = [];
+  const bases = [pillars.year.ji, pillars.day.ji];
+
+  for (const baseJi of bases) {
+    const target = DOHWA_TABLE[baseJi];
+    if (!target) continue;
+    for (const { ji, pos } of allJi(pillars)) {
+      if (ji === target) {
+        // Avoid duplicates (same name + position)
+        if (!results.some(r => r.name === '도화살' && r.position === pos)) {
+          results.push({ name: '도화살', position: pos });
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
+/**
+ * 고란살(孤鸞殺) — 일주 기준
+ */
+const GORAN_ILJU: string[] = ['甲寅', '乙巳', '戊申', '戊子', '戊午', '辛亥'];
+
+function findGoranSal(pillars: Pillars): SinsalEntry[] {
+  const ilju = pillars.day.gan + pillars.day.ji;
+  if (GORAN_ILJU.includes(ilju)) {
+    return [{ name: '고란살', position: '일주' }];
+  }
+  return [];
+}
+
+/**
+ * 과숙살(寡宿殺) — 년지 기준
+ * 寅卯辰→丑, 巳午未→辰, 申酉戌→未, 亥子丑→戌
+ */
+const GWASUK_TABLE: Record<string, string> = {
+  '寅': '丑', '卯': '丑', '辰': '丑',
+  '巳': '辰', '午': '辰', '未': '辰',
+  '申': '未', '酉': '未', '戌': '未',
+  '亥': '戌', '子': '戌', '丑': '戌',
+};
+
+function findGwasukSal(pillars: Pillars): SinsalEntry[] {
+  const target = GWASUK_TABLE[pillars.year.ji];
+  if (!target) return [];
+  return allJi(pillars)
+    .filter(({ ji }) => ji === target)
+    .map(({ pos }) => ({ name: '과숙살', position: pos }));
+}
+
+/**
+ * 급각살(急脚殺) — 일지가 子, 丑, 또는 申이면 해당
+ */
+const GEUPGAK_JIJI = ['子', '丑', '申'];
+
+function findGeupgakSal(pillars: Pillars): SinsalEntry[] {
+  if (GEUPGAK_JIJI.includes(pillars.day.ji)) {
+    return [{ name: '급각살', position: '일주' }];
+  }
+  return [];
+}
+
+// ══════════════════════════════════════════════
+// 카테고리 매핑
+// ══════════════════════════════════════════════
+
+const CATEGORY_MAP: Record<string, SinsalCategory> = {
+  // sibiiSinsal
+  '겁살': 'sibiiSinsal',
+  '재살': 'sibiiSinsal',
+  '천살': 'sibiiSinsal',
+  '지살': 'sibiiSinsal',
+  '연살': 'sibiiSinsal',
+  '월살': 'sibiiSinsal',
+  '망신살': 'sibiiSinsal',
+  '장성살': 'sibiiSinsal',
+  '반안살': 'sibiiSinsal',
+  '역마살': 'sibiiSinsal',
+  '육해살': 'sibiiSinsal',
+  '화개살': 'sibiiSinsal',
+
+  // gilsin
+  '천을귀인': 'gilsin',
+  '문창귀인': 'gilsin',
+  '문곡귀인': 'gilsin',
+  '천복귀인': 'gilsin',
+  '천주귀인': 'gilsin',
+  '태극귀인': 'gilsin',
+  '학당귀인': 'gilsin',
+  '천덕귀인': 'gilsin',
+  '월덕귀인': 'gilsin',
+  '금여록': 'gilsin',
+  '암록': 'gilsin',
+  '협록': 'gilsin',
+
+  // hyungsin
+  '양인살': 'hyungsin',
+  '괴강살': 'hyungsin',
+  '백호살': 'hyungsin',
+  '원진살': 'hyungsin',
+  '귀문관살': 'hyungsin',
+  '낙정관살': 'hyungsin',
+  '홍염살': 'hyungsin',
+  '현침살': 'hyungsin',
+  '공망': 'hyungsin',
+  '도화살': 'hyungsin',
+  '고란살': 'hyungsin',
+  '과숙살': 'hyungsin',
+  '급각살': 'hyungsin',
+};
+
+function getCategory(name: string): SinsalCategory {
+  return CATEGORY_MAP[name] || 'gita';
+}
+
+// ══════════════════════════════════════════════
 // 통합 함수
 // ══════════════════════════════════════════════
 
 /**
- * 원국 신살 전체 계산
+ * Layer 1: 원국 신살 전체 계산 (Engine/LLM용, 사주첩경 기준 33종)
  * @param pillars 4주
  * @returns 신살 배열
  */
-export function calculateSinsal(pillars: Pillars): SinsalEntry[] {
+export function calculateEngineSinsal(pillars: Pillars): SinsalEntry[] {
   const dayStem = pillars.day.gan;
   const dayJi = pillars.day.ji;
   const monthJi = pillars.month.ji;
@@ -656,9 +819,9 @@ export function calculateSinsal(pillars: Pillars): SinsalEntry[] {
   results.push(...findGoegangSal(pillars));
   results.push(...findYanginSal(dayStem, pillars));
   results.push(...findHongyeomSal(dayStem, pillars));
-  results.push(...findHyeonchimSal(dayStem));
+  results.push(...findHyeonchimSal(pillars));
   results.push(...findGwimungwanSal(dayJi, pillars));
-  results.push(...findNakjeongSal(dayJi, pillars));
+  results.push(...findNakjeongSal(dayStem, pillars));
 
   // C. 록
   results.push(...findGeumyeorok(dayStem, pillars));
@@ -672,4 +835,67 @@ export function calculateSinsal(pillars: Pillars): SinsalEntry[] {
   results.push(...findSibiiSinsalInWonguk(pillars));
 
   return results;
+}
+
+/** Backward-compatible alias */
+export const calculateSinsal = calculateEngineSinsal;
+
+/**
+ * Layer 2: Display/UI용 신살 계산 (통용 기준 확장 + 추가 신살 포함)
+ * @param pillars 4주
+ * @returns 카테고리가 포함된 신살 배열
+ */
+export function calculateDisplaySinsal(pillars: Pillars): DisplaySinsalEntry[] {
+  const dayStem = pillars.day.gan;
+  const dayJi = pillars.day.ji;
+  const monthJi = pillars.month.ji;
+
+  const raw: SinsalEntry[] = [];
+
+  // A. 귀인성
+  raw.push(...findCheonulGwiin(dayStem, pillars));
+  raw.push(...findMunchangGwiin(dayStem, pillars));
+  raw.push(...findMungokGwiin(dayStem, pillars));
+  raw.push(...findCheonbokGwiin(dayStem, pillars));
+  raw.push(...findCheonjuGwiin(dayStem, pillars));
+  raw.push(...findTaegeukGwiin(dayStem, pillars));
+  raw.push(...findHakdangGwiin(dayStem, pillars));
+  raw.push(...findCheondeokGwiin(monthJi, pillars));
+  raw.push(...findWoldeokGwiin(monthJi, pillars));
+
+  // B. 살성·특수 (Layer 2 확장 테이블 사용)
+  raw.push(...findYeokmaSal(dayJi, pillars));
+  raw.push(...findHwagaeSal(dayJi, pillars));
+  raw.push(...findBaekhoSalExtended(pillars));   // Layer 2 extended
+  raw.push(...findWonjinSal(dayJi, pillars));
+  raw.push(...findGoegangSalExtended(pillars));   // Layer 2 extended
+  raw.push(...findYanginSal(dayStem, pillars));
+  raw.push(...findHongyeomSal(dayStem, pillars));
+  raw.push(...findHyeonchimSal(pillars));
+  raw.push(...findGwimungwanSal(dayJi, pillars));
+  raw.push(...findNakjeongSal(dayStem, pillars));
+
+  // C. 록
+  raw.push(...findGeumyeorok(dayStem, pillars));
+  raw.push(...findAmrok(dayStem, pillars));
+  raw.push(...findHyeoprok(dayStem, pillars));
+
+  // D. 공망
+  raw.push(...findGongmang(pillars));
+
+  // E. 십이신살 (원국 내)
+  raw.push(...findSibiiSinsalInWonguk(pillars));
+
+  // F. Layer 2 추가 신살
+  raw.push(...findDohwaSal(pillars));
+  raw.push(...findGoranSal(pillars));
+  raw.push(...findGwasukSal(pillars));
+  raw.push(...findGeupgakSal(pillars));
+
+  // 카테고리 할당
+  return raw.map(entry => ({
+    name: entry.name,
+    position: entry.position,
+    category: getCategory(entry.name),
+  }));
 }

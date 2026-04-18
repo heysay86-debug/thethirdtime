@@ -93,22 +93,26 @@ describe('괴강살', () => {
 });
 
 describe('현침살', () => {
-  it('壬일간 → 현침살 있음', () => {
+  // 현침살: 4주 천간·지지 중 甲, 辛, 卯, 午, 申 이 있으면 해당
+  it('1986 사주 (丙寅/丁酉/壬戌/庚子) → 甲辛卯午申 모두 없으므로 현침살 없음', () => {
     const result = calculateSinsal(PILLARS_1986);
-    const hyeonchim = result.filter(s => s.name === '현침살');
-    expect(hyeonchim).toHaveLength(1);
-  });
-
-  it('庚일간 → 현침살 없음', () => {
-    const result = calculateSinsal(PILLARS_GOEGANG);
     const hyeonchim = result.filter(s => s.name === '현침살');
     expect(hyeonchim).toHaveLength(0);
   });
 
-  it('甲일간 → 현침살 있음', () => {
+  it('괴강 사주 (戊午/甲寅/庚辰/丙子) → 甲(월간), 午(연지) → 현침살 있음', () => {
+    const result = calculateSinsal(PILLARS_GOEGANG);
+    const hyeonchim = result.filter(s => s.name === '현침살');
+    expect(hyeonchim.length).toBeGreaterThanOrEqual(1);
+    // 연주(午)와 월주(甲) 모두 해당
+    expect(hyeonchim.some(s => s.position === '연주')).toBe(true);
+    expect(hyeonchim.some(s => s.position === '월주')).toBe(true);
+  });
+
+  it('갑자 사주 (甲子/丙寅/甲子/甲子) → 甲(연간·일간·시간) → 현침살 있음', () => {
     const result = calculateSinsal(PILLARS_GAP_JA);
     const hyeonchim = result.filter(s => s.name === '현침살');
-    expect(hyeonchim).toHaveLength(1);
+    expect(hyeonchim.length).toBeGreaterThanOrEqual(1);
   });
 });
 
