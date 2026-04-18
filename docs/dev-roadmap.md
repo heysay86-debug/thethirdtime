@@ -1,6 +1,8 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-17
+최종 업데이트: 2026-04-18
+GitHub: https://github.com/heysay86-debug/thethirdtime
+라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
 참고 코드: github.com/hjsh200219/fortuneteller (clean-room 참조, LICENSE 확인 전)
 
@@ -204,8 +206,10 @@
 >   참고: https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
 
 ### M15. 시스템 프롬프트 + Tool 정의 ✅
-- [x] 시스템 프롬프트 (`src/gateway/prompts/system.ts`) — 역할·원칙·서술 지침 (~500 토큰)
-- [x] Phase 2 전용 프롬프트 (`SAJU_SYSTEM_PROMPT_PHASE2`) — JSON 직접 출력 지침 추가
+- [x] 시스템 프롬프트 (`src/gateway/prompts/system.ts`) — 역할·원칙·서술 지침
+- [x] Phase 2 전용 프롬프트 (`SAJU_SYSTEM_PROMPT_PHASE2`) — JSON 구조 명시 + 분량 기준
+- [x] 프롬프트에서 특정 서적명 제거 ("이석영 사주첩경" 워딩 삭제)
+- [x] 통변 지침(tongbyeon/)은 LLM 프롬프트에 포함하지 않음 (Phase 3 전용)
 - [x] Phase 1 tool: `src/gateway/tools/saju_core.ts` (summary + 3 readings)
 - [x] Phase 2 tool: `src/gateway/tools/saju_interpretation.ts` (coreJudgment 제외, 스키마 참조용)
 - [x] Phase 2 Zod 스키마: `Phase2ResultSchema` (`src/gateway/prompts/schema.ts`)
@@ -312,17 +316,22 @@
 - [x] InterpretationStream — Phase 2 SSE 스트리밍 + 14개 섹션 카드
 - [x] 기본 UX 흐름 (입력 → Phase1 즉시 표시 → Phase2 스트리밍)
 
-### alt1 / alt2 분기
-- [ ] 현재 구현을 `app/alt1/`로 이전. `app/page.tsx`는 alt1 redirect.
-- [ ] `app/alt2/` 신규 구현 — 캐릭터 스토리텔링 버전
-  - **구현 명령서**: `docs/alt2-implementation-guide.md` (단계별 상세 지시)
-  - **디자인 시스템**: `DESIGN-ALT2.md` (Mystical Night 테마)
-  - 선행 조건: 캐릭터 SVG 파일 `public/character/`에 준비 (placeholder로 선 구현, 후 교체)
-  - Step 1 랜딩: 캐릭터 + 타이핑 말풍선 + CTA
-  - Step 2 입력: SajuForm 로직 재사용, UI 다크 테마 재작성
-  - Step 3 로딩: 캐릭터 애니메이션 + 순환 멘트
-  - Step 4 결과: PillarCard + CoreNarration + StreamRenderer (스크롤 레이아웃)
-- [ ] alt1·alt2 비교 후 메인 방향 확정
+### alt1 / alt2 분기 ✅
+- [x] 기존 구현을 `app/alt1/`로 이전. `app/page.tsx`는 alt2 redirect.
+- [x] `app/alt2/` RPG형 스토리텔링 버전 구현 완료
+  - Zone A: RPG 대화 시퀀스 (DialoguePlayer + 대화형 입력 수집)
+  - Zone B: 무료 결과 (조견표 + 대운 + 세운 + 오행 + 양피지 해설)
+  - Zone C: 업셀 (궁합 + 심층 해석 CTA)
+  - 오프닝 시퀀스 (로고 + 슬로건 + 기둥 프레임 디졸브)
+  - 4단계 배경 전환 (before→after→inside_sun/moon→past)
+  - DotCharacter 4방향 스프라이트 + PATH 이동 시퀀스
+  - cast 이펙트 (캐릭터 회전 연출 + 방사형 밝기)
+  - 흔들림+플래시 트랜지션 (inside→past)
+  - thought 스타일 (유저 내면 대사)
+  - redo 모드 (다시하기 → 짧은 대화 + InputModal)
+  - BGM (crystalfield.mp3, 로딩 대기, visibility 제어)
+  - PWA manifest + iOS 줌 방지
+- [x] alt2를 메인으로 확정 (루트 → /alt2 redirect)
 
 ### M-SEO. 검색엔진 최적화 (Phase 4 병행)
 - [ ] Next.js Metadata API로 페이지별 title·description·og 태그 설정
@@ -348,9 +357,12 @@
   - 05 주별 심층 분석 (4기둥 개별 카드)
   - 06 오행 분석 (바차트·조후)
   - 07 십성 분석 (배치 테이블·카테고리 카드)
-  - 08 형충파해합·신살 (관계 카드·신살 칩)
-  - 09 대운 흐름 (대운표·세운표·현재 분석)
-  - 10 종합 해석 (총평 배너·주분석·현대적 적용·유파별 관점)
+  - 08 십이운성 분석 (배치 테이블·운성별 해설 카드)
+  - 09 형충파해합·신살 (관계 카드·신살 칩)
+  - 10 대운 흐름 (대운표·세운표·현재 분석)
+  - 11 종합 해석 (총평 배너·주분석·현대적 적용)
+  - 목차·섹션 번호 업데이트 (십이운성 추가에 따른 재조정)
+  - OverallReadingSection 서적명 제거 ("명리학 종합 분석"으로 변경)
 - [x] `scripts/test-real-pipeline.tsx` — 엔진→Phase1→Phase2→PDF 통합 스크립트
 - [x] `scripts/dump-engine-result.tsx` — 엔진 결과 JSON 덤프 스크립트
 
@@ -406,16 +418,64 @@
 
 ---
 
-## Phase 5 — 배포 & 운영 ⚫
+## Phase 5 — 배포 & 운영 🟡 진행 중
 
 > 하이브리드 배포: Netlify(프론트) + Fly.io(API). 상세: `docs/deployment-plan.md`
 
-### M-DB. 익명화된 고객정보 데이터베이스
-- [x] SQLite + better-sqlite3 + Fly.io 영구 볼륨
-- [x] reports 테이블: report_no, name, keyword1~3, created_at
-- [x] 리포트번호 자동 생성 (T3-YYYYMMDD-XXXX)
+### M-DEPLOY. Fly.io 배포 ✅
+- [x] Dockerfile + standalone 빌드
+- [x] Fly.io 앱 생성 (도쿄 nrt, shared-cpu-1x 1GB RAM)
+- [x] 영구 볼륨 1GB (SQLite DB 저장)
+- [x] 시크릿 등록 (ANTHROPIC_API_KEY, SESSION_SECRET)
+- [x] 프록시 타임아웃 300초 (fly_proxy_timeout 메타데이터)
+- [x] 파일 권한 수정 (chungan/jiji 폴더)
+- [x] 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
+- [ ] 커스텀 도메인 연결 (saju.betterdan.net)
+- [ ] Netlify 프론트 분리 (하이브리드 구조 완성)
+
+### M-API. API 안정화 ✅
+- [x] CORS 설정 (app/api/cors.ts)
+- [x] Phase 2 JSON 추출 강화 (extractFirstJsonObject)
+- [x] 누락 섹션 자동 패치 (patchMissingSections)
+- [x] Phase 2 프롬프트 JSON 구조 명시
+- [x] max_tokens 12000
+- [x] PDF 생성 API (/api/saju/pdf) — 서버사이드 렌더링 + 다운로드
+- [x] 환경변수 분리 (NEXT_PUBLIC_API_URL)
+
+### M-WEB-REPORT. 웹 리포트 표시 ✅
+- [x] CTA 버튼 클릭 → Phase 2 SSE 호출 → 웹에서 전체 해석 양피지 카드 렌더링
+- [x] PDF 다운로드 버튼 (서버사이드 PDF 생성 후 blob 다운로드)
+- [x] Content-Disposition UTF-8 한글 파일명
+
+### M-UX. 프론트엔드 UX 개선 ✅
+- [x] 프로모션 가격 시스템 (pricing.ts, 날짜 기반 자동 할인)
+- [x] GunghamUpsell 대화형 궁합 업셀 (intro→select→offer→declined)
+- [x] ParchmentCard 양피지 해설 카드 + ## 소제목 파싱
+- [x] Zone B 불투명 배경 (#2d3440) + Zone C silverlining 분리
+- [x] PillarTable 십이운성+신살 컬럼 내부 통합 + 참고사항
+- [x] DaeunTimeline 강화 (대운수, 길운, 평가, 형충합, 용신관계)
+- [x] SeunCard 세운 버그 수정 (engine.seun 경로) + analysis 표시
+- [x] 상단/하단 로고 워터마크 + 오프닝 슬로건
+- [x] Portrait 가로형 캐릭터 contain 모드
+- [x] 키보드 컨테이너 고정 (overlays-content + visualViewport)
+- [x] 입력 필드 fontSize 16px (iOS 줌 방지)
+- [x] 에러 시 배경 상태 초기화
+- [x] CTA 로딩 중 재클릭 알림
+- [x] 대화 텍스트 1줄 17자 제한 (wrapText)
+- [x] 준비되었나? 확인 버튼 (submit 전 유저 동의)
+- [x] ZoneTransition timezone 배경 + 춤추는 캐릭터 (dance1/2)
+
+### M-DB. 익명화된 고객정보 데이터베이스 ✅
+- [x] SQLite + better-sqlite3 + Fly.io 영구 볼륨 (/data/reports.db)
+- [x] reports 테이블: report_no(PK), order_id, channel, char_name, keyword1~3, created_at
+- [x] counter 테이블: 결제 유저 카운트 관리
+- [x] 리포트번호: T3-XX-YYMMDD-A001XXXX (XX=결제카운트, A001=유입채널, XXXX=순번)
+  - 무료: T3-00-YYMMDD-A001XXXX
+  - 유료: T3-01-YYMMDD-A001XXXX (결제 시 카운트 증가)
+- [x] 유입채널 추적 6종 (A001~A006) + URL ?ch= 파라미터
 - [x] 핵심키워드 자동 추출 (격국, 신강/신약, 용신)
 - [x] analyze API 연동 (자동 저장, 실패 시 서비스 영향 없음)
+- [x] upgradeToPaid() — 무료→유료 리포트 전환 함수
 
 ### M-LEGAL. 법적 고지 사항
 - [x] 이용약관 페이지 (`/terms`) — 표준약관 제10023호 준용, 11개 조항
@@ -435,6 +495,19 @@
   - `gungham_click` → `redo_click`
 - [ ] GA4 퍼널 리포트 설정 (단계별 이탈률 확인)
 - [ ] 이탈 구간 분석 → UX 개선 피드백 루프
+
+### M-PAY. 결제 연동 (사업자 등록 후)
+- [ ] 토스페이먼츠 연동
+- [ ] 결제 전 동의 체크박스 (이용약관 + 개인정보 + 환불제한)
+- [ ] 결제 시작 시점에 백그라운드 Phase 1+2 호출 (대기시간 단축)
+- [ ] 결제 완료 → 웹 결과 즉시 표시 → PDF 다운로드
+- [ ] savePaidReport() + upgradeToPaid() 연동
+- [ ] 가격: 심층해석 ₩13,900 / 2인궁합 ₩18,900 / 3인궁합 ₩23,900
+
+### M-SHARE. 친구 공유 카드
+- [ ] 공유용 카드 이미지 생성 (사주 요약 + QR/링크)
+- [ ] 카카오톡 공유 API 연동
+- [ ] 유입채널 A006 (친구 공유 카드) 추적
 
 ### M-ADS. 애드센스 (선택)
 - [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입
