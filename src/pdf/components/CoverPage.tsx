@@ -157,19 +157,21 @@ const s = StyleSheet.create({
  * 정적 별 점들 (PDF는 애니메이션 불가, 고정 위치 원으로 대체)
  */
 function Stars() {
-  // 시드 고정: 매번 동일한 별 배치
-  const stars = [
-    { x: 12, y: 5, r: 0.8 }, { x: 85, y: 8, r: 0.6 }, { x: 45, y: 3, r: 1.0 },
-    { x: 23, y: 15, r: 0.5 }, { x: 78, y: 12, r: 0.7 }, { x: 55, y: 18, r: 0.9 },
-    { x: 8, y: 25, r: 0.6 }, { x: 92, y: 22, r: 0.8 }, { x: 35, y: 28, r: 0.5 },
-    { x: 67, y: 30, r: 1.0 }, { x: 15, y: 38, r: 0.7 }, { x: 88, y: 35, r: 0.6 },
-    { x: 42, y: 42, r: 0.8 }, { x: 73, y: 45, r: 0.5 }, { x: 28, y: 50, r: 0.9 },
-    { x: 95, y: 48, r: 0.7 }, { x: 5, y: 55, r: 0.6 }, { x: 60, y: 58, r: 0.8 },
-    { x: 18, y: 65, r: 0.5 }, { x: 82, y: 62, r: 1.0 }, { x: 48, y: 68, r: 0.7 },
-    { x: 33, y: 72, r: 0.6 }, { x: 70, y: 75, r: 0.8 }, { x: 10, y: 80, r: 0.9 },
-    { x: 90, y: 78, r: 0.5 }, { x: 52, y: 85, r: 0.7 }, { x: 25, y: 88, r: 0.6 },
-    { x: 75, y: 90, r: 0.8 }, { x: 40, y: 95, r: 0.5 }, { x: 62, y: 92, r: 1.0 },
-  ];
+  // 상단(0~15%)과 하단(80~100%)에만 별을 배치, 중앙은 깨끗하게
+  function seededRand(seed: number) {
+    let s = seed;
+    return () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  }
+  const rand = seededRand(31);
+  const stars: Array<{ x: number; y: number; r: number }> = [];
+  // 상단 25개
+  for (let i = 0; i < 25; i++) {
+    stars.push({ x: rand() * 100, y: rand() * 15, r: 0.3 + rand() * 0.8 });
+  }
+  // 하단 15개
+  for (let i = 0; i < 15; i++) {
+    stars.push({ x: rand() * 100, y: 82 + rand() * 18, r: 0.3 + rand() * 0.6 });
+  }
 
   return (
     <Svg viewBox="0 0 100 100" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>

@@ -30,7 +30,7 @@ export default function AdminPage() {
   const [showWelcome, setShowWelcome] = useState(false);
 
   // PDF 강제 생성 폼
-  const [pdfForm, setPdfForm] = useState({ name: '', birthDate: '', birthTime: '12:00', gender: 'M' as 'M' | 'F', calendar: 'solar' as 'solar' | 'lunar' });
+  const [pdfForm, setPdfForm] = useState({ name: '', birthDate: '', birthTime: '12:00', birthTimeUnknown: false, gender: 'M' as 'M' | 'F', calendar: 'solar' as 'solar' | 'lunar' });
   const [pdfStatus, setPdfStatus] = useState('');
 
   const fetchData = async (t: string) => {
@@ -313,8 +313,16 @@ export default function AdminPage() {
             </label>
             <label style={{ fontSize: 12, color: '#aab' }}>
               출생시간
-              <input type="time" value={pdfForm.birthTime} onChange={e => setPdfForm(p => ({ ...p, birthTime: e.target.value }))}
-                style={{ ...S.input, width: '100%', marginTop: 4 }} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+                <input type="time" value={pdfForm.birthTime} disabled={pdfForm.birthTimeUnknown}
+                  onChange={e => setPdfForm(p => ({ ...p, birthTime: e.target.value }))}
+                  style={{ ...S.input, flex: 1, opacity: pdfForm.birthTimeUnknown ? 0.4 : 1 }} />
+                <label style={{ fontSize: 11, color: '#889', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={pdfForm.birthTimeUnknown}
+                    onChange={e => setPdfForm(p => ({ ...p, birthTimeUnknown: e.target.checked }))} />
+                  시간 모름
+                </label>
+              </div>
             </label>
             <div style={{ display: 'flex', gap: 12 }}>
               <label style={{ fontSize: 12, color: '#aab' }}>
@@ -337,54 +345,33 @@ export default function AdminPage() {
             <button
               disabled={!pdfForm.name || !pdfForm.birthDate || pdfStatus === 'loading'}
               onClick={async () => {
-                setPdfStatus('loading');
+                setPdfStatus('분석 + PDF 생성 중...');
                 try {
-                  // 1) 엔진 + Phase1
-                  const analyzeRes = await fetch('/api/saju/analyze', {
+                  const res = await fetch(`/api/admin/generate-pdf?token=${encodeURIComponent(token)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                      birthDate: pdfForm.birthDate,
-                      birthTime: pdfForm.birthTime,
-                      calendar: pdfForm.calendar,
-                      gender: pdfForm.gender,
                       name: pdfForm.name,
-                      birthCity: '서울',
+                      birthDate: pdfForm.birthDate,
+                      ...(!pdfForm.birthTimeUnknown && { birthTime: pdfForm.birthTime }),
+                      gender: pdfForm.gender,
+                      calendar: pdfForm.calendar,
                     }),
                   });
-                  if (!analyzeRes.ok) throw new Error('분석 실패');
-                  const analyzeData = await analyzeRes.json();
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({ error: 'PDF 생성 실패' }));
+                    throw new Error(err.error || 'PDF 생성 실패');
+                  }
 
-                  // 2) Phase2
-                  setPdfStatus('Phase 2 해석 중...');
-                  const interpRes = await fetch('/api/saju/interpret', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({}),
-                  });
-                  if (!interpRes.ok) throw new Error('해석 실패');
-                  const interpData = await interpRes.json();
+                  const blob = await res.blob();
+                  const cd = res.headers.get('Content-Disposition') || '';
+                  const fnMatch = cd.match(/filename="(.+?)"/);
+                  const fileName = fnMatch ? fnMatch[1] : 'admin-report.pdf';
 
-                  // 3) PDF 생성
-                  setPdfStatus('PDF 렌더링 중...');
-                  const pdfRes = await fetch('/api/saju/pdf', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      engine: analyzeData.engine,
-                      core: analyzeData.core,
-                      sections: interpData.sections,
-                      userName: pdfForm.name,
-                      reportNo: analyzeData.reportNo,
-                    }),
-                  });
-                  if (!pdfRes.ok) throw new Error('PDF 생성 실패');
-
-                  const blob = await pdfRes.blob();
                   const url = URL.createObjectURL(blob);
                   const a = document.createElement('a');
                   a.href = url;
-                  a.download = analyzeData.reportNo ? `${analyzeData.reportNo}.pdf` : 'admin-report.pdf';
+                  a.download = fileName;
                   a.click();
                   URL.revokeObjectURL(url);
                   setPdfStatus('완료!');

@@ -20,6 +20,7 @@ class Phase2ContentError extends Error {
 import Anthropic from '@anthropic-ai/sdk';
 import { SAJU_SYSTEM_PROMPT, SAJU_SYSTEM_PROMPT_PHASE2 } from './prompts/system';
 import { sajuCoreTool } from './tools/saju_core';
+import { sajuInterpretationTool } from './tools/saju_interpretation';
 import { Phase2ResultSchema } from './prompts/schema';
 import { SajuResult } from '../engine/schema';
 import { buildChunkContext } from './chunks';
@@ -27,6 +28,7 @@ import { buildChunkContext } from './chunks';
 // ── 설정 ──
 
 const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+const PHASE2_MODEL = 'claude-sonnet-4-5-20250929';
 const PHASE1_MAX_TOKENS = 1024;
 const PHASE2_MAX_TOKENS = 12000;
 
@@ -175,14 +177,10 @@ export class SajuGateway {
     onChunk?: (text: string) => void,
   ): Promise<Phase2Response> {
     const start = Date.now();
-    let timeToFirstTokenMs = 0;
-    let firstTokenReceived = false;
 
     const hasDaeun = sajuResult.daeun !== null;
-    // 교안 청크 로드 (없으면 빈 문자열)
     const chunkContext = buildChunkContext();
 
-    // 출생 연도에서 현재 나이 계산
     const birthYear = sajuResult.birth?.solar ? parseInt(sajuResult.birth.solar.split('-')[0]) : null;
     const currentYear = new Date().getFullYear();
     const currentAge = birthYear ? currentYear - birthYear : null;
@@ -202,25 +200,16 @@ export class SajuGateway {
       '',
       '위 핵심 판단은 이미 사용자에게 제공되었습니다.',
       '교안 참고자료를 심리·상담 관점 보강에 활용하되, 이석영 기준 명리 해석이 1차입니다.',
-      '아래 JSON 구조를 정확히 따르십시오. 모든 키는 필수입니다. pillarAnalysis는 제외(별도 처리):',
-      `{
-  "sections": {
-    "basics": {"description": "..."},
-    "ohengAnalysis": {"distribution": "...", "johu": "..."},
-    "sipseongAnalysis": {"reading": "..."},
-    "relations": {"reading": "..."},
-    "daeunReading": {"overview": "...", "currentPeriod": "...", "upcoming": "..."},
-    "overallReading": {"primary": "...", "modernApplication": "..."}
-  }
-}`,
+      'submit_saju_interpretation 도구를 호출하여 결과를 제출하십시오. pillarAnalysis는 제외(별도 처리).',
       '',
       hasDaeun
         ? `대운 데이터 포함(${sajuResult.daeun!.periods.length}개 대운, ${sajuResult.seun.length}개 세운). daeunReading을 반드시 object로 작성.`
         : '대운 데이터 없음. daeunReading은 null.',
     ].join('\n');
 
-    const stream = this.client.messages.stream({
-      model: this.model,
+    // Tool use — API가 JSON 구조를 강제 (Sonnet으로 안정성 확보)
+    const response = await this.client.messages.create({
+      model: PHASE2_MODEL,
       max_tokens: PHASE2_MAX_TOKENS,
       system: [
         {
@@ -229,77 +218,53 @@ export class SajuGateway {
           cache_control: { type: 'ephemeral' },
         },
       ],
-      // tool use 없음 — 순수 텍스트 스트리밍
+      tools: [
+        {
+          ...sajuInterpretationTool,
+          cache_control: { type: 'ephemeral' },
+        } as any,
+      ],
+      tool_choice: { type: 'tool', name: 'submit_saju_interpretation' },
       messages: [
         { role: 'user', content: userMessage },
       ],
     });
 
-    stream.on('text', (text) => {
-      if (!firstTokenReceived) {
-        timeToFirstTokenMs = Date.now() - start;
-        firstTokenReceived = true;
-      }
-      if (onChunk) onChunk(text);
-    });
-
-    const finalMessage = await stream.finalMessage();
     const elapsedMs = Date.now() - start;
-    const usage = extractUsage(finalMessage);
-    this.logPhase('Phase2', usage, elapsedMs, timeToFirstTokenMs);
+    const usage = extractUsage(response);
+    this.logPhase('Phase2', usage, elapsedMs);
 
-    // 텍스트에서 JSON 추출
-    const finalText = finalMessage.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map(b => b.text)
-      .join('');
-
-    // JSON 추출: 마크다운 코드블록 제거 + 첫 { ~ 마지막 } 추출
-    let jsonText = finalText.replace(/```(?:json)?\s*/g, '').replace(/\s*```/g, '').trim();
-    const firstBrace = jsonText.indexOf('{');
-    if (firstBrace >= 0) {
-      jsonText = jsonText.slice(firstBrace);
-      // 괄호 균형 확인: 불균형이면 절단된 것이므로 lastBrace 슬라이싱 생략
-      let depth = 0;
-      let inStr = false;
-      let esc = false;
-      for (const ch of jsonText) {
-        if (esc) { esc = false; continue; }
-        if (ch === '\\' && inStr) { esc = true; continue; }
-        if (ch === '"') { inStr = !inStr; continue; }
-        if (inStr) continue;
-        if (ch === '{' || ch === '[') depth++;
-        else if (ch === '}' || ch === ']') depth--;
-      }
-      if (depth === 0) {
-        // 균형 잡힌 경우에만 마지막 } 까지 자르기 (뒤쪽 쓰레기 제거)
-        const lastBrace = jsonText.lastIndexOf('}');
-        if (lastBrace >= 0) jsonText = jsonText.slice(0, lastBrace + 1);
-      }
-      // depth > 0 이면 절단된 JSON → repairTruncatedJson이 처리
+    // tool_use 블록에서 구조화된 JSON 추출 — 파싱 불필요
+    const toolBlock = response.content.find(
+      (b): b is Anthropic.ToolUseBlock => b.type === 'tool_use',
+    );
+    if (!toolBlock || toolBlock.name !== 'submit_saju_interpretation') {
+      throw new Error('Phase 2: tool_use 블록 없음');
     }
 
-    let parsed: any = null;
-
-    parsed = robustParsePhase2(jsonText);
-
-    // 디버그: LLM이 반환한 실제 키 구조 출력
-    if (parsed?.sections) {
-      const keys = Object.keys(parsed.sections);
-      const subkeys: Record<string, string[]> = {};
-      for (const k of keys) {
-        if (typeof parsed.sections[k] === 'object' && parsed.sections[k] !== null) {
-          subkeys[k] = Object.keys(parsed.sections[k]);
-        }
+    let parsed = toolBlock.input as any;
+    // tool_use input이 문자열로 올 경우 파싱
+    if (typeof parsed === 'string') {
+      try { parsed = JSON.parse(parsed); } catch {
+        throw new Error('Phase 2: tool input 파싱 실패');
       }
-      console.log('[Phase2] 반환 키:', JSON.stringify(subkeys, null, 2));
     }
 
-    // Zod 검증 — 누락 필드 패치 후 재시도
+    // sections 구조 정규화
+    if (!parsed.sections && (parsed.basics || parsed.ohengAnalysis)) {
+      // 래퍼 없이 직접 필드가 온 경우
+      parsed = { sections: parsed };
+    } else if (parsed.sections?.sections && !parsed.sections.basics) {
+      // 이중 래핑: { sections: { sections: { ... } } }
+      parsed.sections = parsed.sections.sections;
+    }
+
+    console.log('[Phase2] 반환 키:', JSON.stringify(Object.keys(parsed.sections || {})));
+
+    // Zod 검증
     const patched = patchMissingSections(parsed);
     const validated = Phase2ResultSchema.parse(patched);
 
-    // ── 콘텐츠 검증: 핵심 섹션에 실제 내용이 있는지 확인 ──
     const sec = validated.sections as Phase2Sections;
     const emptyKeys: string[] = [];
     if (!sec.ohengAnalysis?.distribution && !sec.ohengAnalysis?.johu) emptyKeys.push('ohengAnalysis');
@@ -307,7 +272,6 @@ export class SajuGateway {
     if (!sec.daeunReading?.overview && !sec.daeunReading?.currentPeriod) emptyKeys.push('daeunReading');
     if (!sec.overallReading?.primary) emptyKeys.push('overallReading');
 
-    // 2개 이상 누락이면 재시도, 1개만(overallReading 등) 누락이면 경고 후 진행
     if (emptyKeys.length >= 2) {
       console.warn(`[Phase2] 핵심 섹션 다수 누락: ${emptyKeys.join(', ')}`);
       throw new Phase2ContentError(emptyKeys, sec);
@@ -319,7 +283,7 @@ export class SajuGateway {
       sections: sec,
       usage,
       elapsedMs,
-      timeToFirstTokenMs,
+      timeToFirstTokenMs: 0,
     };
   }
 

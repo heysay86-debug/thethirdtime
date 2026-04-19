@@ -45,32 +45,6 @@ export const sajuInterpretationTool = {
             },
             required: ['description'],
           },
-          pillarAnalysis: {
-            type: 'object' as const,
-            description: '[3] 주별 심층 분석. 각 기둥의 간지·십성·지장간 의미를 해석.',
-            properties: {
-              year: {
-                type: 'string' as const,
-                description: '연주 해석. 300자 내외. 조상궁·사회적 배경·초년운.',
-              },
-              month: {
-                type: 'string' as const,
-                description: '월주 해석. 300자 내외. 부모궁·사회활동·격국의 근거.',
-              },
-              day: {
-                type: 'string' as const,
-                description: '일주 해석. 300자 내외. 본인궁·배우자궁·일간 성격.',
-              },
-              hour: {
-                anyOf: [
-                  { type: 'string' as const, description: '시주 해석. 300자 내외. 자녀궁·말년운·직업적성.' },
-                  { type: 'null' as const },
-                ],
-                description: '시주 해석. 시각 미상이면 null.',
-              },
-            },
-            required: ['year', 'month', 'day', 'hour'],
-          },
           ohengAnalysis: {
             type: 'object' as const,
             description: '[4] 오행 분석 + 조후. 궁통보감 관점을 반드시 포함.',
@@ -164,7 +138,7 @@ export const sajuInterpretationTool = {
           },
         },
         required: [
-          'basics', 'pillarAnalysis',
+          'basics',
           'ohengAnalysis', 'sipseongAnalysis', 'relations',
           'daeunReading', 'overallReading',
         ],
