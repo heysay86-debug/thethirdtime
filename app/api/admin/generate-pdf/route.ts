@@ -7,11 +7,14 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
+import fs from 'fs';
+import path from 'path';
 import { renderToBuffer } from '@react-pdf/renderer';
 import { analyzeSaju } from '@/src/engine/analyze';
 import { SajuGateway } from '@/src/gateway/gateway';
 import { saveReport } from '@/src/db';
 import SajuReport from '@/src/pdf/SajuReport';
+import { savePdfCopy } from '@/src/db/pdf-storage';
 
 export async function POST(request: NextRequest) {
   const token = request.nextUrl.searchParams.get('token');
@@ -86,6 +89,10 @@ export async function POST(request: NextRequest) {
     );
 
     const fileName = reportNo || 'admin-report';
+
+    // 서버에 사본 저장
+    try { savePdfCopy(fileName, Buffer.from(buffer)); } catch {}
+
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {

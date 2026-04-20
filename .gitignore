@@ -79,3 +79,4 @@ scripts/output/
 
 # ========== 대용량 원본 데이터 (필요 시 별도 관리) ==========
 # data/manse_data.json  ← 런타임 미사용, 포함 여부는 저장소 정책에 따름
+phase1_complete.png

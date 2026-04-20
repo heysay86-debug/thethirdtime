@@ -345,8 +345,10 @@ export default function AdminPage() {
             <button
               disabled={!pdfForm.name || !pdfForm.birthDate || pdfStatus === 'loading'}
               onClick={async () => {
-                setPdfStatus('분석 + PDF 생성 중...');
+                setPdfStatus('분석 + PDF 생성 중... (최대 3분 소요)');
                 try {
+                  const controller = new AbortController();
+                  const timeout = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5분
                   const res = await fetch(`/api/admin/generate-pdf?token=${encodeURIComponent(token)}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -357,7 +359,9 @@ export default function AdminPage() {
                       gender: pdfForm.gender,
                       calendar: pdfForm.calendar,
                     }),
+                    signal: controller.signal,
                   });
+                  clearTimeout(timeout);
                   if (!res.ok) {
                     const err = await res.json().catch(() => ({ error: 'PDF 생성 실패' }));
                     throw new Error(err.error || 'PDF 생성 실패');

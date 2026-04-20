@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import SajuReport from '@/src/pdf/SajuReport';
+import { savePdfCopy } from '@/src/db/pdf-storage';
 import { corsHeaders, handleOptions } from '../../cors';
 
 export async function OPTIONS(request: NextRequest) {
@@ -73,12 +74,16 @@ export async function POST(request: NextRequest) {
       }) as any
     );
 
+    // 서버에 사본 저장
+    const pdfFileName = reportNo || 'saju-report';
+    try { savePdfCopy(pdfFileName, Buffer.from(buffer)); } catch {}
+
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
       headers: {
         ...cors,
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${reportNo || 'saju-report'}.pdf"; filename*=UTF-8''${encodeURIComponent(reportNo ? `${reportNo}.pdf` : `사주리포트-${userName}.pdf`)}`,
+        'Content-Disposition': `attachment; filename="${pdfFileName}.pdf"; filename*=UTF-8''${encodeURIComponent(reportNo ? `${reportNo}.pdf` : `사주리포트-${userName}.pdf`)}`,
       },
     });
   } catch (error) {
