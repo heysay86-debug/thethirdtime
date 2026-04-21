@@ -6,7 +6,7 @@ import type { DialogueLine } from '../base/DialogueBox';
 import ChoicePanel from './ChoicePanel';
 import DialogueInput from './DialogueInput';
 import type { InputType } from './DialogueInput';
-import { hasLeapMonth } from '@engine/calendar';
+import { hasLeapMonthLite as hasLeapMonth } from '@engine/leap-months-lite';
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
@@ -233,8 +233,6 @@ export default function DialoguePlayer({
   const handleTap = useCallback(() => {
     if (isWalking) return;
     if (showChoices || showInput) return;
-    // 선택지/입력/제출이 예정된 줄에서는 탭 무시 (타이핑 중 탭 방지)
-    if (currentLine.action === 'show_choices' || currentLine.action === 'submit_and_transition' || (currentLine.action && INPUT_TYPE_MAP[currentLine.action])) return;
 
     if (showResponse) {
       if (pendingTempleWalk) {
@@ -275,6 +273,8 @@ export default function DialoguePlayer({
     }
 
     if (mode === 'dialogue') {
+      // 선택지/입력이 예정된 줄에서는 탭으로 건너뛸 수 없음
+      if (currentLine.action === 'show_choices') return;
       if (currentLine.action && currentLine.action !== 'show_choices') {
         onAction?.(currentLine.action);
       }
@@ -286,7 +286,7 @@ export default function DialoguePlayer({
         onComplete();
       }
     } else {
-      // Input mode: isInputAction이거나 submit_and_transition이면 탭으로 진행 불가
+      // Input mode: 입력/제출/선택 액션이면 탭으로 진행 불가, 응답 표시 후에만 허용
       if (!isInputAction && currentLine.action !== 'submit_and_transition' && currentLine.action !== 'show_choices') {
         advanceInputFlow();
       }
