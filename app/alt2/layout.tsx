@@ -3,23 +3,31 @@ import { Gaegu, Noto_Sans_KR } from 'next/font/google';
 const gaegu = Gaegu({ weight: '400', subsets: ['latin'], display: 'swap', variable: '--font-gaegu' });
 const notoSansKR = Noto_Sans_KR({ weight: ['400', '500', '600', '700'], subsets: ['latin'], display: 'swap', variable: '--font-noto-sans-kr' });
 
-export const metadata = {
-  title: '제3의시간 — 당신의 시간 속 이야기',
-  description: '밤하늘 아래, 시간의 마법사가 들려주는 당신의 사주팔자',
-  manifest: '/manifest.json',
+import type { Metadata, Viewport } from 'next';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  interactiveWidget: 'overlays-content',
   themeColor: '#1a1e24',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    minimumScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    interactiveWidget: 'overlays-content',
-  },
+};
+
+export const metadata: Metadata = {
+  title: '제3의시간 — 당신의 시간 속 이야기',
+  description: '밤하늘 아래, 시간의 마법사가 들려주는 당신의 사주팔자. RPG 대화형 사주 분석.',
+  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: '제3의시간',
+  },
+  openGraph: {
+    title: '제3의시간 — 당신의 시간 속 이야기',
+    description: '밤하늘 아래, 시간의 마법사가 들려주는 당신의 사주팔자.',
+    type: 'website',
   },
 };
 

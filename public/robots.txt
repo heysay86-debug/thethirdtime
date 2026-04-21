@@ -1,0 +1,17 @@
+# 제3의시간 — 검색엔진 크롤링 규칙
+# https://saju-api-rough-shadow-6686.fly.dev
+
+User-agent: *
+Allow: /
+Allow: /alt2
+Allow: /terms
+Allow: /privacy
+Allow: /business
+
+# API, 어드민은 크롤링 금지
+Disallow: /api/
+Disallow: /admin
+Disallow: /alt1
+
+# sitemap 위치
+Sitemap: https://saju-api-rough-shadow-6686.fly.dev/sitemap.xml
