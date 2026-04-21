@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const fileName = reportNo || 'admin-report';
 
     // 서버에 사본 저장
-    try { savePdfCopy(fileName, Buffer.from(buffer)); } catch {}
+    try { await savePdfCopy(fileName, Buffer.from(buffer)); } catch {}
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

@@ -233,6 +233,8 @@ export default function DialoguePlayer({
   const handleTap = useCallback(() => {
     if (isWalking) return;
     if (showChoices || showInput) return;
+    // 선택지/입력/제출이 예정된 줄에서는 탭 무시 (타이핑 중 탭 방지)
+    if (currentLine.action === 'show_choices' || currentLine.action === 'submit_and_transition' || (currentLine.action && INPUT_TYPE_MAP[currentLine.action])) return;
 
     if (showResponse) {
       if (pendingTempleWalk) {

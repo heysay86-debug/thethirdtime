@@ -7,6 +7,7 @@ import SectionDivider from './components/base/SectionDivider';
 import DotCharacter from './components/base/DotCharacter';
 import PillarFrame from './components/base/PillarFrame';
 import BgmPlayer from './components/base/BgmPlayer';
+import PdfLoadingOverlay from './components/PdfLoadingOverlay';
 import DialoguePlayer from './components/dialogue/DialoguePlayer';
 import InputModal from './components/input/InputModal';
 import PillarTable from './components/result/PillarTable';
@@ -71,6 +72,7 @@ export default function Alt2Page() {
   const [engine, setEngine] = useState<any>(null);
   const [core, setCore] = useState<any>(null);
   const [reportNo, setReportNo] = useState<string | null>(null);
+  const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
   const [redoScript, setRedoScript] = useState<DialogueLine[]>([]);
@@ -307,6 +309,8 @@ export default function Alt2Page() {
 
   return (
     <div className="relative min-h-screen" style={{ background: '#1a1e24' }}>
+      {/* PDF 생성 오버레이 */}
+      <PdfLoadingOverlay visible={pdfProgress !== 'idle'} progress={pdfProgress as any} />
       {/* Pillar Frame — always visible */}
       <PillarFrame isOpen={pillarsOpen} />
       <BgmPlayer show={phase !== 'opening'} />
@@ -792,6 +796,8 @@ export default function Alt2Page() {
                         borderRadius: 20,
                       }}
                       onClick={async () => {
+                        if (pdfProgress === 'generating') return;
+                        setPdfProgress('generating');
                         try {
                           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/pdf`, {
                             method: 'POST',
@@ -806,6 +812,8 @@ export default function Alt2Page() {
                           });
                           if (!res.ok) throw new Error('PDF 생성 실패');
                           const blob = await res.blob();
+                          setPdfProgress('done');
+                          await new Promise(r => setTimeout(r, 1200));
                           const url = URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
@@ -813,11 +821,14 @@ export default function Alt2Page() {
                           a.click();
                           URL.revokeObjectURL(url);
                         } catch {
-                          alert('PDF 생성 중 오류가 발생했습니다.');
+                          setPdfProgress('error');
+                          await new Promise(r => setTimeout(r, 2000));
+                        } finally {
+                          setPdfProgress('idle');
                         }
                       }}
                     >
-                      📄 PDF 리포트 다운로드
+                      PDF 리포트 다운로드
                     </button>
                   </div>
                 </div>

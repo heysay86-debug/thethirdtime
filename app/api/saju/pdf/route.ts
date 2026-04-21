@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     // 서버에 사본 저장
     const pdfFileName = reportNo || 'saju-report';
-    try { savePdfCopy(pdfFileName, Buffer.from(buffer)); } catch {}
+    try { await savePdfCopy(pdfFileName, Buffer.from(buffer)); } catch {}
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,
