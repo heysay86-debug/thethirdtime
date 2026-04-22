@@ -70,6 +70,8 @@ export const InterpretationResultSchema = z.object({
       primary: z.string(),
       /** 현대적 적용 (직업·성향·관계) */
       modernApplication: z.string(),
+      /** 종합제언 (유저 관심사 맞춤) */
+      advice: z.string().optional(),
       /** 유파별 보강 관점 */
       perspectives: z.array(SchoolPerspectiveSchema).optional(),
     }),
@@ -106,6 +108,7 @@ export const Phase2SectionsSchema = z.object({
   overallReading: z.object({
     primary: z.string(),
     modernApplication: z.string(),
+    advice: z.string().optional(),
     perspectives: z.array(SchoolPerspectiveSchema).optional(),
   }),
 });

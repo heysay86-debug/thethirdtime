@@ -192,6 +192,83 @@
       "style": "normal"
     },
     {
+      "character": "magician",
+      "name": "복길",
+      "text": "문을 열기 전에\n한 가지만 더 물어보지.",
+      "style": "normal"
+    },
+    {
+      "character": "speak",
+      "text": "자네가 특히\n알고 싶은 것이 있나?",
+      "style": "emphasis",
+      "action": "show_choices",
+      "choices": [
+        {
+          "label": "연애운이 궁금합니다",
+          "action": "연애운"
+        },
+        {
+          "label": "직업운이 궁금합니다",
+          "action": "직업운"
+        },
+        {
+          "label": "재물운이 궁금합니다",
+          "action": "재물운"
+        },
+        {
+          "label": "건강운이 궁금합니다",
+          "action": "건강운"
+        },
+        {
+          "label": "전체적으로 봐주세요",
+          "action": "종합"
+        }
+      ],
+      "responses": {
+        "연애운": {
+          "character": "flash",
+          "text": "연애운이라...\n좋아, 특별히 살펴보지."
+        },
+        "직업운": {
+          "character": "flash",
+          "text": "직업운이라...\n좋아, 자세히 들여다보지."
+        },
+        "재물운": {
+          "character": "flash",
+          "text": "재물운이라...\n좋아, 꼼꼼히 봐주지."
+        },
+        "건강운": {
+          "character": "flash",
+          "text": "건강운이라...\n좋아, 놓치지 않겠네."
+        },
+        "종합": {
+          "character": "flash",
+          "text": "전체를 보겠다고?\n욕심이 좋군. 알겠네."
+        }
+      }
+    },
+    {
+      "character": "magician",
+      "text": "혹시 더 구체적으로\n궁금한 것이 있다면\n적어보게.",
+      "style": "normal",
+      "action": "input_question",
+      "inputConfig": {
+        "placeholder": "궁금한 점을 자유롭게 적어주세요 (200자)",
+        "maxLength": 200,
+        "skipLabel": "괜찮습니다"
+      },
+      "responses": {
+        "_any": {
+          "character": "doin",
+          "text": "알겠네. 잘 기억해두지."
+        },
+        "_skip": {
+          "character": "doin",
+          "text": "좋아. 그럼 전체적으로\n살펴보겠네."
+        }
+      }
+    },
+    {
       "character": "excite",
       "text": "자, 문을 열겠네.\n단단히 붙잡게!",
       "style": "emphasis",

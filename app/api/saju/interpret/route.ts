@@ -28,6 +28,8 @@ const InputSchema = z.object({
     gyeokGukReading: z.string(),
     yongSinReading: z.string(),
   }),
+  interest: z.string().optional(),
+  question: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -66,11 +68,12 @@ export async function POST(request: NextRequest) {
           input.engine,
           input.core,
           (text) => {
-            // SSE chunk: 개인정보 마스킹 후 전송
             const safeText = sanitizePersonalInfo(text);
             const data = JSON.stringify({ text: safeText });
             controller.enqueue(encoder.encode(`event: chunk\ndata: ${data}\n\n`));
           },
+          input.interest,
+          input.question,
         );
 
         // 완료: 섹션 전체 마스킹 후 전송

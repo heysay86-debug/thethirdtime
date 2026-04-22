@@ -16,6 +16,7 @@ export interface DialogueLine {
     skipLabel?: string;
     skipValue?: string;
     options?: string[];
+    maxLength?: number;
   };
   responses?: Record<string, {
     character: string;

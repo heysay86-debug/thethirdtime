@@ -61,7 +61,7 @@ export interface Phase2Sections {
   sipseongAnalysis: { reading: string; perspectives?: any[] };
   relations: { reading: string };
   daeunReading: { overview: string; currentPeriod: string; upcoming: string } | null;
-  overallReading: { primary: string; modernApplication: string; perspectives?: any[] };
+  overallReading: { primary: string; modernApplication: string; advice?: string; perspectives?: any[] };
 }
 
 export interface Phase2Response {
@@ -155,11 +155,13 @@ export class SajuGateway {
     sajuResult: SajuResult,
     phase1Result: CoreJudgment,
     onChunk?: (text: string) => void,
+    userInterest?: string,
+    userQuestion?: string,
   ): Promise<Phase2Response> {
     const MAX_RETRIES = 1;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        return await this._analyzePhase2(sajuResult, phase1Result, onChunk);
+        return await this._analyzePhase2(sajuResult, phase1Result, onChunk, userInterest, userQuestion);
       } catch (e) {
         if (e instanceof Phase2ContentError && attempt < MAX_RETRIES) {
           console.warn(`[Phase2] 재시도 ${attempt + 1}/${MAX_RETRIES} — 누락: ${e.emptyKeys.join(', ')}`);
@@ -175,6 +177,8 @@ export class SajuGateway {
     sajuResult: SajuResult,
     phase1Result: CoreJudgment,
     onChunk?: (text: string) => void,
+    userInterest?: string,
+    userQuestion?: string,
   ): Promise<Phase2Response> {
     const start = Date.now();
 
@@ -205,6 +209,15 @@ export class SajuGateway {
       hasDaeun
         ? `대운 데이터 포함(${sajuResult.daeun!.periods.length}개 대운, ${sajuResult.seun.length}개 세운). daeunReading을 반드시 object로 작성.`
         : '대운 데이터 없음. daeunReading은 null.',
+      '',
+      // 유저 관심사 + 질문
+      ...(userInterest || userQuestion ? [
+        '--- 사용자 관심 영역 ---',
+        userInterest ? `관심 분야: ${userInterest}` : '',
+        userQuestion ? `구체적 질문: ${userQuestion}` : '',
+        '위 관심사와 질문을 반영하여 overallReading.advice에 600자 내외의 종합제언을 작성하십시오.',
+        '종합제언은 사주 분석 내용을 바탕으로 사용자의 구체적 질문에 답하는 맞춤형 조언입니다.',
+      ] : []),
     ].join('\n');
 
     // Tool use — API가 JSON 구조를 강제 (Sonnet으로 안정성 확보)

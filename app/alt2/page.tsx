@@ -73,6 +73,8 @@ export default function Alt2Page() {
   const [core, setCore] = useState<any>(null);
   const [reportNo, setReportNo] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
+  const [userInterest, setUserInterest] = useState<string>('');
+  const [userQuestion, setUserQuestion] = useState<string>('');
   const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
@@ -183,6 +185,8 @@ export default function Alt2Page() {
     if (input.birthCity) body.birthCity = input.birthCity;
     if (input.gender) body.gender = input.gender;
     if (input.name) { body.name = input.name; setUserName(input.name); }
+    if (input.interest) { setUserInterest(input.interest); }
+    if (input.question) { setUserQuestion(input.question); }
     body.channel = channel;
 
     try {
@@ -238,6 +242,8 @@ export default function Alt2Page() {
     if (src.birthCity) body.birthCity = src.birthCity;
     if (src.gender) body.gender = src.gender;
     if (src.name) { body.name = src.name; setUserName(src.name); }
+    if (src.interest) { setUserInterest(src.interest); }
+    if (src.question) { setUserQuestion(src.question); }
     body.channel = channel;
 
     try {
@@ -680,7 +686,7 @@ export default function Alt2Page() {
                       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/interpret`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ engine, core }),
+                        body: JSON.stringify({ engine, core, interest: userInterest, question: userQuestion }),
                       });
                       if (!res.ok || !res.body) throw new Error('API error');
                       const reader = res.body.getReader();

@@ -66,6 +66,7 @@ const FIELD_MAP: Record<string, string> = {
   input_leapmonth: 'isLeapMonth',
   input_birthtime: 'birthTime',
   input_birthcity: 'birthCity',
+  input_question: 'question',
 };
 
 const INPUT_TYPE_MAP: Record<string, InputType> = {
@@ -76,9 +77,10 @@ const INPUT_TYPE_MAP: Record<string, InputType> = {
   input_leapmonth: 'leapmonth',
   input_birthtime: 'time',
   input_birthcity: 'city',
+  input_question: 'text',
 };
 
-function buildSajuInput(collected: Record<string, string>): SajuInput {
+function buildSajuInput(collected: Record<string, string>): SajuInput & { interest?: string; question?: string } {
   return {
     birthDate: collected.birthDate || '',
     birthTime: collected.birthTime || '',
@@ -87,6 +89,8 @@ function buildSajuInput(collected: Record<string, string>): SajuInput {
     birthCity: collected.birthCity || '서울',
     gender: (collected.gender || '') as 'M' | 'F' | '',
     name: collected.name || '',
+    ...(collected.interest && { interest: collected.interest }),
+    ...(collected.question && { question: collected.question }),
   };
 }
 
@@ -345,10 +349,18 @@ export default function DialoguePlayer({
       } else {
         advanceInputFlow();
       }
+    } else if (currentLine.responses && currentLine.responses[action]) {
+      // 선택지 값을 collectedInput에 저장 + 응답 표시
+      const field = currentLine.action === 'show_choices' ? 'interest' : action;
+      setCollectedInput(prev => ({ ...prev, [field]: action }));
+      const resp = currentLine.responses[action];
+      setResponseLines([resp as DialogueLine]);
+      setShowResponse(true);
+      setTypingDone(false);
     } else {
       onAction?.(action);
     }
-  }, [lineIndex, script.length, mode, birthdateStepIndex, collectedInput, onAction, onComplete, onBgChange, onDotMove, advanceInputFlow]);
+  }, [lineIndex, script.length, mode, birthdateStepIndex, collectedInput, currentLine, onAction, onComplete, onBgChange, onDotMove, advanceInputFlow]);
 
   const handleDialogueInput = useCallback((value: string) => {
     const action = currentLine.action || '';

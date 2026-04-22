@@ -110,9 +110,20 @@ export default function OverallReadingSection({ sajuResult, interpretation }: Ov
         {toParagraphs(overallReading.modernApplication).map((p, i) => (
           <Text key={i} style={s.interpretText}>{p}</Text>
         ))}
+
+        {/* ═══ ③ 종합제언 (유저 맞춤, 있을 경우) ═══ */}
+        {overallReading.advice && overallReading.advice.length > 0 && (
+          <>
+            <View style={{ width: '100%', height: 0.5, backgroundColor: colors.goldDim, marginVertical: 14 }} />
+            <Text style={s.subTitle}>종합제언</Text>
+            {toParagraphs(overallReading.advice).map((p, i) => (
+              <Text key={`adv-${i}`} style={s.interpretText}>{p}</Text>
+            ))}
+          </>
+        )}
       </PageLayout>
 
-      {/* ═══ ③ 유파별 보강 관점 (있을 경우) ═══ */}
+      {/* ═══ ④ 유파별 보강 관점 (있을 경우) ═══ */}
       {overallReading.perspectives && overallReading.perspectives.length > 0 && (
         <PageLayout>
           <Text style={s.subTitle}>유파별 보강 관점</Text>

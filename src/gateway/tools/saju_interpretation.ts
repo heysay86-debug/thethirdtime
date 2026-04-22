@@ -128,6 +128,10 @@ export const sajuInterpretationTool = {
                 type: 'string' as const,
                 description: '현대적 적용. 300자 내외. 직업 적성, 성격 특성, 대인관계.',
               },
+              advice: {
+                type: 'string' as const,
+                description: '종합제언. 사용자의 관심 분야와 질문에 맞춤 답변. 600자 내외. 관심사/질문이 없으면 빈 문자열.',
+              },
               perspectives: {
                 type: 'array' as const,
                 items: schoolPerspective,
