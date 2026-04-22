@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-19
+최종 업데이트: 2026-04-22
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -333,14 +333,7 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
   - PWA manifest + iOS 줌 방지
 - [x] alt2를 메인으로 확정 (루트 → /alt2 redirect)
 
-### M-SEO. 검색엔진 최적화 (Phase 4 병행)
-- [ ] Next.js Metadata API로 페이지별 title·description·og 태그 설정
-- [ ] sitemap.xml 자동 생성 (next-sitemap 또는 App Router 내장)
-- [ ] robots.txt 설정
-- [ ] Schema.org 구조화 데이터 삽입 (WebApplication 타입)
-- [ ] Google Search Console·Bing Webmaster Tools·Naver Search Advisor 등록
-      (배포 후 즉시 수행, 도메인 확정 후 진행 가능)
-- [ ] Core Web Vitals 측정 및 기준치(LCP 2.5초 이하) 충족 확인
+### M-SEO. 검색엔진 최적화 → Phase 5 M-SEO로 이동 ✅
 
 ---
 
@@ -470,6 +463,11 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] max_tokens 12000
 - [x] PDF 생성 API (/api/saju/pdf) — 서버사이드 렌더링 + 다운로드
 - [x] 환경변수 분리 (NEXT_PUBLIC_API_URL)
+- [x] Phase 2: Haiku 텍스트 스트리밍 → Sonnet 4.5 tool use 전환 (JSON 안정성 확보)
+- [x] robustParsePhase2() 통합 JSON 파서 + sections 이중 래핑 정규화
+- [x] 콘텐츠 검증 + 자동 재시도 (핵심 섹션 2개 이상 누락 시 1회 재시도)
+- [x] 동시접속 제한 (MAX_CONCURRENT=5, 503 대기 안내)
+- [x] 한자 표기 규칙: 천간/지지/오행 39자만 허용, 나머지 한글 강제
 
 ### M-WEB-REPORT. 웹 리포트 표시 ✅
 - [x] CTA 버튼 클릭 → Phase 2 SSE 호출 → 웹에서 전체 해석 양피지 카드 렌더링
@@ -493,6 +491,12 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] 대화 텍스트 1줄 17자 제한 (wrapText)
 - [x] 준비되었나? 확인 버튼 (submit 전 유저 동의)
 - [x] ZoneTransition timezone 배경 + 춤추는 캐릭터 (dance1/2)
+- [x] DialoguePlayer: show_choices 줄 타이핑 중 탭 건너뛰기 방지
+- [x] PDF 다운로드: 전체 화면 로딩 오버레이 (프로그레스 바 + 팁 로테이션, 광고 영역 예비)
+- [x] PDF 파일명에 리포트 번호 사용 + 표지에 번호 표시
+- [x] PDF 유저 이름 연결 ('분석 대상자' → 유저 입력 이름)
+- [x] 배경 이미지 최적화: poll.png 1.5MB→120KB, silverlining.jpg 1.9MB→13KB (WebP 전환)
+- [x] 클라이언트 번들 경량화: lunar_lookup.json(4.5MB) → leap-months-lite.ts(607B)
 
 ### M-DB. 익명화된 고객정보 데이터베이스 ✅
 - [x] SQLite + better-sqlite3 + Fly.io 영구 볼륨 (/data/reports.db)
@@ -516,6 +520,38 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] 통계 카드: 전체/오늘/유료/동접(current/max) 실시간 표시
 - [x] 5분 자동 새로고침
 - [x] ADMIN_TOKEN 환경변수 인증 (Fly.io secrets)
+- [x] PDF 강제 생성: 전용 API(/api/admin/generate-pdf) + 시간 모름 체크박스
+- [x] 환영 메시지 ("어서오세요, 시간의 관리자여!")
+- [x] fetch 타임아웃 5분 확장 (Sonnet 응답 대기)
+
+### M-SEO. 검색엔진 최적화 ✅ (2026-04-21)
+- [x] 루트 메타태그: title template, OG(Open Graph), Twitter 카드, canonical
+- [x] alt2 메타태그: viewport 분리 (Next.js 16 경고 해소), OG 추가
+- [x] robots.txt: API/어드민/alt1 차단, 메인 허용
+- [x] sitemap.xml: 동적 생성 (alt2 priority 1.0, 법적 페이지 0.3)
+- [ ] Google Search Console 등록 (도메인 확정 후)
+- [ ] Naver Search Advisor 등록
+- [ ] OG 이미지 제작 (SNS 공유 미리보기)
+
+### M-SUPABASE. Supabase 연동 ✅ (2026-04-21)
+- [x] Supabase 프로젝트 생성 (thethirdtime, 도쿄 ap-northeast-1)
+- [x] Storage 버킷 'reports' 생성 (PDF 보관)
+- [x] src/db/supabase.ts: 지연 초기화 클라이언트 (빌드 타임 안전)
+- [x] PDF 생성 시 Supabase Storage 자동 업로드 + 로컬 폴백
+- [x] 업로드 비동기화 (fire-and-forget, PDF 응답 블로킹 없음)
+- [ ] Auth 연동 (회원가입/로그인)
+- [ ] DB 이전 (SQLite → Supabase PostgreSQL)
+
+### M-PDF-QUALITY. PDF 콘텐츠 품질 ✅ (2026-04-22)
+- [x] 십이운성 12종 해설: 엑셀 키워드 → 이석영 사주첩경 기반 총론+주별+십성별 구조
+- [x] docs/tongbyeon/twelve-stages-reference.md 원본 저장
+- [x] TwelveStagesSection 해설 카드: 총론 + 해당 주별 해석 함께 표시
+- [x] PillarAnalysisSection: 십이운성×십성 교차 해석 반영
+- [x] 한자 폰트 메트릭 통일 (DroidSans advance 900→792)
+- [x] 천간/지지 아이콘 영문 파일명 전환 (Unicode NFC/NFD 문제 해결)
+- [x] 신살 35종 한 줄 해설 + 주별 그룹 정렬
+- [x] 표지 별 배치: 의사난수, 중앙 텍스트 영역 회피
+- [ ] 리포트 톤 다듬기: 레퍼런스 텍스트 제공 후 프롬프트 반영 (대기 중)
 
 ### M-LEGAL. 법적 고지 사항
 - [x] 이용약관 페이지 (`/terms`) — 표준약관 제10023호 준용, 11개 조항
