@@ -64,7 +64,7 @@ export default function PillarFrame({ isOpen }: PillarFrameProps) {
           }}
         >
           <img
-            src="/background/poll.png"
+            src="/background/poll.webp"
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'fill' }}
           />
@@ -87,7 +87,7 @@ export default function PillarFrame({ isOpen }: PillarFrameProps) {
           }}
         >
           <img
-            src="/background/poll.png"
+            src="/background/poll.webp"
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'fill', transform: 'scaleX(-1)' }}
           />

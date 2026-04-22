@@ -13,31 +13,31 @@ import path from 'path';
 const ICON_DIR = path.join(process.cwd(), 'public/icon');
 
 const GAN_FILENAME: Record<string, string> = {
-  '甲': '갑.png',
-  '乙': '을.png',
-  '丙': '병.png',
-  '丁': '정.png',
-  '戊': '무.png',
-  '己': '기.png',
-  '庚': '경.png',
-  '辛': '(천간)신.png',
-  '壬': '임.png',
-  '癸': '계.png',
+  '甲': 'gap.png',
+  '乙': 'eul.png',
+  '丙': 'byeong.png',
+  '丁': 'jeong.png',
+  '戊': 'mu.png',
+  '己': 'gi.png',
+  '庚': 'gyeong.png',
+  '辛': 'sin-chun.png',
+  '壬': 'im.png',
+  '癸': 'gye.png',
 };
 
 const JI_FILENAME: Record<string, string> = {
-  '子': '자.png',
-  '丑': '축.png',
-  '寅': '인.png',
-  '卯': '묘.png',
-  '辰': '진.png',
-  '巳': '사.png',
-  '午': '오.png',
-  '未': '미.png',
-  '申': '(지지)신.png',
-  '酉': '유.png',
-  '戌': '술.png',
-  '亥': '해.png',
+  '子': 'ja.png',
+  '丑': 'chuk.png',
+  '寅': 'in.png',
+  '卯': 'myo.png',
+  '辰': 'jin.png',
+  '巳': 'sa.png',
+  '午': 'o.png',
+  '未': 'mi.png',
+  '申': 'sin-ji.png',
+  '酉': 'yu.png',
+  '戌': 'sul.png',
+  '亥': 'hae.png',
 };
 
 /** 천간 한자 → 아이콘 절대경로. 매핑 없으면 빈 문자열 반환. */

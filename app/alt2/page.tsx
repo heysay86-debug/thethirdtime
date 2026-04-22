@@ -465,7 +465,7 @@ export default function Alt2Page() {
 
           {/* Silverlining background for ZONE C */}
           <img
-            src="/background/silverlining.jpg"
+            src="/background/silverlining.webp"
             alt=""
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-1000"
             style={{ opacity: bgOpacity }}
