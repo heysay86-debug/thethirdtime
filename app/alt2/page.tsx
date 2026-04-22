@@ -72,6 +72,7 @@ export default function Alt2Page() {
   const [engine, setEngine] = useState<any>(null);
   const [core, setCore] = useState<any>(null);
   const [reportNo, setReportNo] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
   const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
@@ -181,7 +182,7 @@ export default function Alt2Page() {
     if (input.calendar === 'lunar') body.isLeapMonth = input.isLeapMonth;
     if (input.birthCity) body.birthCity = input.birthCity;
     if (input.gender) body.gender = input.gender;
-    if (input.name) body.name = input.name;
+    if (input.name) { body.name = input.name; setUserName(input.name); }
     body.channel = channel;
 
     try {
@@ -236,7 +237,7 @@ export default function Alt2Page() {
     if (src.calendar === 'lunar') body.isLeapMonth = src.isLeapMonth;
     if (src.birthCity) body.birthCity = src.birthCity;
     if (src.gender) body.gender = src.gender;
-    if (src.name) body.name = src.name;
+    if (src.name) { body.name = src.name; setUserName(src.name); }
     body.channel = channel;
 
     try {
@@ -806,7 +807,7 @@ export default function Alt2Page() {
                               engine,
                               core,
                               sections: phase2Sections,
-                              userName: '분석 대상자',
+                              userName: userName || '여행자',
                               reportNo,
                             }),
                           });

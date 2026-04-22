@@ -360,6 +360,10 @@ export function getStageSummary(stage: string): string {
   return SIBII_DATA[stage]?.summary ?? '';
 }
 
+export function getStageByPillar(stage: string, position: 'year' | 'month' | 'day' | 'hour'): string {
+  return SIBII_DATA[stage]?.byPillar[position] ?? '';
+}
+
 export function buildPillarReading(input: PillarKeywordInput): string {
   const { position, gan, ji, ganTenGod, jiTenGod, twelveStage } = input;
   const ctx = PILLAR_CONTEXT[position];

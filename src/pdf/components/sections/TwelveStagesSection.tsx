@@ -12,7 +12,7 @@ import PageLayout from '../PageLayout';
 import { commonStyles, colors, fontSize } from '../../styles';
 import { ganToKorean, jiToKorean } from '../../utils/koreanReading';
 
-import { getStageSummary } from '../../utils/pillarKeywords';
+import { getStageSummary, getStageByPillar } from '../../utils/pillarKeywords';
 import type { SajuResult } from '@engine/schema';
 
 // 운성 강약 분류
@@ -181,10 +181,16 @@ export default function TwelveStagesSection({ sajuResult }: Props) {
       {/* 각 운성 해설 */}
       <Text style={s.subTitle}>운성별 해설</Text>
       {uniqueStages.map((stage) => {
-        const positions = columns
-          .filter(c => c.stage === stage)
-          .map(c => c.label)
-          .join(' · ');
+        const posMap: Record<string, 'year' | 'month' | 'day' | 'hour'> = { '연주': 'year', '월주': 'month', '일주': 'day', '시주': 'hour' };
+        const matchedCols = columns.filter(c => c.stage === stage);
+        const positions = matchedCols.map(c => c.label).join(' · ');
+        // 주별 해석 수집
+        const pillarReadings = matchedCols
+          .map(c => {
+            const reading = getStageByPillar(stage, posMap[c.label]);
+            return reading ? `${c.label}: ${reading}` : '';
+          })
+          .filter(Boolean);
         return (
           <View key={stage} style={s.descCard}>
             <View style={s.descLabel}>
@@ -196,6 +202,11 @@ export default function TwelveStagesSection({ sajuResult }: Props) {
               <Text style={s.descBodyText}>
                 {getStageSummary(stage)}
               </Text>
+              {pillarReadings.map((pr, i) => (
+                <Text key={i} style={[s.descBodyText, { marginTop: 3, color: colors.darkBg, fontWeight: 400 }]}>
+                  {pr}
+                </Text>
+              ))}
               <Text style={s.descPosition}>
                 해당 위치: {positions}
               </Text>
