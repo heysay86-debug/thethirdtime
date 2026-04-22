@@ -353,6 +353,13 @@ function toSipseongCategory(tenGod: string): string {
  * 단일 주(柱)의 자연어 해석 텍스트를 조립한다.
  * LLM 호출 없이 엔진 데이터 + 키워드 테이블로 결정적 생성.
  */
+/**
+ * 운성 총론 가져오기 (TwelveStagesSection 해설 카드용)
+ */
+export function getStageSummary(stage: string): string {
+  return SIBII_DATA[stage]?.summary ?? '';
+}
+
 export function buildPillarReading(input: PillarKeywordInput): string {
   const { position, gan, ji, ganTenGod, jiTenGod, twelveStage } = input;
   const ctx = PILLAR_CONTEXT[position];

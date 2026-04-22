@@ -12,24 +12,8 @@ import PageLayout from '../PageLayout';
 import { commonStyles, colors, fontSize } from '../../styles';
 import { ganToKorean, jiToKorean } from '../../utils/koreanReading';
 
+import { getStageSummary } from '../../utils/pillarKeywords';
 import type { SajuResult } from '@engine/schema';
-
-// ── 운성 해설 ──
-
-const STAGE_DESC: Record<string, string> = {
-  '장생': '새 생명이 태어나는 단계. 시작과 성장의 에너지가 충만합니다.',
-  '목욕': '갓 태어난 아이를 씻기는 단계. 불안정하지만 새로움에 대한 호기심이 큽니다.',
-  '관대': '성인이 되어 관을 쓰는 단계. 사회적 인정을 받기 시작하는 시기입니다.',
-  '건록': '녹봉을 받는 단계. 능력이 안정되고 실질적 성과가 나타납니다.',
-  '제왕': '왕의 자리. 에너지가 최고조에 달하며 주도적 위치에 서게 됩니다.',
-  '쇠': '정점을 지나 서서히 내려오는 단계. 원숙하지만 힘이 줄기 시작합니다.',
-  '병': '기운이 약해지는 단계. 내면의 성찰이 깊어지는 시기입니다.',
-  '사': '활동이 멈추는 단계. 외적 움직임보다 내적 정리가 필요합니다.',
-  '묘': '무덤에 묻히는 단계. 에너지가 저장되고 축적되는 시기입니다.',
-  '절': '완전히 끊어지는 단계. 기존 방식의 종료와 새로운 시작을 암시합니다.',
-  '태': '태아가 잉태되는 단계. 새로운 가능성이 품어지기 시작합니다.',
-  '양': '태아가 자라나는 단계. 아직 드러나지 않지만 내면에서 힘이 키워집니다.',
-};
 
 // 운성 강약 분류
 const STAGE_STRENGTH: Record<string, 'strong' | 'neutral' | 'weak'> = {
@@ -210,7 +194,7 @@ export default function TwelveStagesSection({ sajuResult }: Props) {
             </View>
             <View style={s.descBody}>
               <Text style={s.descBodyText}>
-                {STAGE_DESC[stage] || ''}
+                {getStageSummary(stage)}
               </Text>
               <Text style={s.descPosition}>
                 해당 위치: {positions}
