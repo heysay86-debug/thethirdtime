@@ -589,20 +589,57 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 > 정통 시초법(서죽점법) 기반 육효점. 별도 모듈(/hyo, src/hyo/)로 사주 본체와 분리.
 > LLM 비용 0원, 클라이언트 전용. 애드센스 승인용 콘텐츠 다양성 + 체류시간 증가.
 - [x] `src/hyo/sicho.ts` — 시초법 엔진 (대연지수 49, 삼변, 6→9 노음~노양)
-- [x] `src/hyo/stages.ts` — 6개 스테이지 설정 (나무별: 복숭아→벼락맞은→월계수→편백→자작→이름없는)
+- [x] `src/hyo/stages.ts` — 6개 스테이지 설정 + 신령 패스 (나무별 이동 좌표)
 - [x] `app/hyo/page.tsx` — 메인 페이지 (탭 인터랙션, 카운팅 애니메이션, 효 쌓기)
+- [x] `app/hyo/layout.tsx` — 전용 레이아웃 (Gaegu + Pretendard 폰트)
 - [x] `public/background/hyo.jpeg` — 제단 배경 이미지
-- [x] 64괘 이름 표시 + 다시 점치기
-- [ ] 괘 해석문 (64괘별 해설)
-- [ ] 맵 스크롤 (스테이지 진행에 따라 산 위로 올라가는 연출)
-- [ ] 복길 캐릭터 표시
+- [x] `public/character/hyo.png` — 복길 도인 캐릭터
+- [x] `public/bgm/hyo.mp3` — 전용 BGM (64kbps, 1.3MB)
+- [x] 64괘 해석 데이터 추출 (`src/hyo/gua-data.json`, 총론 + 384효 × 17카테고리)
+- [x] 괘 해석 룩업 (`src/hyo/gua-lookup.ts`, 시초법→책 번호 매핑)
+- [x] 팔궁 체계 (`src/hyo/gua-palace.ts`, 世應·지지·육친 알고리즘, 64괘 전수 매핑)
+- [x] 정통 읽기 + 평서문 풀이 (`src/hyo/gua-reading.ts`)
+- [x] 입장 다이얼로그 (alt2 하단고정 스타일, 복길 대사 + 유저 thought)
+- [x] 복길 캐릭터 맵 위 표시 + 신령 패스 애니메이션 (스테이지별 나무 이동)
+- [x] 변효 개수별 안내 (RPG 톤) + 효별 상세 카테고리 17종
+- [x] 복사 버튼 (전체 + 효별) + 브랜드 출처 삽입
+- [x] GA4 이벤트 (hyo_start, hyo_complete, hyo_copy)
 - [ ] sitemap.xml에 /hyo 추가
 - [ ] robots.txt에 /hyo 허용
+- [ ] 괘 도표에 변효 하이라이트
+- [ ] 맵 스크롤 (캐릭터 따라 뷰포트 이동)
 
-### M-UX-2. 프론트엔드 UX 추가 개선 (2026-04-24)
-- [x] GlossaryTip 컴포넌트 (`app/alt2/components/base/GlossaryTip.tsx`) + glossary 데이터
+### M-UX-2. 프론트엔드 UX 추가 개선 ✅ (2026-04-24)
+- [x] GlossaryTip 컴포넌트 + glossary 데이터
 - [x] favicon 아이콘 세트 (favicon.ico, 32px, 192px, 512px)
-- [ ] 기타 진행 중 변경사항 (DotCharacter, DialoguePlayer, PillarTable 수정)
+- [x] 대화창 글씨 18px, 초상화 축소 (lg 110→90), 패딩 확대
+- [x] ▼ 인디케이터 금색 바운스 애니메이션
+- [x] 오프닝 GM 메시지 ("BGM을 켜고 플레이하시면 더 재미있습니다")
+- [x] 대화창 아이콘 제거
+
+### M-QUEUE. 대기열 시스템 ✅ (2026-04-24)
+- [x] 503 거절 → 대기열 방식 (waitForSlot, 최대 2분 대기)
+- [x] 자리 나면 큐에서 자동 활성화 (release → next)
+- [x] 대기 중 복길 대사 순환 (8초마다, 5개 메시지)
+- [x] `/api/saju/queue` 상태 조회 API
+- [x] 프론트 503 거절 메시지 제거
+
+### M-STATS. 익명 통계 데이터 확장 ✅ (2026-04-24)
+- [x] DB age_group 컬럼 추가 (10대미만~70대이상)
+- [x] DB gender 컬럼 추가 (M/F)
+- [x] 어드민 리포트 테이블에 연령/성별 표시
+- [x] 기존 DB 자동 마이그레이션 (ALTER TABLE)
+
+### M-GA. GA4 이벤트 추적 ✅ (2026-04-24)
+- [x] `gtag.js` 삽입 (Next.js Script 컴포넌트, G-P88RY9HF2E)
+- [x] `src/analytics.ts` — trackEvent 유틸
+- [x] 퍼널 이벤트: opening_start → dialogue_complete → submit → result_view → upsell_click → pdf_download → redo_click
+- [ ] GA4 퍼널 리포트 설정 (단계별 이탈률 확인)
+- [ ] 이탈 구간 분석 → UX 개선 피드백 루프
+
+### M-CABINET. 어드민 캐비넷 ✅ (2026-04-24)
+- [x] `/api/admin/cabinet` — Supabase Storage PDF 목록 조회 + 서명 URL 다운로드
+- [x] 어드민 캐비넷 탭 (검색, 페이지네이션, 개별 다운로드)
 
 ### M-ADS. 애드센스 (선택)
 - [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입
