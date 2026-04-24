@@ -161,7 +161,7 @@ export default function DialogueBox({
       : isThought
       ? '"Pretendard Variable", "Noto Sans KR", sans-serif'
       : 'var(--font-gaegu), "Gaegu", cursive',
-    fontSize: line.style === 'emphasis' ? 18 : line.style === 'whisper' ? 14 : isSystem ? 13 : isThought ? 14 : 16,
+    fontSize: line.style === 'emphasis' ? 20 : line.style === 'whisper' ? 15 : isSystem ? 14 : isThought ? 15 : 18,
     color: isThought ? '#a1c5ac' : line.style === 'emphasis' ? '#f0dfad' : '#dde1e5',
     opacity: line.style === 'whisper' ? 0.6 : 1,
     lineHeight: 1.6,
@@ -177,7 +177,7 @@ export default function DialogueBox({
       style={{
         borderImage: `url("${PIXEL_BORDER_SVG}") 6 fill / 6px`,
         borderStyle: 'solid',
-        padding: '12px 14px',
+        padding: '14px 16px',
         cursor: 'pointer',
         imageRendering: 'pixelated',
       }}
@@ -205,15 +205,6 @@ export default function DialogueBox({
             )}
           </div>
 
-          {/* Icon */}
-          {line.icon && (
-            <img
-              src={`/icon/${line.icon}.svg`}
-              alt=""
-              className="inline-block ml-2"
-              style={{ width: 20, height: 20, verticalAlign: 'middle', opacity: 0.7 }}
-            />
-          )}
         </div>
 
         {/* Portrait - right */}
@@ -225,12 +216,22 @@ export default function DialogueBox({
       {/* Indicator - bottom center */}
       {showIndicator && !isTyping && (
         <div
-          className="absolute bottom-2 left-1/2 -translate-x-1/2 animate-pulse"
-          style={{ color: '#8899aa', fontSize: 10 }}
+          className="absolute bottom-2 left-1/2 -translate-x-1/2"
+          style={{
+            color: '#f0dfad',
+            fontSize: 12,
+            animation: 'indicator-bounce 1s ease-in-out infinite',
+          }}
         >
           ▼
         </div>
       )}
+      <style jsx>{`
+        @keyframes indicator-bounce {
+          0%, 100% { transform: translateY(0); opacity: 0.5; }
+          50% { transform: translateY(4px); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

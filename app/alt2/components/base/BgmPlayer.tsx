@@ -4,9 +4,10 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 interface BgmPlayerProps {
   show?: boolean;
+  src?: string;
 }
 
-export default function BgmPlayer({ show = true }: BgmPlayerProps) {
+export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }: BgmPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
@@ -14,7 +15,7 @@ export default function BgmPlayer({ show = true }: BgmPlayerProps) {
   const playingRef = useRef(false);
 
   useEffect(() => {
-    const audio = new Audio('/bgm/crystalfield.mp3');
+    const audio = new Audio(src);
     audio.loop = true;
     audio.volume = 0.08;
     audioRef.current = audio;

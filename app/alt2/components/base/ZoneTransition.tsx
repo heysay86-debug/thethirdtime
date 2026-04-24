@@ -15,6 +15,15 @@ export default function ZoneTransition({
   loadingText = '시간의 문을 열고 있어요...',
 }: ZoneTransitionProps) {
   const [danceFrame, setDanceFrame] = useState(1);
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  const LOADING_MSGS = [
+    loadingText,
+    '잠시만 기다려주게...',
+    '다른 여행자의 이야기가\n끝나가고 있어.',
+    '자네의 차례가 곧 올 거야.',
+    '시간의 강물을\n건너고 있는 중이야...',
+  ];
 
   // Dance animation: alternate dance1/dance2 every 0.5s
   useEffect(() => {
@@ -22,6 +31,15 @@ export default function ZoneTransition({
     const interval = setInterval(() => {
       setDanceFrame(prev => prev === 1 ? 2 : 1);
     }, 500);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // 메시지 순환 (8초마다)
+  useEffect(() => {
+    if (phase !== 'loading') { setMsgIndex(0); return; }
+    const interval = setInterval(() => {
+      setMsgIndex(prev => (prev + 1) % LOADING_MSGS.length);
+    }, 8000);
     return () => clearInterval(interval);
   }, [phase]);
 
@@ -89,7 +107,7 @@ export default function ZoneTransition({
                       lineHeight: 1.65,
                     }}
                   >
-                    {loadingText}
+                    {LOADING_MSGS[msgIndex]}
                   </div>
                 </div>
               </div>

@@ -18,7 +18,7 @@ export async function OPTIONS(request: NextRequest) {
 import { checkRateLimit } from '@/src/middleware/rate-limit';
 import { sanitizeSections } from '@/src/middleware/sanitize';
 import { getOrCreateSession, updateSession, hashInput, SESSION_COOKIE_NAME } from '@/src/middleware/session';
-import { tryAcquire, release } from '@/src/middleware/concurrency';
+import { tryAcquire, release, waitForSlot, getQueueLength } from '@/src/middleware/concurrency';
 
 const InputSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -48,10 +48,12 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 동시 분석 제한
-  if (!tryAcquire()) {
+  // 동시 분석 제한 — 대기열 방식
+  try {
+    await waitForSlot(120000); // 최대 2분 대기
+  } catch {
     return NextResponse.json(
-      { error: '현재 다른 분석이 진행 중입니다. 잠시 후 다시 시도해주세요.', retryAfter: 30 },
+      { error: '대기 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.', retryAfter: 30 },
       { status: 503, headers: { ...cors, 'Retry-After': '30' } },
     );
   }

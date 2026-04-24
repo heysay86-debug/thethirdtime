@@ -9,6 +9,8 @@ interface Report {
   keyword1: string;
   keyword2: string;
   keyword3: string;
+  age_group: string;
+  gender: string;
   is_paid: number;
   created_at: string;
 }
@@ -22,7 +24,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
   const [paidFilter, setPaidFilter] = useState<'all' | 'paid' | 'free'>('all');
-  const [activeTab, setActiveTab] = useState<'reports' | 'payments' | 'counter' | 'pdf'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'payments' | 'counter' | 'pdf' | 'cabinet'>('reports');
   const [payments, setPayments] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [counterSummary, setCounterSummary] = useState<any>(null);
@@ -32,6 +34,12 @@ export default function AdminPage() {
   // PDF 강제 생성 폼
   const [pdfForm, setPdfForm] = useState({ name: '', birthDate: '', birthTime: '12:00', birthTimeUnknown: false, gender: 'M' as 'M' | 'F', calendar: 'solar' as 'solar' | 'lunar' });
   const [pdfStatus, setPdfStatus] = useState('');
+
+  // 캐비넷
+  const [cabinetFiles, setCabinetFiles] = useState<{ name: string; size: number; created: string }[]>([]);
+  const [cabinetLoading, setCabinetLoading] = useState(false);
+  const [cabinetSearch, setCabinetSearch] = useState('');
+  const [cabinetOffset, setCabinetOffset] = useState(0);
 
   const fetchData = async (t: string) => {
     setLoading(true);
@@ -68,6 +76,33 @@ export default function AdminPage() {
         alert('삭제 실패');
       }
     } catch { alert('삭제 실패'); }
+  };
+
+  const fetchCabinet = async (t: string, offset = 0, search = '') => {
+    setCabinetLoading(true);
+    try {
+      const params = new URLSearchParams({ token: t, offset: String(offset), limit: '50' });
+      if (search) params.set('search', search);
+      const res = await fetch(`/api/admin/cabinet?${params}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setCabinetFiles(data.files || []);
+      setCabinetOffset(offset);
+    } catch {}
+    finally { setCabinetLoading(false); }
+  };
+
+  const handleDownload = async (fileName: string) => {
+    try {
+      const res = await fetch(`/api/admin/cabinet?token=${encodeURIComponent(token)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName }),
+      });
+      const data = await res.json();
+      if (data.url) window.open(data.url, '_blank');
+      else alert('다운로드 URL 생성 실패');
+    } catch { alert('다운로드 실패'); }
   };
 
   const handleLogin = (e: React.FormEvent) => { e.preventDefault(); if (token.trim()) fetchData(token.trim()); };
@@ -173,10 +208,13 @@ export default function AdminPage() {
 
       {/* 탭 */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #333', paddingBottom: 8 }}>
-        {(['reports', 'payments', 'counter', 'pdf'] as const).map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)}
+        {(['reports', 'payments', 'counter', 'pdf', 'cabinet'] as const).map(tab => (
+          <button key={tab} onClick={() => {
+            setActiveTab(tab);
+            if (tab === 'cabinet' && cabinetFiles.length === 0) fetchCabinet(token);
+          }}
             style={{ ...S.btn, background: activeTab === tab ? '#f0dfad' : '#333', color: activeTab === tab ? '#1a1e24' : '#dde1e5', fontWeight: activeTab === tab ? 700 : 400 }}>
-            {tab === 'reports' ? `리포트 (${reports.length})` : tab === 'payments' ? `결제 (${payments.length})` : tab === 'counter' ? '카운터' : 'PDF 생성'}
+            {tab === 'reports' ? `리포트 (${reports.length})` : tab === 'payments' ? `결제 (${payments.length})` : tab === 'counter' ? '카운터' : tab === 'pdf' ? 'PDF 생성' : '캐비넷'}
           </button>
         ))}
       </div>
@@ -203,7 +241,7 @@ export default function AdminPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #444' }}>
-                {['#', '리포트번호', '채널', '캐릭터명', '격국', '신강/약', '용신', '유료', '생성일시', ''].map(h => (
+                {['#', '리포트번호', '채널', '캐릭터명', '연령', '성별', '격국', '신강/약', '용신', '유료', '생성일시', ''].map(h => (
                   <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#8899aa', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -215,6 +253,8 @@ export default function AdminPage() {
                   <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11 }}>{r.report_no}</td>
                   <td style={{ padding: '6px 10px' }}>{r.channel}</td>
                   <td style={{ padding: '6px 10px' }}>{r.char_name}</td>
+                  <td style={{ padding: '6px 10px', fontSize: 11, color: '#889' }}>{r.age_group || '-'}</td>
+                  <td style={{ padding: '6px 10px', fontSize: 11, color: r.gender === 'F' ? '#e88' : '#88b' }}>{r.gender === 'F' ? '여' : r.gender === 'M' ? '남' : '-'}</td>
                   <td style={{ padding: '6px 10px' }}>{r.keyword1}</td>
                   <td style={{ padding: '6px 10px' }}>{r.keyword2}</td>
                   <td style={{ padding: '6px 10px' }}>{r.keyword3}</td>
@@ -293,6 +333,84 @@ export default function AdminPage() {
               </tr>
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ═══ 캐비넷 (PDF 보관함) ═══ */}
+      {activeTab === 'cabinet' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center' }}>
+            <input
+              value={cabinetSearch}
+              onChange={e => setCabinetSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') { setCabinetOffset(0); fetchCabinet(token, 0, cabinetSearch); } }}
+              placeholder="파일명 검색 (Enter)"
+              style={{ ...S.input, width: 240 }}
+            />
+            <button onClick={() => { setCabinetOffset(0); fetchCabinet(token, 0, cabinetSearch); }} style={S.btn}>
+              {cabinetLoading ? '...' : '검색'}
+            </button>
+            <button onClick={() => { setCabinetSearch(''); setCabinetOffset(0); fetchCabinet(token, 0, ''); }} style={{ ...S.btn, color: '#889' }}>
+              초기화
+            </button>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ borderCollapse: 'collapse', fontSize: 13, width: '100%' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #444' }}>
+                  {['#', '파일명', '크기', '생성일', ''].map(h => (
+                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#8899aa', fontWeight: 600, fontSize: 11 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cabinetFiles.map((f, i) => (
+                  <tr key={f.name} style={{ borderBottom: '1px solid #2a2f36' }}>
+                    <td style={{ padding: '6px 10px', color: '#556', fontSize: 11 }}>{cabinetOffset + i + 1}</td>
+                    <td style={{ padding: '6px 10px', fontFamily: 'monospace', fontSize: 11 }}>{f.name}</td>
+                    <td style={{ padding: '6px 10px', fontSize: 11, color: '#889' }}>{(f.size / 1024).toFixed(0)}KB</td>
+                    <td style={{ padding: '6px 10px', fontSize: 11, color: '#889' }}>{f.created ? new Date(f.created).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }) : '-'}</td>
+                    <td style={{ padding: '6px 10px' }}>
+                      <button
+                        onClick={() => handleDownload(f.name)}
+                        style={{ ...S.btn, fontSize: 11, padding: '4px 10px' }}
+                      >
+                        다운로드
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {cabinetFiles.length === 0 && !cabinetLoading && (
+                  <tr><td colSpan={5} style={{ padding: '20px 10px', textAlign: 'center', color: '#556' }}>PDF 파일 없음</td></tr>
+                )}
+                {cabinetLoading && (
+                  <tr><td colSpan={5} style={{ padding: '20px 10px', textAlign: 'center', color: '#889' }}>불러오는 중...</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 페이지네이션 */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
+            <button
+              disabled={cabinetOffset === 0}
+              onClick={() => fetchCabinet(token, Math.max(0, cabinetOffset - 50), cabinetSearch)}
+              style={{ ...S.btn, opacity: cabinetOffset === 0 ? 0.4 : 1 }}
+            >
+              이전
+            </button>
+            <span style={{ fontSize: 12, color: '#889', lineHeight: '30px' }}>
+              {cabinetOffset + 1}~{cabinetOffset + cabinetFiles.length}
+            </span>
+            <button
+              disabled={cabinetFiles.length < 50}
+              onClick={() => fetchCabinet(token, cabinetOffset + 50, cabinetSearch)}
+              style={{ ...S.btn, opacity: cabinetFiles.length < 50 ? 0.4 : 1 }}
+            >
+              다음
+            </button>
+          </div>
         </div>
       )}
 

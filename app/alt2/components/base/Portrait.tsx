@@ -8,7 +8,7 @@ interface PortraitProps {
   className?: string;
 }
 
-const sizeMap = { sm: 48, md: 80, lg: 110 };
+const sizeMap = { sm: 44, md: 72, lg: 90 };
 
 // 세로형 캐릭터 (높이 > 폭) — cover + top crop
 const TALL_CHARACTERS = new Set(['angel', 'devil', 'doin', 'magician']);

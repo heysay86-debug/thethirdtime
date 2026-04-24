@@ -33,6 +33,18 @@ function getDb(): Database.Database {
       )
     `);
 
+    // age_group 컬럼 추가 (기존 DB 마이그레이션)
+    try {
+      db.exec(`ALTER TABLE reports ADD COLUMN age_group VARCHAR NOT NULL DEFAULT ''`);
+    } catch {
+      // 이미 존재하면 무시
+    }
+
+    // gender 컬럼 추가
+    try {
+      db.exec(`ALTER TABLE reports ADD COLUMN gender VARCHAR NOT NULL DEFAULT ''`);
+    } catch {}
+
     // 결제 검증 (휘발성, 24시간 TTL)
     db.exec(`
       CREATE TABLE IF NOT EXISTS payments (
@@ -155,6 +167,34 @@ export function extractKeywords(engine: any): [string, string, string] {
   return [k1, k2, k3];
 }
 
+// ─── 연령대 추출 ────────────────────────────────────────────
+
+function extractAgeGroup(engine: any): string {
+  try {
+    const birthDate = engine?.input?.birthDate;
+    if (!birthDate) return '';
+    const year = typeof birthDate === 'string' ? parseInt(birthDate.slice(0, 4)) : null;
+    if (!year || isNaN(year)) return '';
+    const now = new Date();
+    const kstYear = now.getUTCFullYear() + (now.getUTCMonth() >= 3 ? 0 : 0); // 현재 연도
+    const age = kstYear - year;
+    if (age < 10) return '10대미만';
+    if (age < 20) return '10대';
+    if (age < 30) return '20대';
+    if (age < 40) return '30대';
+    if (age < 50) return '40대';
+    if (age < 60) return '50대';
+    if (age < 70) return '60대';
+    return '70대이상';
+  } catch { return ''; }
+}
+
+function extractGender(engine: any): string {
+  try {
+    return engine?.input?.gender === 'F' ? 'F' : engine?.input?.gender === 'M' ? 'M' : '';
+  } catch { return ''; }
+}
+
 // ─── 리포트 저장 (무료) ─────────────────────────────────────
 
 export function saveReport(charName: string, engine: any, channel?: string): { reportNo: string; keywords: [string, string, string] } {
@@ -163,10 +203,12 @@ export function saveReport(charName: string, engine: any, channel?: string): { r
   const reportNo = generateReportNo(ch, false);
   const [k1, k2, k3] = extractKeywords(engine);
   const masked = maskName(charName);
+  const ageGroup = extractAgeGroup(engine);
+  const gender = extractGender(engine);
 
   d.prepare(
-    `INSERT INTO reports (report_no, channel, char_name, keyword1, keyword2, keyword3, is_paid) VALUES (?, ?, ?, ?, ?, ?, 0)`
-  ).run(reportNo, ch, masked, k1, k2, k3);
+    `INSERT INTO reports (report_no, channel, char_name, keyword1, keyword2, keyword3, is_paid, age_group, gender) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`
+  ).run(reportNo, ch, masked, k1, k2, k3, ageGroup, gender);
 
   return { reportNo, keywords: [k1, k2, k3] };
 }
@@ -179,10 +221,12 @@ export function savePaidReport(charName: string, engine: any, orderId: string, c
   const reportNo = generateReportNo(ch, true);
   const [k1, k2, k3] = extractKeywords(engine);
   const masked = maskName(charName);
+  const ageGroup = extractAgeGroup(engine);
+  const gender = extractGender(engine);
 
   d.prepare(
-    `INSERT INTO reports (report_no, channel, char_name, keyword1, keyword2, keyword3, is_paid) VALUES (?, ?, ?, ?, ?, ?, 1)`
-  ).run(reportNo, ch, masked, k1, k2, k3);
+    `INSERT INTO reports (report_no, channel, char_name, keyword1, keyword2, keyword3, is_paid, age_group, gender) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+  ).run(reportNo, ch, masked, k1, k2, k3, ageGroup, gender);
 
   // 결제 검증용 임시 저장 (24시간 TTL)
   d.prepare(

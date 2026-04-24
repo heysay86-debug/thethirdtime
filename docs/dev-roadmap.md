@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-22
+최종 업데이트: 2026-04-24
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -584,6 +584,25 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 공유용 카드 이미지 생성 (사주 요약 + QR/링크)
 - [ ] 카카오톡 공유 API 연동
 - [ ] 유입채널 A006 (친구 공유 카드) 추적
+
+### M-HYO. 육효점 미니게임 🟡 진행 중 (2026-04-24)
+> 정통 시초법(서죽점법) 기반 육효점. 별도 모듈(/hyo, src/hyo/)로 사주 본체와 분리.
+> LLM 비용 0원, 클라이언트 전용. 애드센스 승인용 콘텐츠 다양성 + 체류시간 증가.
+- [x] `src/hyo/sicho.ts` — 시초법 엔진 (대연지수 49, 삼변, 6→9 노음~노양)
+- [x] `src/hyo/stages.ts` — 6개 스테이지 설정 (나무별: 복숭아→벼락맞은→월계수→편백→자작→이름없는)
+- [x] `app/hyo/page.tsx` — 메인 페이지 (탭 인터랙션, 카운팅 애니메이션, 효 쌓기)
+- [x] `public/background/hyo.jpeg` — 제단 배경 이미지
+- [x] 64괘 이름 표시 + 다시 점치기
+- [ ] 괘 해석문 (64괘별 해설)
+- [ ] 맵 스크롤 (스테이지 진행에 따라 산 위로 올라가는 연출)
+- [ ] 복길 캐릭터 표시
+- [ ] sitemap.xml에 /hyo 추가
+- [ ] robots.txt에 /hyo 허용
+
+### M-UX-2. 프론트엔드 UX 추가 개선 (2026-04-24)
+- [x] GlossaryTip 컴포넌트 (`app/alt2/components/base/GlossaryTip.tsx`) + glossary 데이터
+- [x] favicon 아이콘 세트 (favicon.ico, 32px, 192px, 512px)
+- [ ] 기타 진행 중 변경사항 (DotCharacter, DialoguePlayer, PillarTable 수정)
 
 ### M-ADS. 애드센스 (선택)
 - [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입

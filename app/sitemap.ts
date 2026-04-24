@@ -9,7 +9,7 @@
 
 import type { MetadataRoute } from 'next';
 
-const BASE_URL = 'https://saju-api-rough-shadow-6686.fly.dev';
+const BASE_URL = 'https://ttt.betterdan.net';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

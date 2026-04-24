@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 
-type Direction = 'front' | 'back' | 'left' | 'right';
+type Direction = 'front' | 'back' | 'left' | 'right' | '45angle' | 'dance1' | 'dance2';
 
 interface DotCharacterProps {
   direction?: Direction;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import GlossaryTip from '../base/GlossaryTip';
 
 interface PillarTableProps {
   pillars: {
@@ -81,14 +82,14 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations, si
         {cols.map((col, i) => (
           <div key={i} className="text-center">
             <div className="text-xs mb-2" style={{ color: '#688097', fontWeight: 600 }}>
-              {col.label}
+              <GlossaryTip term={col.label}>{col.label}</GlossaryTip>
             </div>
 
             {col.pillar ? (
               <>
                 {/* Gan sipseong */}
                 <div className="text-[10px] mb-1" style={{ color: '#688097', fontWeight: 600 }}>
-                  {tenGods[col.ganKey] || ''}
+                  <GlossaryTip term={tenGods[col.ganKey] || ''}>{tenGods[col.ganKey] || ''}</GlossaryTip>
                 </div>
                 {/* Gan hanja */}
                 <div
@@ -117,7 +118,7 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations, si
                 </div>
                 {/* Ji sipseong */}
                 <div className="text-[10px] mt-1" style={{ color: '#688097', fontWeight: 600 }}>
-                  {tenGods[col.jiKey] || ''}
+                  <GlossaryTip term={tenGods[col.jiKey] || ''}>{tenGods[col.jiKey] || ''}</GlossaryTip>
                 </div>
 
                 {/* Jijanggan */}
@@ -130,7 +131,7 @@ export default function PillarTable({ pillars, tenGods, jijanggan, relations, si
                 {/* 십이운성 */}
                 {twelveStages && (
                   <div className="text-[10px] mt-2 font-semibold" style={{ color: '#f0dfad' }}>
-                    {twelveStages[col.posKey as keyof typeof twelveStages] || '-'}
+                    <GlossaryTip term={twelveStages[col.posKey as keyof typeof twelveStages] || ''}>{twelveStages[col.posKey as keyof typeof twelveStages] || '-'}</GlossaryTip>
                   </div>
                 )}
 

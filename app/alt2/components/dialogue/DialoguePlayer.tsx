@@ -83,7 +83,7 @@ const INPUT_TYPE_MAP: Record<string, InputType> = {
 function buildSajuInput(collected: Record<string, string>): SajuInput & { interest?: string; question?: string } {
   return {
     birthDate: collected.birthDate || '',
-    birthTime: collected.birthTime || '',
+    birthTime: collected.birthTime && collected.birthTime !== 'unknown' ? collected.birthTime : '',
     calendar: (collected.calendar || 'solar') as 'solar' | 'lunar',
     isLeapMonth: collected.isLeapMonth === 'true',
     birthCity: collected.birthCity || '서울',
@@ -207,10 +207,11 @@ export default function DialoguePlayer({
           onScreenEffect?.('cast');
           await delay(200);
           // 2. 캐릭터 회전 연출
+          onDotMove?.({ visible: true });
           const sprites = ['back', '45angle', 'right', 'dance2', 'front'];
           for (const sprite of sprites) {
-            onDotMove?.({ direction: sprite as any, visible: false });
-            await delay(150);
+            onDotMove?.({ direction: sprite as any });
+            await delay(200);
           }
           // front 유지
           await delay(500);
@@ -290,8 +291,8 @@ export default function DialoguePlayer({
         onComplete();
       }
     } else {
-      // Input mode: 입력/제출/선택 액션이면 탭으로 진행 불가, 응답 표시 후에만 허용
-      if (!isInputAction && currentLine.action !== 'submit_and_transition' && currentLine.action !== 'show_choices') {
+      // Input mode: 입력/제출/선택/bg_past 액션이면 탭으로 진행 불가
+      if (!isInputAction && currentLine.action !== 'submit_and_transition' && currentLine.action !== 'show_choices' && currentLine.action !== 'bg_past') {
         advanceInputFlow();
       }
     }

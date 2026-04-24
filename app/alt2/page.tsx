@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import StarField from './components/base/StarField';
 import ZoneTransition from './components/base/ZoneTransition';
 import SectionDivider from './components/base/SectionDivider';
@@ -18,6 +18,8 @@ import OhengRelation from './components/result/OhengRelation';
 import OhengRadar from './components/result/OhengRadar';
 import InlineDialogue from './components/result/InlineDialogue';
 import GunghamUpsell from './components/gungham/GunghamUpsell';
+import CopyTextButton from './components/base/CopyTextButton';
+import { trackEvent } from '@/src/analytics';
 import UpsellDialogue from './components/upsell/UpsellDialogue';
 import CtaButton from './components/upsell/CtaButton';
 import type { DialogueLine } from './components/base/DialogueBox';
@@ -76,6 +78,7 @@ export default function Alt2Page() {
   const [userInterest, setUserInterest] = useState<string>('');
   const [userQuestion, setUserQuestion] = useState<string>('');
   const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
+  const daeunSeunRef = useRef<HTMLDivElement>(null);
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
   const [redoScript, setRedoScript] = useState<DialogueLine[]>([]);
@@ -92,7 +95,7 @@ export default function Alt2Page() {
   const [zonaBg, setZonaBg] = useState<ZoneBg>('before');
   const [screenEffect, setScreenEffect] = useState<'shake' | 'flash' | 'cast' | null>(null);
   const [dotState, setDotState] = useState({
-    direction: 'front' as 'front' | 'back' | 'left' | 'right',
+    direction: 'front' as string,
     x: 50,
     y: 62,
     visible: true,
@@ -107,6 +110,7 @@ export default function Alt2Page() {
     const t4 = setTimeout(() => {
       setLogoVisible(false);
       setPhase('dialogue');
+      trackEvent('opening_start');
     }, 5050);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [phase]);
@@ -154,13 +158,17 @@ export default function Alt2Page() {
   }, []);
 
   const handleAction = useCallback((action: string) => {
-    if (action === 'open_input_modal') setModalOpen(true);
+    if (action === 'open_input_modal') {
+      setModalOpen(true);
+      trackEvent('dialogue_complete');
+    }
   }, []);
 
   const [redoInput, setRedoInput] = useState<any>(null);
 
   const handleSubmit = useCallback(async (input: any) => {
     setModalOpen(false);
+    trackEvent('submit', { is_redo: isRedo });
 
     // redo 모드: 모달 닫고 afterInput 대화 표시
     if (isRedo) {
@@ -212,15 +220,15 @@ export default function Alt2Page() {
       setPhase('result');
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
+      trackEvent('result_view');
     } catch (e: any) {
-      alert(e?.message === 'busy'
-        ? '지금 다른 여행자의 운명을 읽고 있습니다. 잠시 후 다시 시도해주세요.'
-        : '분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+      alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
       setZonaBg('before');
       setScreenEffect(null);
       setDotState({ direction: 'front', x: 50, y: 62, visible: true });
+      trackEvent('error', { type: 'analyze_failed' });
     }
   }, [isRedo]);
 
@@ -268,10 +276,9 @@ export default function Alt2Page() {
       setPhase('result');
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
-    } catch (e: any) {
-      alert(e?.message === 'busy'
-        ? '지금 다른 여행자의 운명을 읽고 있습니다. 잠시 후 다시 시도해주세요.'
-        : '분석 중 오류가 발생했습니다. 다시 시도해주세요.');
+      trackEvent('result_view', { is_redo: true });
+    } catch {
+      alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
       setTransitionPhase('idle');
       setZonaBg('before');
@@ -281,6 +288,7 @@ export default function Alt2Page() {
   }, [isRedo, redoInput]);
 
   const handleReset = useCallback(() => {
+    trackEvent('redo_click');
     setEngine(null);
     setCore(null);
     setReportNo(null);
@@ -349,6 +357,31 @@ export default function Alt2Page() {
           >
             본격 RPG형 사주풀이
           </p>
+          {/* GM 메시지 */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 40,
+              left: 0,
+              right: 0,
+              textAlign: 'center',
+              opacity: logoVisible ? (logoFading ? 0 : 1) : 0,
+              transition: 'opacity 0.8s ease',
+            }}
+          >
+            <p style={{
+              display: 'inline-block',
+              padding: '8px 20px',
+              background: 'rgba(240, 223, 173, 0.08)',
+              border: '1px solid rgba(240, 223, 173, 0.15)',
+              borderRadius: 20,
+              color: '#f0dfad',
+              fontSize: 11,
+              letterSpacing: 1,
+            }}>
+              🔊 BGM을 켜고 플레이하시면 더 재미있습니다
+            </p>
+          </div>
         </div>
       )}
 
@@ -460,7 +493,7 @@ export default function Alt2Page() {
 
               {/* 도트 캐릭터 (배경 컨테이너 내부) */}
               <DotCharacter
-                direction={dotState.direction}
+                direction={dotState.direction as any}
                 size={10}
                 x={dotState.x}
                 y={dotState.y}
@@ -601,32 +634,36 @@ export default function Alt2Page() {
                 </ParchmentCard>
               )}
 
-              {/* ② DaeunTimeline */}
-              {daeunPeriods.length > 0 && (
-                <DaeunTimeline periods={daeunPeriods} currentAge={currentAge} startAge={daeunStartAge} />
-              )}
+              {/* ② 대운 + 세운 (복사 영역) */}
+              <div ref={daeunSeunRef}>
+                {/* DaeunTimeline */}
+                {daeunPeriods.length > 0 && (
+                  <DaeunTimeline periods={daeunPeriods} currentAge={currentAge} startAge={daeunStartAge} />
+                )}
 
-              {/* 양피지 해설: 대운 */}
-              {resultComments?.parchment_daeun && (
-                <ParchmentCard title="대운 해설">
-                  {resultComments.parchment_daeun}
-                </ParchmentCard>
-              )}
+                {/* 양피지 해설: 대운 */}
+                {resultComments?.parchment_daeun && (
+                  <ParchmentCard title="대운 해설">
+                    {resultComments.parchment_daeun}
+                  </ParchmentCard>
+                )}
 
-              {/* ③ SeunCard */}
-              <SeunCard currentYear={seunCurrent} nextYear={seunNext} />
+                {/* ③ SeunCard */}
+                <SeunCard currentYear={seunCurrent} nextYear={seunNext} />
 
-              {/* 복길 코멘트: 세운 */}
-              {resultComments?.after_seun && (
-                <InlineDialogue lines={resultComments.after_seun} autoPlay />
-              )}
+                {/* 복길 코멘트: 세운 */}
+                {resultComments?.after_seun && (
+                  <InlineDialogue lines={resultComments.after_seun} autoPlay />
+                )}
 
-              {/* 양피지 해설: 세운 */}
-              {resultComments?.parchment_seun && (
-                <ParchmentCard title="세운 해설">
-                  {resultComments.parchment_seun}
-                </ParchmentCard>
-              )}
+                {/* 양피지 해설: 세운 */}
+                {resultComments?.parchment_seun && (
+                  <ParchmentCard title="세운 해설">
+                    {resultComments.parchment_seun}
+                  </ParchmentCard>
+                )}
+              </div>
+              <CopyTextButton containerRef={daeunSeunRef} title="대운·세운 분석" />
 
               <SectionDivider icon="star" />
 
@@ -681,6 +718,7 @@ export default function Alt2Page() {
                   onClick={async () => {
                     if (phase2Sections) return;
                     if (phase2Loading) { alert('리포트를 준비하고 있습니다. 잠시만 기다려주세요.'); return; }
+                    trackEvent('upsell_click');
                     setPhase2Loading(true);
                     try {
                       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/interpret`, {
@@ -804,6 +842,7 @@ export default function Alt2Page() {
                       }}
                       onClick={async () => {
                         if (pdfProgress === 'generating') return;
+                        trackEvent('pdf_download');
                         setPdfProgress('generating');
                         try {
                           const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/saju/pdf`, {
