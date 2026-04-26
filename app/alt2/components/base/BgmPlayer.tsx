@@ -128,6 +128,32 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }
           }} />
         )}
       </button>
+
+      {/* GM 메시지 — BGM 미시작 + 버튼 보이는 상태 */}
+      {visible && !started && (
+        <div
+          className="fixed"
+          style={{
+            bottom: 'max(70px, calc(env(safe-area-inset-bottom) + 54px))',
+            right: 16,
+            zIndex: 55,
+            pointerEvents: 'none',
+            animation: 'bgm-glow 2s ease-in-out infinite',
+          }}
+        >
+          <div style={{
+            padding: '6px 12px',
+            background: 'rgba(240, 223, 173, 0.08)',
+            border: '1px solid rgba(240, 223, 173, 0.15)',
+            borderRadius: 12,
+            fontSize: 10,
+            color: '#f0dfad',
+            whiteSpace: 'nowrap',
+          }}>
+            BGM을 켜고 플레이하시면 더 재미있습니다
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -15,11 +15,10 @@ import { SajuGateway } from '@/src/gateway/gateway';
 import { saveReport } from '@/src/db';
 import SajuReport from '@/src/pdf/SajuReport';
 import { savePdfCopy } from '@/src/db/pdf-storage';
+import { adminAuth } from '@/src/middleware/admin-auth';
 
 export async function POST(request: NextRequest) {
-  const token = request.nextUrl.searchParams.get('token');
-  const adminToken = process.env.ADMIN_TOKEN;
-  if (!adminToken || token !== adminToken) {
+  if (!adminAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

@@ -7,6 +7,7 @@ import SectionDivider from './components/base/SectionDivider';
 import DotCharacter from './components/base/DotCharacter';
 import PillarFrame from './components/base/PillarFrame';
 import BgmPlayer from './components/base/BgmPlayer';
+import GameMenu from './components/base/GameMenu';
 import PdfLoadingOverlay from './components/PdfLoadingOverlay';
 import DialoguePlayer from './components/dialogue/DialoguePlayer';
 import InputModal from './components/input/InputModal';
@@ -16,9 +17,13 @@ import DaeunTimeline from './components/result/DaeunTimeline';
 import SeunCard from './components/result/SeunCard';
 import OhengRelation from './components/result/OhengRelation';
 import OhengRadar from './components/result/OhengRadar';
+import OhengWangSang from './components/result/OhengWangSang';
 import InlineDialogue from './components/result/InlineDialogue';
 import GunghamUpsell from './components/gungham/GunghamUpsell';
 import CopyTextButton from './components/base/CopyTextButton';
+import SaveResultButton from './components/auth/SaveResultButton';
+import SavePromptCard from './components/auth/SavePromptCard';
+import EmailSaveModal from './components/auth/EmailSaveModal';
 import { trackEvent } from '@/src/analytics';
 import UpsellDialogue from './components/upsell/UpsellDialogue';
 import CtaButton from './components/upsell/CtaButton';
@@ -78,6 +83,8 @@ export default function Alt2Page() {
   const [userInterest, setUserInterest] = useState<string>('');
   const [userQuestion, setUserQuestion] = useState<string>('');
   const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [resultSaved, setResultSaved] = useState(false);
   const daeunSeunRef = useRef<HTMLDivElement>(null);
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
@@ -221,6 +228,7 @@ export default function Alt2Page() {
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
       trackEvent('result_view');
+      try { localStorage.setItem('thethirdtime_ch1_clear', 'true'); } catch {}
     } catch (e: any) {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
@@ -277,6 +285,7 @@ export default function Alt2Page() {
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
       trackEvent('result_view', { is_redo: true });
+      try { localStorage.setItem('thethirdtime_ch1_clear', 'true'); } catch {}
     } catch {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
@@ -294,6 +303,8 @@ export default function Alt2Page() {
     setReportNo(null);
     setPhase2Sections(null);
     setPhase2Loading(false);
+    setResultSaved(false);
+    setSaveModalOpen(false);
     setIsRedo(true);
     setRedoKey(prev => prev + 1);
     setRedoAfterInputActive(false);
@@ -329,6 +340,7 @@ export default function Alt2Page() {
       {/* Pillar Frame — always visible */}
       <PillarFrame isOpen={pillarsOpen} />
       <BgmPlayer show={phase !== 'opening'} />
+      {phase !== 'opening' && <GameMenu />}
 
       {/* Opening: logo */}
       {phase === 'opening' && (
@@ -594,14 +606,20 @@ export default function Alt2Page() {
                 />
               </div>
 
-              {/* Reset button */}
-              <button
-                onClick={handleReset}
-                className="text-sm font-medium"
-                style={{ color: '#688097' }}
-              >
-                ← 다시하기
-              </button>
+              {/* Reset + Save buttons */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button
+                  onClick={handleReset}
+                  className="text-sm font-medium"
+                  style={{ color: '#688097' }}
+                >
+                  ← 다시하기
+                </button>
+                <SaveResultButton
+                  onClick={() => setSaveModalOpen(true)}
+                  saved={resultSaved}
+                />
+              </div>
 
               {/* ① PillarTable (신살 통합) */}
               <PillarTable
@@ -667,9 +685,16 @@ export default function Alt2Page() {
 
               <SectionDivider icon="star" />
 
-              {/* ④ OhengRelation + OhengRadar */}
+              {/* ④ OhengRelation + OhengRadar + WangSang */}
               <OhengRelation />
               <OhengRadar distribution={ohengDistribution} />
+              {engine?.ohengAnalysis && (
+                <OhengWangSang
+                  counts={engine.ohengAnalysis.counts}
+                  statuses={engine.ohengAnalysis.statuses}
+                  monthElement={engine.ohengAnalysis.monthElement}
+                />
+              )}
 
               {/* 복길 코멘트 + core.strengthReading */}
               <InlineDialogue
@@ -880,6 +905,12 @@ export default function Alt2Page() {
                 </div>
               )}
 
+              {/* 저장 유도 카드 */}
+              <SavePromptCard
+                onClick={() => setSaveModalOpen(true)}
+                saved={resultSaved}
+              />
+
               {/* Free section end comment */}
               {!phase2Sections && resultComments?.free_section_end && (
                 <InlineDialogue lines={resultComments.free_section_end} autoPlay />
@@ -931,6 +962,14 @@ export default function Alt2Page() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
+      />
+
+      {/* 결과 저장 모달 */}
+      <EmailSaveModal
+        isOpen={saveModalOpen}
+        onClose={() => setSaveModalOpen(false)}
+        onSaved={() => setResultSaved(true)}
+        reportNo={reportNo}
       />
     </div>
   );

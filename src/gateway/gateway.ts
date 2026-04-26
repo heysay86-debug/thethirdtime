@@ -23,7 +23,7 @@ import { sajuCoreTool } from './tools/saju_core';
 import { sajuInterpretationTool } from './tools/saju_interpretation';
 import { Phase2ResultSchema } from './prompts/schema';
 import { SajuResult } from '../engine/schema';
-import { buildChunkContext } from './chunks';
+import { buildChunkContext, type SajuContext } from './chunks';
 
 // ── 설정 ──
 
@@ -183,7 +183,15 @@ export class SajuGateway {
     const start = Date.now();
 
     const hasDaeun = sajuResult.daeun !== null;
-    const chunkContext = buildChunkContext();
+
+    // 사주 맞춤 청크 선별
+    const sajuContext: SajuContext = {
+      dayGan: sajuResult.pillars.day.gan,
+      gyeokGukType: sajuResult.gyeokGuk.type,
+      yongSinElement: sajuResult.yongSin.final.primary,
+      strengthLevel: sajuResult.strength.level,
+    };
+    const chunkContext = buildChunkContext(sajuContext);
 
     const birthYear = sajuResult.birth?.solar ? parseInt(sajuResult.birth.solar.split('-')[0]) : null;
     const currentYear = new Date().getFullYear();

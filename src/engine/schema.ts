@@ -193,6 +193,44 @@ const SeUnYearSchema = z.object({
   sinsal: z.array(SibiiSinsalEntrySchema),
 });
 
+// ── 오행 분석 ──
+
+const WangSangStateSchema = z.enum(['旺', '相', '休', '囚', '死']);
+
+const OhengCountSchema = z.object({
+  element: ElementSchema,
+  count: z.number(),
+  withJijanggan: z.number(),
+  includesMonthBranch: z.boolean(),
+  state: WangSangStateSchema,
+});
+
+const OhengStatusSchema = z.object({
+  element: ElementSchema,
+  level: z.enum(['발달', '과다', '고립', '보통', '부족']),
+  description: z.string(),
+});
+
+const JijiHapSchema = z.object({
+  type: z.enum(['육합', '삼합', '방합', '반합']),
+  branches: z.array(z.string()),
+  positions: z.array(z.string()),
+  hwaElement: ElementSchema,
+});
+
+const CheonganChungSchema = z.object({
+  stem1: z.string(),
+  stem2: z.string(),
+  position1: z.string(),
+  position2: z.string(),
+});
+
+const OhengAnalysisSchema = z.object({
+  counts: z.array(OhengCountSchema),
+  statuses: z.array(OhengStatusSchema),
+  monthElement: ElementSchema,
+});
+
 // ── 통합 스키마 ──
 
 export const SajuResultSchema = z.object({
@@ -228,6 +266,12 @@ export const SajuResultSchema = z.object({
   daeun: DaeunSchema,
   /** 세운 (향후 10년) */
   seun: z.array(SeUnYearSchema),
+  /** 오행 분석 (왕상휴수사 · 발달/과다/고립) */
+  ohengAnalysis: OhengAnalysisSchema,
+  /** 지지합 (육합·삼합·방합·반합) */
+  jijiHap: z.array(JijiHapSchema),
+  /** 천간충 */
+  cheonganChung: z.array(CheonganChungSchema),
 });
 
 export type SajuResult = z.infer<typeof SajuResultSchema>;

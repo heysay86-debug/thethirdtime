@@ -41,14 +41,14 @@ export default function AdminPage() {
   const [cabinetSearch, setCabinetSearch] = useState('');
   const [cabinetOffset, setCabinetOffset] = useState(0);
 
-  const fetchData = async (t: string) => {
+  const fetchData = async () => {
     setLoading(true);
     setError('');
     try {
       const [rRes, pRes, cRes] = await Promise.all([
-        fetch(`/api/admin/reports?token=${encodeURIComponent(t)}&table=reports&limit=500`),
-        fetch(`/api/admin/reports?token=${encodeURIComponent(t)}&table=payments&limit=100`),
-        fetch(`/api/admin/reports?token=${encodeURIComponent(t)}&table=counter`),
+        fetch(`/api/admin/reports?table=reports&limit=500`),
+        fetch(`/api/admin/reports?table=payments&limit=100`),
+        fetch(`/api/admin/reports?table=counter`),
       ]);
       if (rRes.status === 401) { setError('인증 실패'); setAuthenticated(false); return; }
       const [rData, pData, cData] = await Promise.all([rRes.json(), pRes.json(), cRes.json()]);
@@ -69,7 +69,7 @@ export default function AdminPage() {
   const handleDelete = async (reportNo: string) => {
     if (!confirm(`${reportNo} 삭제?`)) return;
     try {
-      const res = await fetch(`/api/admin/reports?token=${encodeURIComponent(token)}&reportNo=${encodeURIComponent(reportNo)}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/reports?reportNo=${encodeURIComponent(reportNo)}`, { method: 'DELETE' });
       if (res.ok) {
         setReports(prev => prev.filter(r => r.report_no !== reportNo));
       } else {
@@ -78,10 +78,10 @@ export default function AdminPage() {
     } catch { alert('삭제 실패'); }
   };
 
-  const fetchCabinet = async (t: string, offset = 0, search = '') => {
+  const fetchCabinet = async (offset = 0, search = '') => {
     setCabinetLoading(true);
     try {
-      const params = new URLSearchParams({ token: t, offset: String(offset), limit: '50' });
+      const params = new URLSearchParams({ offset: String(offset), limit: '50' });
       if (search) params.set('search', search);
       const res = await fetch(`/api/admin/cabinet?${params}`);
       if (!res.ok) return;
@@ -94,7 +94,7 @@ export default function AdminPage() {
 
   const handleDownload = async (fileName: string) => {
     try {
-      const res = await fetch(`/api/admin/cabinet?token=${encodeURIComponent(token)}`, {
+      const res = await fetch(`/api/admin/cabinet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName }),
@@ -105,11 +105,29 @@ export default function AdminPage() {
     } catch { alert('다운로드 실패'); }
   };
 
-  const handleLogin = (e: React.FormEvent) => { e.preventDefault(); if (token.trim()) fetchData(token.trim()); };
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!token.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token.trim() }),
+      });
+      if (res.ok) {
+        await fetchData();
+      } else {
+        setError('인증 실패');
+      }
+    } catch { setError('서버 연결 실패'); }
+    finally { setLoading(false); }
+  };
 
   useEffect(() => {
     if (!authenticated || !token) return;
-    const id = setInterval(() => fetchData(token), 5 * 60 * 1000);
+    const id = setInterval(() => fetchData(), 5 * 60 * 1000);
     return () => clearInterval(id);
   }, [authenticated, token]);
 
@@ -181,8 +199,11 @@ export default function AdminPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, marginTop: showWelcome ? 48 : 0 }}>
         <h1 style={{ fontSize: 20, fontWeight: 700 }}>리포트 관리</h1>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => fetchData(token)} style={S.btn}>{loading ? '...' : '새로고침'}</button>
-          <button onClick={() => { setAuthenticated(false); setReports([]); setToken(''); }} style={{ ...S.btn, color: '#e74c3c' }}>로그아웃</button>
+          <button onClick={() => fetchData()} style={S.btn}>{loading ? '...' : '새로고침'}</button>
+          <button onClick={async () => {
+            await fetch('/api/admin/auth', { method: 'DELETE' });
+            setAuthenticated(false); setReports([]); setToken('');
+          }} style={{ ...S.btn, color: '#e74c3c' }}>로그아웃</button>
         </div>
       </div>
 
@@ -211,7 +232,7 @@ export default function AdminPage() {
         {(['reports', 'payments', 'counter', 'pdf', 'cabinet'] as const).map(tab => (
           <button key={tab} onClick={() => {
             setActiveTab(tab);
-            if (tab === 'cabinet' && cabinetFiles.length === 0) fetchCabinet(token);
+            if (tab === 'cabinet' && cabinetFiles.length === 0) fetchCabinet();
           }}
             style={{ ...S.btn, background: activeTab === tab ? '#f0dfad' : '#333', color: activeTab === tab ? '#1a1e24' : '#dde1e5', fontWeight: activeTab === tab ? 700 : 400 }}>
             {tab === 'reports' ? `리포트 (${reports.length})` : tab === 'payments' ? `결제 (${payments.length})` : tab === 'counter' ? '카운터' : tab === 'pdf' ? 'PDF 생성' : '캐비넷'}
@@ -343,14 +364,14 @@ export default function AdminPage() {
             <input
               value={cabinetSearch}
               onChange={e => setCabinetSearch(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { setCabinetOffset(0); fetchCabinet(token, 0, cabinetSearch); } }}
+              onKeyDown={e => { if (e.key === 'Enter') { setCabinetOffset(0); fetchCabinet(0, cabinetSearch); } }}
               placeholder="파일명 검색 (Enter)"
               style={{ ...S.input, width: 240 }}
             />
-            <button onClick={() => { setCabinetOffset(0); fetchCabinet(token, 0, cabinetSearch); }} style={S.btn}>
+            <button onClick={() => { setCabinetOffset(0); fetchCabinet(0, cabinetSearch); }} style={S.btn}>
               {cabinetLoading ? '...' : '검색'}
             </button>
-            <button onClick={() => { setCabinetSearch(''); setCabinetOffset(0); fetchCabinet(token, 0, ''); }} style={{ ...S.btn, color: '#889' }}>
+            <button onClick={() => { setCabinetSearch(''); setCabinetOffset(0); fetchCabinet(0, ''); }} style={{ ...S.btn, color: '#889' }}>
               초기화
             </button>
           </div>
@@ -395,7 +416,7 @@ export default function AdminPage() {
           <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'center' }}>
             <button
               disabled={cabinetOffset === 0}
-              onClick={() => fetchCabinet(token, Math.max(0, cabinetOffset - 50), cabinetSearch)}
+              onClick={() => fetchCabinet(Math.max(0, cabinetOffset - 50), cabinetSearch)}
               style={{ ...S.btn, opacity: cabinetOffset === 0 ? 0.4 : 1 }}
             >
               이전
@@ -405,7 +426,7 @@ export default function AdminPage() {
             </span>
             <button
               disabled={cabinetFiles.length < 50}
-              onClick={() => fetchCabinet(token, cabinetOffset + 50, cabinetSearch)}
+              onClick={() => fetchCabinet(cabinetOffset + 50, cabinetSearch)}
               style={{ ...S.btn, opacity: cabinetFiles.length < 50 ? 0.4 : 1 }}
             >
               다음
@@ -467,7 +488,7 @@ export default function AdminPage() {
                 try {
                   const controller = new AbortController();
                   const timeout = setTimeout(() => controller.abort(), 5 * 60 * 1000); // 5분
-                  const res = await fetch(`/api/admin/generate-pdf?token=${encodeURIComponent(token)}`, {
+                  const res = await fetch(`/api/admin/generate-pdf`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -497,7 +518,7 @@ export default function AdminPage() {
                   a.click();
                   URL.revokeObjectURL(url);
                   setPdfStatus('완료!');
-                  fetchData(token);
+                  fetchData();
                 } catch (e: any) {
                   setPdfStatus(`오류: ${e.message}`);
                 }

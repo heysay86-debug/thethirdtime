@@ -9,7 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import { uploadPdf, getPdfUrl } from './supabase';
 
-const PDF_DIR = process.env.PDF_DIR || path.join(process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : '/data', 'pdfs');
+const PDF_DIR = process.env.PDF_DIR || path.join(/*turbopackIgnore: true*/ process.env.DB_PATH ? path.dirname(process.env.DB_PATH) : '/data', 'pdfs');
 
 export async function savePdfCopy(fileName: string, buffer: Buffer): Promise<void> {
   // Supabase Storage 업로드 (fire-and-forget, 응답을 블로킹하지 않음)

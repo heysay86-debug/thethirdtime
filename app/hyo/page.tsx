@@ -11,42 +11,78 @@ import { generateTraditionalReading } from '@/src/hyo/gua-reading';
 
 type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'complete';
 
-// 효 심볼 렌더링
+// 픽셀 도트 1개
+function Dot({ color, glow }: { color: string; glow?: boolean }) {
+  return (
+    <div style={{
+      width: 4, height: 4,
+      backgroundColor: color,
+      boxShadow: glow ? `0 0 4px ${color}, 0 0 8px ${color}` : undefined,
+    }} />
+  );
+}
+
+// 효 심볼 렌더링 — 픽셀아트 스타일
 function YaoSymbol({ yao, size = 32 }: { yao: YaoResult; size?: number }) {
-  const w = size;
-  const h = size * 0.3;
-  const gap = size * 0.15;
-  const color = yao.isChanging ? '#f0dfad' : '#dde1e5';
+  const dotCount = Math.max(5, Math.floor(size / 6));
+  const halfDots = Math.floor(dotCount * 0.4);
+  const gapDots = Math.max(2, dotCount - halfDots * 2);
+
+  const baseColor = yao.isChanging ? '#f0dfad' : '#aab4be';
+  const glowColor = '#f0dfad';
+  const isGlow = yao.isChanging;
+
+  const totalWidth = dotCount * 4 + (dotCount - 1) * 2; // 도트 + gap 총 너비
 
   if (yao.isYang) {
-    // 양효: 한 줄 (━━━)
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, gap: 0 }}>
-        <div style={{ width: w, height: h * 0.4, backgroundColor: color, borderRadius: 2 }} />
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        width: totalWidth, height: size * 0.25, position: 'relative',
+      }}>
+        <div style={{ display: 'flex', gap: 2 }}>
+          {Array.from({ length: dotCount }).map((_, i) => (
+            <Dot key={i} color={baseColor} glow={isGlow} />
+          ))}
+        </div>
         {yao.isChanging && (
           <div style={{
             position: 'absolute',
-            width: h * 0.6, height: h * 0.12,
-            backgroundColor: '#f0dfad',
-            transform: 'rotate(-45deg)',
-            borderRadius: 1,
+            width: 6, height: 6, borderRadius: '50%',
+            backgroundColor: glowColor,
+            boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
+            animation: 'pixel-pulse 1.5s ease-in-out infinite',
           }} />
         )}
       </div>
     );
   }
-  // 음효: 두 줄 (━ ━)
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: h, gap }}>
-      <div style={{ width: w * 0.4, height: h * 0.4, backgroundColor: color, borderRadius: 2 }} />
-      <div style={{ width: w * 0.4, height: h * 0.4, backgroundColor: color, borderRadius: 2 }} />
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: totalWidth, height: size * 0.25, position: 'relative',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 2 }}>
+          {Array.from({ length: halfDots }).map((_, i) => (
+            <Dot key={`l${i}`} color={baseColor} glow={isGlow} />
+          ))}
+        </div>
+        <div style={{ width: gapDots * 6 }} />
+        <div style={{ display: 'flex', gap: 2 }}>
+          {Array.from({ length: halfDots }).map((_, i) => (
+            <Dot key={`r${i}`} color={baseColor} glow={isGlow} />
+          ))}
+        </div>
+      </div>
       {yao.isChanging && (
         <div style={{
           position: 'absolute',
-          width: h * 0.6, height: h * 0.12,
-          backgroundColor: '#f0dfad',
-          transform: 'rotate(-45deg)',
-          borderRadius: 1,
+          width: 6, height: 6, borderRadius: '50%',
+          backgroundColor: glowColor,
+          boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
+          animation: 'pixel-pulse 1.5s ease-in-out infinite',
         }} />
       )}
     </div>
@@ -245,14 +281,38 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
               const isShi = i + 1 === palaceInfo.shi;
               const isYing = i + 1 === palaceInfo.ying;
               const mark = isShi ? '世' : isYing ? '應' : '　';
-              const bar = isYang ? '━━━━━' : '━━ ━━';
+              const dotColor = isYang ? '#aab4be' : '#7a8490';
+              const dotCount = 7;
+              const halfDots = 3;
               return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ color: isShi ? '#f0dfad' : isYing ? '#8cb4ff' : '#556', width: 16, textAlign: 'center', fontSize: 11 }}>
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 18 }}>
+                  <span style={{ color: isShi ? '#f0dfad' : isYing ? '#8cb4ff' : '#556', width: 16, textAlign: 'center', fontSize: 11, flexShrink: 0 }}>
                     {mark}
                   </span>
-                  <span style={{ color: isYang ? '#dde1e5' : '#889', letterSpacing: 2 }}>{bar}</span>
-                  <span style={{ color: '#f0dfad', width: 14, textAlign: 'center' }}>{palaceInfo.yaoDizhi[i]}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', width: 52, flexShrink: 0 }}>
+                    {isYang ? (
+                      <div style={{ display: 'flex', gap: 2 }}>
+                        {Array.from({ length: dotCount }).map((_, j) => (
+                          <div key={j} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          {Array.from({ length: halfDots }).map((_, j) => (
+                            <div key={`l${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                          ))}
+                        </div>
+                        <div style={{ width: 10 }} />
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          {Array.from({ length: halfDots }).map((_, j) => (
+                            <div key={`r${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <span style={{ color: '#f0dfad', width: 14, textAlign: 'center', fontSize: 12, flexShrink: 0 }}>{palaceInfo.yaoDizhi[i]}</span>
                   <span style={{ color: '#999', fontSize: 11 }}>{liuqinKorean(palaceInfo.yaoLiuqin[i])}</span>
                 </div>
               );
@@ -560,6 +620,8 @@ export default function HyoPage() {
       fontFamily: '"Pretendard Variable", sans-serif',
       position: 'relative',
       overflow: 'hidden',
+      maxWidth: 440,
+      margin: '0 auto',
     }}>
       <BgmPlayer show src="/bgm/hyo.mp3" />
 
@@ -590,13 +652,13 @@ export default function HyoPage() {
             opacity: isWalking ? 0.6 : 1,
           }}>
             <img
-              src="/character/hyo.png"
+              src="/character/doin_dot.png"
               alt="복길"
               style={{
-                height: '6vh',
+                height: '5.1vh',
                 width: 'auto',
                 imageRendering: 'pixelated',
-                filter: `drop-shadow(0 3px 8px rgba(0,0,0,0.6))${isWalking ? ' brightness(1.3)' : ''}`,
+                filter: `drop-shadow(0 2px 6px rgba(0,0,0,0.6))${isWalking ? ' brightness(1.3)' : ''}`,
                 animation: 'bounce-gentle 1.2s ease-in-out infinite',
               }}
             />
@@ -895,6 +957,10 @@ export default function HyoPage() {
       )}
 
       <style>{`
+        @keyframes pixel-pulse {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.4); }
+        }
         @keyframes bounce-gentle {
           0%, 100% { transform: translateX(-50%) translateY(0); }
           50% { transform: translateX(-50%) translateY(-4px); }

@@ -7,6 +7,7 @@ module.exports = {
     '^@engine/(.*)$': '<rootDir>/src/engine/$1',
     '^@gateway/(.*)$': '<rootDir>/src/gateway/$1',
     '^@data/(.*)$': '<rootDir>/data/$1',
+    '^@/(.*)$': '<rootDir>/$1',
   },
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
@@ -24,6 +25,7 @@ module.exports = {
           '@engine/*': ['src/engine/*'],
           '@gateway/*': ['src/gateway/*'],
           '@data/*': ['data/*'],
+          '@/*': ['./*'],
         },
         ignoreDeprecations: '6.0',
       },

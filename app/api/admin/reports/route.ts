@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { listReports, cleanupExpiredPayments } from '@/src/db';
 import { getCurrent, getMax } from '@/src/middleware/concurrency';
+import { adminAuth } from '@/src/middleware/admin-auth';
 import Database from 'better-sqlite3';
 import path from 'path';
 
@@ -17,14 +18,8 @@ function getDb() {
   return new Database(dbPath);
 }
 
-function auth(request: NextRequest): boolean {
-  const token = request.nextUrl.searchParams.get('token');
-  const adminToken = process.env.ADMIN_TOKEN;
-  return !!adminToken && token === adminToken;
-}
-
 export async function GET(request: NextRequest) {
-  if (!auth(request)) {
+  if (!adminAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -68,7 +63,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!auth(request)) {
+  if (!adminAuth(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

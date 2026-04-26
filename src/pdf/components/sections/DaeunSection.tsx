@@ -182,6 +182,37 @@ export default function DaeunSection({ sajuResult, interpretation }: DaeunSectio
           })}
         </View>
 
+        {/* 대운별 한 줄 해설 */}
+        {periods.map((p, i) => {
+          const ratingClr = RATING_COLOR[p.analysis.rating] ?? colors.textBody;
+          const relClr = YONGSIN_REL_COLOR[p.analysis.yongSinRelation] ?? colors.textBody;
+          const relText = p.analysis.yongSinRelation === '희신' ? '용신에 도움이 되는 시기'
+            : p.analysis.yongSinRelation === '기신' ? '용신을 방해하는 시기'
+            : '중립적인 시기';
+          const chungHap = [
+            ...p.analysis.cheonganHaps.map(h => `${h.stem1}${h.stem2}합`),
+            ...p.analysis.jijiRelations.map(r => `${r.ji1}${r.ji2}${r.type}`),
+          ];
+          return (
+            <View key={i} style={{ flexDirection: 'row', marginBottom: 4, paddingHorizontal: 4 }}>
+              <Text style={{ fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 600, color: colors.darkBg, width: 50 }}>
+                {p.gan}{p.ji} ({p.startAge}~{p.endAge})
+              </Text>
+              <Text style={{ fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 500, color: ratingClr, width: 28 }}>
+                {p.analysis.rating}
+              </Text>
+              <Text style={{ fontFamily: 'Paperlogy', fontSize: 8, fontWeight: 400, color: relClr, width: 90 }}>
+                {relText}
+              </Text>
+              <Text style={{ fontFamily: 'Paperlogy', fontSize: 7.5, fontWeight: 300, color: colors.textMuted, flex: 1 }}>
+                {chungHap.length > 0 ? chungHap.join(', ') : ''}
+              </Text>
+            </View>
+          );
+        })}
+
+        <View style={{ marginTop: 8 }} />
+
         {/* 대운 해석 */}
         {daeunReading.overview && toParagraphs(daeunReading.overview).map((p, i) => (
           <Text key={`ov-${i}`} style={s.interpretText}>{p}</Text>

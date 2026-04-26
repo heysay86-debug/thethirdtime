@@ -17,11 +17,11 @@ describe('gateway — 구조 검증', () => {
     expect(sajuCoreTool.input_schema.required).toContain('yongSinReading');
   });
 
-  it('Phase 2 interpretation tool에 coreJudgment 없음', () => {
+  it('Phase 2 interpretation tool에 coreJudgment·pillarAnalysis 없음', () => {
     const sectionKeys = Object.keys(sajuInterpretationTool.input_schema.properties.sections.properties);
     expect(sectionKeys).not.toContain('coreJudgment');
+    expect(sectionKeys).not.toContain('pillarAnalysis');
     expect(sectionKeys).toContain('basics');
-    expect(sectionKeys).toContain('pillarAnalysis');
     expect(sectionKeys).toContain('overallReading');
   });
 

@@ -14,6 +14,7 @@ import { SajuResultSchema } from '@/src/engine/schema';
 import { SajuGateway } from '@/src/gateway/gateway';
 import { checkRateLimit } from '@/src/middleware/rate-limit';
 import { sanitizePersonalInfo, sanitizeSections } from '@/src/middleware/sanitize';
+import { release, waitForSlot } from '@/src/middleware/concurrency';
 import { corsHeaders, handleOptions } from '../../cors';
 
 export async function OPTIONS(request: NextRequest) {
@@ -33,6 +34,9 @@ const InputSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  const cors = corsHeaders(origin);
+
   // Rate Limiting
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
     ?? request.headers.get('x-real-ip')
@@ -43,6 +47,15 @@ export async function POST(request: NextRequest) {
     return new Response(
       JSON.stringify({ error: '요청 한도 초과', resetMs: rateLimit.resetMs }),
       { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(Math.ceil(rateLimit.resetMs / 1000)) } },
+    );
+  }
+
+  try {
+    await waitForSlot(120000);
+  } catch {
+    return NextResponse.json(
+      { error: '대기 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.', retryAfter: 30 },
+      { status: 503, headers: { ...cors, 'Retry-After': '30' } },
     );
   }
 
@@ -87,6 +100,8 @@ export async function POST(request: NextRequest) {
         const errorData = JSON.stringify({ error: safeMessage });
         controller.enqueue(encoder.encode(`event: error\ndata: ${errorData}\n\n`));
         controller.close();
+      } finally {
+        release();
       }
     },
   });
@@ -96,6 +111,7 @@ export async function POST(request: NextRequest) {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
+      ...cors,
       'X-RateLimit-Remaining': String(rateLimit.remaining),
     },
   });

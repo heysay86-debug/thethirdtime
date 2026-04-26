@@ -15,6 +15,8 @@ import { calculateDaeun, calculateSeUn } from './daeun';
 import { calculateSinsal } from './sinsal';
 import { calculateTwelveStages } from './twelve_stages';
 import { SajuResultSchema, SajuResult } from './schema';
+import { analyzeOheng } from './oheng_analysis';
+import { detectJijiHap, detectCheonganChung } from './relations';
 
 export function analyzeSaju(input: SajuInput): SajuResult {
   // M8: 4기둥
@@ -73,6 +75,15 @@ export function analyzeSaju(input: SajuInput): SajuResult {
   const currentYear = new Date().getFullYear();
   const seun = calculateSeUn(currentYear, currentYear + 9, pillars, yongSinElement);
 
+  // 오행 분석
+  const ohengAnalysis = analyzeOheng(pillars);
+
+  // 지지합
+  const jijiHap = detectJijiHap(pillars);
+
+  // 천간충
+  const cheonganChung = detectCheonganChung(pillars);
+
   const result: SajuResult = {
     pillars,
     birth: saju.birth,
@@ -85,6 +96,9 @@ export function analyzeSaju(input: SajuInput): SajuResult {
     sinsal,
     daeun,
     seun,
+    ohengAnalysis,
+    jijiHap,
+    cheonganChung,
   };
 
   // Zod 검증

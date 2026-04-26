@@ -6,8 +6,7 @@ import { analyzeSaju } from '@engine/analyze';
 
 describe('M15 — 시스템 프롬프트 설계', () => {
   it('시스템 프롬프트가 핵심 지침을 포함한다', () => {
-    expect(SAJU_SYSTEM_PROMPT).toContain('이석영');
-    expect(SAJU_SYSTEM_PROMPT).toContain('사주첩경');
+    // 특정 학자명·서적명 직접 표기 금지 방침에 따라 이석영/사주첩경은 제외
     expect(SAJU_SYSTEM_PROMPT).toContain('자평진전');
     expect(SAJU_SYSTEM_PROMPT).toContain('적천수');
     expect(SAJU_SYSTEM_PROMPT).toContain('궁통보감');
@@ -47,12 +46,6 @@ describe('M15 — 시스템 프롬프트 설계', () => {
           gyeokGukReading: '편인격으로 재극인 파격이며 酉戌해로 약화됩니다.',
           yongSinReading: '억부와 조후 모두 木을 가리킵니다.',
         },
-        pillarAnalysis: {
-          year: '丙寅 연주 해석',
-          month: '丁酉 월주 해석',
-          day: '壬戌 일주 해석',
-          hour: '庚子 시주 해석',
-        },
         ohengAnalysis: {
           distribution: '오행 분포 해석',
           johu: '가을 사주로 조후 필요성 낮음',
@@ -85,7 +78,6 @@ describe('M15 — 시스템 프롬프트 설계', () => {
       sections: {
         basics: { description: '...' },
         coreJudgment: { strengthReading: '...', gyeokGukReading: '...', yongSinReading: '...' },
-        pillarAnalysis: { year: '...', month: '...', day: '...', hour: null },
         ohengAnalysis: { distribution: '...', johu: '...' },
         sipseongAnalysis: { reading: '...' },
         relations: { reading: '...' },
@@ -107,11 +99,11 @@ describe('M15 — 2단계 Tool 정의', () => {
     expect(sajuCoreTool.input_schema.required).toContain('yongSinReading');
   });
 
-  it('Phase 2 interpretation tool: coreJudgment 제외', () => {
+  it('Phase 2 interpretation tool: coreJudgment·pillarAnalysis 제외', () => {
     const sectionKeys = Object.keys(sajuInterpretationTool.input_schema.properties.sections.properties);
     expect(sectionKeys).not.toContain('coreJudgment');
+    expect(sectionKeys).not.toContain('pillarAnalysis');
     expect(sectionKeys).toContain('basics');
-    expect(sectionKeys).toContain('pillarAnalysis');
     expect(sectionKeys).toContain('ohengAnalysis');
     expect(sectionKeys).toContain('overallReading');
   });
@@ -122,10 +114,9 @@ describe('M15 — 2단계 Tool 정의', () => {
     expect(daeun.anyOf.some((s: any) => s.type === 'null')).toBe(true);
   });
 
-  it('Phase 2: hour null 허용', () => {
-    const hour = sajuInterpretationTool.input_schema.properties.sections.properties.pillarAnalysis.properties.hour;
-    expect(hour.anyOf).toBeDefined();
-    expect(hour.anyOf.some((s: any) => s.type === 'null')).toBe(true);
+  it('Phase 2: daeunReading가 sections의 필수 필드이다', () => {
+    const required = sajuInterpretationTool.input_schema.properties.sections.required;
+    expect(required).toContain('daeunReading');
   });
 
   it('Phase 2: johu description에 궁통보감 포함', () => {

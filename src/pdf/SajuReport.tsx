@@ -29,9 +29,12 @@ import SolarSystemPage from './components/SolarSystemPage';
 // 본문 섹션
 import BasicsSection from './components/sections/BasicsSection';
 import CoreJudgmentSection from './components/sections/CoreJudgmentSection';
+import IlganDetailSection from './components/sections/IlganDetailSection';
 import PillarAnalysisSection from './components/sections/PillarAnalysisSection';
 import OhengAnalysisSection from './components/sections/OhengAnalysisSection';
+import OhengStatusSection from './components/sections/OhengStatusSection';
 import SipseongAnalysisSection from './components/sections/SipseongAnalysisSection';
+import SipseongDetailSection from './components/sections/SipseongDetailSection';
 import TwelveStagesSection from './components/sections/TwelveStagesSection';
 import RelationsSection from './components/sections/RelationsSection';
 import DaeunSection from './components/sections/DaeunSection';
@@ -97,22 +100,31 @@ export default function SajuReport({
           {/* 06. 핵심 판단 */}
           <CoreJudgmentSection sajuResult={sajuResult} interpretation={interpretation} />
 
+          {/* 06-b. 일간 상세 프로필 */}
+          <IlganDetailSection sajuResult={sajuResult} />
+
           {/* 07. 주별 심층 분석 */}
           <PillarAnalysisSection sajuResult={sajuResult} />
 
           {/* 08. 오행 분석 */}
           <OhengAnalysisSection sajuResult={sajuResult} interpretation={interpretation} />
 
+          {/* 08-b. 오행 상태 분석 (왕상휴수사 · 발달/과다/고립) */}
+          <OhengStatusSection sajuResult={sajuResult} />
+
           {/* 09. 십성 분석 */}
           <SipseongAnalysisSection sajuResult={sajuResult} interpretation={interpretation} />
 
-          {/* 09-b. 십이운성 분석 */}
+          {/* 09-b. 십성 상세 해설 */}
+          <SipseongDetailSection sajuResult={sajuResult} />
+
+          {/* 09-c. 십이운성 분석 */}
           <TwelveStagesSection sajuResult={sajuResult} />
 
           {/* 10. 형충파해합 · 신살 */}
           <RelationsSection sajuResult={sajuResult} interpretation={interpretation} />
 
-          {/* 11. 대운 흐름 */}
+          {/* 11. 대운 흐름 + 상세 */}
           {sajuResult.daeun && (
             <DaeunSection sajuResult={sajuResult} interpretation={interpretation} />
           )}

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-function authCheck(req: NextRequest): boolean {
-  const token = req.nextUrl.searchParams.get('token');
-  return token === process.env.ADMIN_TOKEN;
-}
+import { adminAuth } from '@/src/middleware/admin-auth';
 
 function getClient() {
   const url = process.env.SUPABASE_URL;
@@ -14,7 +10,7 @@ function getClient() {
 }
 
 export async function GET(req: NextRequest) {
-  if (!authCheck(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!adminAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const client = getClient();
   if (!client) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 500 });
@@ -47,7 +43,7 @@ export async function GET(req: NextRequest) {
 
 // 다운로드 URL 생성
 export async function POST(req: NextRequest) {
-  if (!authCheck(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!adminAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
 
   const client = getClient();
   if (!client) return NextResponse.json({ error: 'Supabase 미설정' }, { status: 500 });

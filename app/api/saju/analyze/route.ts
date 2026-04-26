@@ -18,7 +18,7 @@ export async function OPTIONS(request: NextRequest) {
 import { checkRateLimit } from '@/src/middleware/rate-limit';
 import { sanitizeSections } from '@/src/middleware/sanitize';
 import { getOrCreateSession, updateSession, hashInput, SESSION_COOKIE_NAME } from '@/src/middleware/session';
-import { tryAcquire, release, waitForSlot, getQueueLength } from '@/src/middleware/concurrency';
+import { release, waitForSlot } from '@/src/middleware/concurrency';
 
 const InputSchema = z.object({
   birthDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -67,9 +67,8 @@ export async function POST(request: NextRequest) {
     const session = getOrCreateSession(existingSessionId);
     const inputHash = hashInput(input);
 
-    // 캐시 히트: 동일 입력이면 재계산 스킵 (슬롯 즉시 반환)
+    // 캐시 히트: 동일 입력이면 재계산 스킵
     if (session.lastInputHash === inputHash && session.engine && session.core) {
-      release();
       const response = NextResponse.json({
         engine: session.engine,
         core: session.core,

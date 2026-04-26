@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-24
+최종 업데이트: 2026-04-25
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -34,6 +34,38 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 
 [클라이언트] 해석문 렌더링
 ```
+
+---
+
+## 2026-04-25 코드베이스 실구현 점검 메모
+
+> Claude와 병행 개발하며 기록 누락이 있었던 부분을 보완하기 위해, 로컬 코드베이스 기준으로 실제 구현 범위를 재확인함.
+
+### 확인 결과 요약
+
+- 문서상 큰 줄기는 대체로 맞지만, 실제 구현은 로드맵 상단 요약보다 더 진행되어 있음.
+- 현재 코드베이스에는 사주 엔진, LLM 게이트웨이, 웹 API, alt1/alt2 프론트엔드, PDF 리포트, 어드민, SQLite/Supabase 연동, GA4, 육효점(`/hyo`)까지 구현 흔적이 확인됨.
+- 부가 콘텐츠 페이지 `/contact`, `/faq`, `/guide/saju` 와 문의 API `/api/contact` 도 실제 존재함.
+
+### 로컬 검증 결과
+
+- `npm run build`:
+  - 2026-04-25 기준 로컬 빌드 성공.
+  - 단, Turbopack 경고 1건 존재: `next.config.ts` → `src/db/pdf-storage.ts` 경유 파일 추적으로 인해 NFT tracing 경고 발생.
+- `npm test -- --runInBand`:
+  - 22개 테스트 스위트 중 20개 통과, 2개 실패.
+  - 총 276개 테스트 중 272개 통과, 4개 실패.
+  - 실패 파일: `tests/prompts.test.ts`, `tests/gateway.test.ts`
+  - 실패 원인:
+    - 시스템 프롬프트 테스트가 예전 문구(`이석영`, `사주첩경`)를 기대하지만, 현재 구현은 "본문에 특정 학자명·서적명 직접 표기 금지" 방향으로 바뀌어 있음.
+    - Phase 2 tool 테스트가 `pillarAnalysis` 포함 구조를 기대하지만, 현재 `src/gateway/tools/saju_interpretation.ts`는 `pillarAnalysis` 제외 구조로 구현되어 있음.
+  - 즉, 현재 실패는 "기능 미구현"보다는 "테스트/문서와 현 구현의 불일치" 성격이 강함.
+
+### 특히 기억할 현재 상태
+
+- Phase 3 통변 확장은 아직 미완료.
+- 다만 `src/gateway/prompts/phase3-examples/04-core-judgment-sample.md` 예시 파일 1건은 이미 존재함.
+- 반면 `analyzePhase3()` 와 `src/gateway/prompts/phase3-system.ts` 는 아직 확인되지 않음.
 
 ---
 
@@ -260,6 +292,11 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] PDF 파이프라인 통합: Phase3 장문이 있으면 PDF에 장문 사용
 - [ ] 웹 파이프라인: Phase2 즉시 표시 → Phase3 도착 시 교체
 - [ ] 선행 조건: 사용자가 2~3개 섹션의 페어 예시(농축+장문) 제공
+
+실구현 점검 메모 (2026-04-25):
+- `src/gateway/prompts/phase3-examples/04-core-judgment-sample.md` 1건 존재
+- `analyzePhase3()` 미구현
+- `src/gateway/prompts/phase3-system.ts` 미존재
 
 ### M17.6. 번외편 — 연애운·금전운·사업운
 - [ ] Phase 2 출력 스키마 확장: `sections`에 번외편 3개 섹션 추가
