@@ -24,6 +24,23 @@ function renderMarkdown(md: string) {
     const trimmed = block.trim();
     if (!trimmed) return null;
 
+    // 이미지 ![alt](src)
+    const imgMatch = trimmed.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      return (
+        <div key={i} style={{ margin: '16px 0', textAlign: 'center' }}>
+          <img
+            src={imgMatch[2]}
+            alt={imgMatch[1]}
+            style={{ maxWidth: '100%', borderRadius: 8 }}
+          />
+          {imgMatch[1] && (
+            <div style={{ fontSize: 11, color: '#667', marginTop: 6 }}>{imgMatch[1]}</div>
+          )}
+        </div>
+      );
+    }
+
     if (trimmed.startsWith('### ')) {
       return (
         <h3 key={i} style={{
@@ -112,12 +129,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           padding: '20px 0 16px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <Link href="/blog" style={{ fontSize: 12, color: '#688097', textDecoration: 'none' }}>
+          <a href="/blog" target="_top" style={{ fontSize: 12, color: '#688097', textDecoration: 'none' }}>
             ← 서고로 돌아가기
-          </Link>
-          <Link href="/alt2" style={{ fontSize: 12, color: '#556', textDecoration: 'none' }}>
+          </a>
+          <a href="/" target="_top" style={{ fontSize: 12, color: '#556', textDecoration: 'none' }}>
             홈
-          </Link>
+          </a>
         </div>
 
         {/* 글 */}
@@ -164,7 +181,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
             <div style={{ fontSize: 12, color: '#889', marginBottom: 14, lineHeight: 1.6 }}>
               자네의 사주를 직접 풀어보게.
             </div>
-            <Link href="/alt2" style={{
+            <a href="/" target="_top" style={{
               display: 'inline-block',
               padding: '10px 28px',
               background: 'rgba(240,223,173,0.12)',
@@ -175,12 +192,12 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               textDecoration: 'none',
             }}>
               제3의시간 시작하기
-            </Link>
+            </a>
           </div>
 
           {/* 하단 네비게이션 */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 24 }}>
-            <Link href="/blog" style={{
+            <a href="/blog" target="_top" style={{
               padding: '8px 20px',
               border: '1px solid rgba(104,128,151,0.2)',
               borderRadius: 16,
@@ -189,8 +206,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               textDecoration: 'none',
             }}>
               ← 서고로 돌아가기
-            </Link>
-            <Link href="/" style={{
+            </a>
+            <a href="/" target="_top" style={{
               padding: '8px 20px',
               border: '1px solid rgba(104,128,151,0.15)',
               borderRadius: 16,
@@ -199,7 +216,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
               textDecoration: 'none',
             }}>
               메인으로
-            </Link>
+            </a>
           </div>
         </article>
       </div>

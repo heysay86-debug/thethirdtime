@@ -89,9 +89,19 @@ export async function POST(request: NextRequest) {
           input.question,
         );
 
+        // Phase 3: 쉬운 풀이 생성
+        let easyReadings = null;
+        try {
+          controller.enqueue(encoder.encode(`event: chunk\ndata: ${JSON.stringify({ text: '\n\n쉬운 풀이를 생성하고 있습니다...' })}\n\n`));
+          const phase3 = await gw.analyzePhase3(result.sections, input.engine);
+          easyReadings = phase3.easyReadings;
+        } catch (e) {
+          console.warn('[Phase3] 쉬운 풀이 생성 실패 (서비스 영향 없음):', e);
+        }
+
         // 완료: 섹션 전체 마스킹 후 전송
         const safeSections = sanitizeSections(result.sections);
-        const doneData = JSON.stringify({ sections: safeSections });
+        const doneData = JSON.stringify({ sections: safeSections, easyReadings });
         controller.enqueue(encoder.encode(`event: done\ndata: ${doneData}\n\n`));
         controller.close();
       } catch (error) {

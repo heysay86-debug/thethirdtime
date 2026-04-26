@@ -24,13 +24,16 @@ import { sajuInterpretationTool } from './tools/saju_interpretation';
 import { Phase2ResultSchema } from './prompts/schema';
 import { SajuResult } from '../engine/schema';
 import { buildChunkContext, type SajuContext } from './chunks';
+import { PHASE3_SYSTEM_PROMPT, PHASE3_TOOL } from './prompts/phase3-system';
 
 // ── 설정 ──
 
 const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
 const PHASE2_MODEL = 'claude-sonnet-4-5-20250929';
+const PHASE3_MODEL = 'claude-haiku-4-5-20251001'; // 빠르고 저렴
 const PHASE1_MAX_TOKENS = 1024;
 const PHASE2_MAX_TOKENS = 12000;
+const PHASE3_MAX_TOKENS = 4096;
 
 export interface GatewayOptions {
   model?: string;
@@ -69,6 +72,23 @@ export interface Phase2Response {
   usage: UsageInfo;
   elapsedMs: number;
   timeToFirstTokenMs: number;
+}
+
+// ── Phase 3 결과 타입 ──
+
+export interface EasyReadings {
+  basics: string;
+  ohengAnalysis: string;
+  sipseongAnalysis: string;
+  relations: string;
+  daeunReading?: string;
+  overallReading: string;
+}
+
+export interface Phase3Response {
+  easyReadings: EasyReadings;
+  usage: UsageInfo;
+  elapsedMs: number;
 }
 
 export interface UsageInfo {
@@ -324,6 +344,70 @@ export class SajuGateway {
     ];
     if (ttft !== undefined) parts.push(`ttft:${ttft}ms`);
     console.log(parts.join(' | '));
+  }
+
+  // ── Phase 3: 쉬운 풀이 확장 ──
+
+  async analyzePhase3(
+    phase2Sections: Phase2Sections,
+    sajuResult: SajuResult,
+  ): Promise<Phase3Response> {
+    const start = Date.now();
+
+    // Phase 2 해석 요약을 입력으로 전달
+    const sectionSummary = Object.entries(phase2Sections)
+      .filter(([_, v]) => v != null)
+      .map(([key, val]) => {
+        if (typeof val === 'string') return `[${key}] ${val}`;
+        if (typeof val === 'object') {
+          const texts = Object.values(val as Record<string, any>)
+            .filter(v => typeof v === 'string')
+            .join(' ');
+          return `[${key}] ${texts.slice(0, 500)}`;
+        }
+        return '';
+      })
+      .filter(Boolean)
+      .join('\n\n');
+
+    const dayGan = sajuResult.pillars.day.gan;
+    const gyeokGuk = sajuResult.gyeokGuk.type;
+    const yongSin = sajuResult.yongSin.final.primary;
+    const strength = sajuResult.strength.level;
+
+    const userMessage = [
+      `일간: ${dayGan}, 격국: ${gyeokGuk}, 용신: ${yongSin}, 신강약: ${strength}`,
+      '',
+      '아래는 Phase 2에서 작성된 전문적 해석문입니다. 각 섹션마다 쉬운 풀이를 작성해주세요.',
+      '',
+      sectionSummary,
+    ].join('\n');
+
+    const response = await this.client.messages.create({
+      model: PHASE3_MODEL,
+      max_tokens: PHASE3_MAX_TOKENS,
+      system: PHASE3_SYSTEM_PROMPT,
+      tools: [PHASE3_TOOL as any],
+      tool_choice: { type: 'tool' as const, name: 'submit_easy_reading' },
+      messages: [{ role: 'user', content: userMessage }],
+    });
+
+    const usage = extractUsage(response);
+    const elapsedMs = Date.now() - start;
+
+    // tool_use 결과 추출
+    const toolUse = response.content.find(
+      (block): block is Anthropic.ToolUseBlock => block.type === 'tool_use'
+    );
+
+    const easyReadings: EasyReadings = toolUse?.input as EasyReadings ?? {
+      basics: '', ohengAnalysis: '', sipseongAnalysis: '',
+      relations: '', overallReading: '',
+    };
+
+    console.log(`[Phase3] | ${elapsedMs}ms | in:${usage.inputTokens} | out:${usage.outputTokens}`);
+
+    return { easyReadings, usage, elapsedMs };
   }
 }
 

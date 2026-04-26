@@ -24,7 +24,7 @@ export default function AdminPage() {
   const [search, setSearch] = useState('');
   const [channelFilter, setChannelFilter] = useState('all');
   const [paidFilter, setPaidFilter] = useState<'all' | 'paid' | 'free'>('all');
-  const [activeTab, setActiveTab] = useState<'reports' | 'payments' | 'counter' | 'pdf' | 'cabinet'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'payments' | 'counter' | 'pdf' | 'cabinet' | 'inquiries'>('reports');
   const [payments, setPayments] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [counterSummary, setCounterSummary] = useState<any>(null);
@@ -36,6 +36,8 @@ export default function AdminPage() {
   const [pdfStatus, setPdfStatus] = useState('');
 
   // 캐비넷
+  const [inquiries, setInquiries] = useState<any[]>([]);
+  const [inquiryReply, setInquiryReply] = useState<Record<string, string>>({});
   const [cabinetFiles, setCabinetFiles] = useState<{ name: string; size: number; created: string }[]>([]);
   const [cabinetLoading, setCabinetLoading] = useState(false);
   const [cabinetSearch, setCabinetSearch] = useState('');
@@ -103,6 +105,31 @@ export default function AdminPage() {
       if (data.url) window.open(data.url, '_blank');
       else alert('다운로드 URL 생성 실패');
     } catch { alert('다운로드 실패'); }
+  };
+
+  const fetchInquiries = async () => {
+    try {
+      const res = await fetch('/api/contact');
+      if (!res.ok) return;
+      const data = await res.json();
+      setInquiries(data.inquiries || []);
+    } catch {}
+  };
+
+  const handleReply = async (id: string) => {
+    const reply = inquiryReply[id];
+    if (!reply?.trim()) return;
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, reply: reply.trim() }),
+      });
+      if (res.ok) {
+        setInquiryReply(prev => ({ ...prev, [id]: '' }));
+        fetchInquiries();
+      }
+    } catch {}
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -229,13 +256,14 @@ export default function AdminPage() {
 
       {/* 탭 */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16, borderBottom: '1px solid #333', paddingBottom: 8 }}>
-        {(['reports', 'payments', 'counter', 'pdf', 'cabinet'] as const).map(tab => (
+        {(['reports', 'payments', 'counter', 'pdf', 'cabinet', 'inquiries'] as const).map(tab => (
           <button key={tab} onClick={() => {
             setActiveTab(tab);
             if (tab === 'cabinet' && cabinetFiles.length === 0) fetchCabinet();
+            if (tab === 'inquiries' && inquiries.length === 0) fetchInquiries();
           }}
             style={{ ...S.btn, background: activeTab === tab ? '#f0dfad' : '#333', color: activeTab === tab ? '#1a1e24' : '#dde1e5', fontWeight: activeTab === tab ? 700 : 400 }}>
-            {tab === 'reports' ? `리포트 (${reports.length})` : tab === 'payments' ? `결제 (${payments.length})` : tab === 'counter' ? '카운터' : tab === 'pdf' ? 'PDF 생성' : '캐비넷'}
+            {tab === 'reports' ? `리포트 (${reports.length})` : tab === 'payments' ? `결제 (${payments.length})` : tab === 'counter' ? '카운터' : tab === 'pdf' ? 'PDF 생성' : tab === 'cabinet' ? '캐비넷' : '의뢰서'}
           </button>
         ))}
       </div>
@@ -431,6 +459,66 @@ export default function AdminPage() {
             >
               다음
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ 의뢰서 ═══ */}
+      {activeTab === 'inquiries' && (
+        <div>
+          <button onClick={fetchInquiries} style={S.btn}>새로고침</button>
+          <div style={{ marginTop: 12 }}>
+            {inquiries.length === 0 && (
+              <div style={{ color: '#556', padding: '20px 0', textAlign: 'center' }}>의뢰서 없음</div>
+            )}
+            {inquiries.map((inq: any) => (
+              <div key={inq.id} style={{
+                background: inq.status === 'done' ? '#1e2a1e' : '#252a31',
+                borderRadius: 8, padding: 14, marginBottom: 10,
+                border: `1px solid ${inq.status === 'done' ? '#2a4a2a' : '#333'}`,
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <span style={{ fontSize: 12, color: '#f0dfad', fontWeight: 600 }}>
+                    {inq.nickname || '익명'} {inq.email && <span style={{ color: '#889', fontWeight: 400 }}>({inq.email})</span>}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#556' }}>{inq.createdAt?.slice(0, 16).replace('T', ' ')}</span>
+                </div>
+                <div style={{ fontSize: 13, color: '#dde1e5', lineHeight: 1.6, marginBottom: 8, whiteSpace: 'pre-wrap' }}>
+                  {inq.message}
+                </div>
+                {inq.status === 'done' ? (
+                  <div style={{ background: 'rgba(46,204,113,0.08)', borderRadius: 6, padding: 10 }}>
+                    <div style={{ fontSize: 10, color: '#2ecc71', marginBottom: 4 }}>답변 완료 · {inq.repliedAt?.slice(0, 16).replace('T', ' ')}</div>
+                    <div style={{ fontSize: 12, color: '#ccc', whiteSpace: 'pre-wrap' }}>{inq.reply}</div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <textarea
+                      value={inquiryReply[inq.id] || ''}
+                      onChange={e => setInquiryReply(prev => ({ ...prev, [inq.id]: e.target.value }))}
+                      placeholder="답변 작성..."
+                      style={{
+                        flex: 1, padding: '8px 10px', fontSize: 12,
+                        background: '#1a1e24', border: '1px solid #444', borderRadius: 4,
+                        color: '#dde1e5', resize: 'vertical', minHeight: 40,
+                      }}
+                    />
+                    <button
+                      onClick={() => handleReply(inq.id)}
+                      disabled={!inquiryReply[inq.id]?.trim()}
+                      style={{
+                        ...S.btn,
+                        background: inquiryReply[inq.id]?.trim() ? '#f0dfad' : '#333',
+                        color: inquiryReply[inq.id]?.trim() ? '#1a1e24' : '#556',
+                        alignSelf: 'flex-end',
+                      }}
+                    >
+                      답변
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

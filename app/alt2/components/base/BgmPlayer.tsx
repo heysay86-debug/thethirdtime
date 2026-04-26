@@ -5,9 +5,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 interface BgmPlayerProps {
   show?: boolean;
   src?: string;
+  autoPlayFromMenu?: boolean; // 메뉴에서 BGM 켰으면 자동 재생
+  autoStart?: boolean; // 첫 방문 시 자동 시작 (메인 메뉴용)
 }
 
-export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }: BgmPlayerProps) {
+export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3', autoPlayFromMenu = false, autoStart = false }: BgmPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
@@ -17,7 +19,7 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }
   useEffect(() => {
     const audio = new Audio(src);
     audio.loop = true;
-    audio.volume = 0.08;
+    audio.volume = 0.055;
     audioRef.current = audio;
     return () => {
       audio.pause();
@@ -29,12 +31,46 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }
     playingRef.current = playing;
   }, [playing]);
 
-  // show가 true가 되면 3초 후 버튼 노출
+  // show가 true가 되면 버튼 노출 + 자동 재생 판단
   useEffect(() => {
     if (!show) return;
-    const t = setTimeout(() => setVisible(true), 3000);
+    const t = setTimeout(() => {
+      setVisible(true);
+      if (started) return;
+
+      try {
+        const bgmState = localStorage.getItem('thethirdtime_bgm');
+
+        // autoStart: 첫 방문(null) 또는 'on'이면 자동 재생, 'off'면 안 함
+        // autoPlayFromMenu: 'on'일 때만 자동 재생
+        const shouldPlay = autoStart
+          ? bgmState !== 'off'
+          : autoPlayFromMenu && bgmState === 'on';
+
+        if (shouldPlay && audioRef.current) {
+          audioRef.current.play().then(() => {
+            setPlaying(true);
+            setStarted(true);
+            localStorage.setItem('thethirdtime_bgm', 'on');
+          }).catch(() => {
+            // 자동재생 차단됨 — 첫 터치에 재생
+            if (autoStart) {
+              const startOnTouch = () => {
+                audioRef.current?.play().then(() => {
+                  setPlaying(true);
+                  setStarted(true);
+                  try { localStorage.setItem('thethirdtime_bgm', 'on'); } catch {}
+                }).catch(() => {});
+                document.removeEventListener('pointerdown', startOnTouch);
+              };
+              document.addEventListener('pointerdown', startOnTouch, { once: true });
+            }
+          });
+        }
+      } catch {}
+    }, autoStart ? 500 : 3000);
     return () => clearTimeout(t);
-  }, [show]);
+  }, [show, autoPlayFromMenu, autoStart, started]);
 
   useEffect(() => {
     const handleVisibility = () => {
@@ -54,6 +90,7 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }
     if (playing) {
       audioRef.current.pause();
       setPlaying(false);
+      try { localStorage.setItem('thethirdtime_bgm', 'off'); } catch {}
     } else {
       // 모바일: 클릭 시 로드+재생 동시 시도
       const playPromise = audioRef.current.play();
@@ -62,6 +99,7 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3' }
           .then(() => {
             setPlaying(true);
             setStarted(true);
+            try { localStorage.setItem('thethirdtime_bgm', 'on'); } catch {}
           })
           .catch(() => {
             // 로딩 안 됐으면 로드 후 재시도

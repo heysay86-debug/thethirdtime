@@ -26,6 +26,9 @@ import PrefacePage from './components/PrefacePage';
 import ClosingPage from './components/ClosingPage';
 import SolarSystemPage from './components/SolarSystemPage';
 
+// 쉬운 풀이
+import EasyReadingBox from './components/EasyReadingBox';
+
 // 본문 섹션
 import BasicsSection from './components/sections/BasicsSection';
 import CoreJudgmentSection from './components/sections/CoreJudgmentSection';
@@ -58,6 +61,8 @@ export interface SajuReportProps {
   interpretation?: InterpretationResult | null;
   /** 리포트 번호 (예: T3-00-260418-A0010005) */
   reportNo?: string | null;
+  /** Phase 3 쉬운 풀이 (없으면 생략) */
+  easyReadings?: Record<string, string> | null;
 }
 
 export default function SajuReport({
@@ -69,6 +74,7 @@ export default function SajuReport({
   sajuResult = null,
   interpretation = null,
   reportNo = null,
+  easyReadings = null,
 }: SajuReportProps) {
   const hasBody = sajuResult != null && interpretation != null;
 

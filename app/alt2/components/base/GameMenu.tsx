@@ -21,6 +21,11 @@ function renderMarkdown(md: string) {
   const blocks = md.split('\n\n');
   return blocks.map((block, i) => {
     const t = block.trim();
+    // 이미지
+    const imgMatch = t.match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
+    if (imgMatch) {
+      return <div key={i} style={{ margin: '12px 0', textAlign: 'center' }}><img src={imgMatch[2]} alt={imgMatch[1]} style={{ maxWidth: '100%', borderRadius: 8 }} />{imgMatch[1] && <div style={{ fontSize: 10, color: '#667', marginTop: 4 }}>{imgMatch[1]}</div>}</div>;
+    }
     if (!t) return null;
     if (t.startsWith('## ')) {
       return <h2 key={i} style={{ fontSize: 15, fontWeight: 700, color: '#f0dfad', marginTop: i > 0 ? 20 : 0, marginBottom: 6, borderBottom: '1px solid rgba(240,223,173,0.15)', paddingBottom: 4 }}>{t.replace(/^##\s*/, '')}</h2>;
@@ -40,7 +45,8 @@ function renderMarkdown(md: string) {
 
 export default function GameMenu() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [overlay, setOverlay] = useState<'none' | 'blog' | 'faq' | 'contact'>('none');
+  const [overlay, setOverlay] = useState<'none' | 'blog' | 'iframe'>('none');
+  const [iframeUrl, setIframeUrl] = useState('');
   const [posts, setPosts] = useState<PostSummary[]>([]);
   const [page, setPage] = useState(0);
   const [selectedPost, setSelectedPost] = useState<PostFull | null>(null);
@@ -80,6 +86,13 @@ export default function GameMenu() {
   const closeOverlay = () => {
     setOverlay('none');
     setSelectedPost(null);
+    setIframeUrl('');
+  };
+
+  const openIframe = (url: string) => {
+    setMenuOpen(false);
+    setIframeUrl(url);
+    setOverlay('iframe');
   };
 
   const totalPages = Math.ceil(posts.length / PER_PAGE);
@@ -119,11 +132,11 @@ export default function GameMenu() {
           }}>
             <button onClick={openBlog} style={menuItemStyle}>복길의 서고</button>
             <a href="/hyo" style={menuItemStyle}>육효점</a>
-            <a href="/faq" style={menuItemStyle}>자주 묻는 질문</a>
-            <a href="/contact" style={menuItemStyle}>문의하기</a>
+            <button onClick={() => openIframe('/faq')} style={menuItemStyle}>자주 묻는 질문</button>
+            <button onClick={() => openIframe('/contact')} style={menuItemStyle}>문의하기</button>
             <div style={{ height: 1, background: 'rgba(104,128,151,0.2)', margin: '4px 12px' }} />
-            <a href="/terms" style={{ ...menuItemStyle, fontSize: 11, color: '#667' }}>이용약관</a>
-            <a href="/privacy" style={{ ...menuItemStyle, fontSize: 11, color: '#667' }}>개인정보처리방침</a>
+            <button onClick={() => openIframe('/terms')} style={{ ...menuItemStyle, fontSize: 11, color: '#667' }}>이용약관</button>
+            <button onClick={() => openIframe('/privacy')} style={{ ...menuItemStyle, fontSize: 11, color: '#667' }}>개인정보처리방침</button>
           </div>
         </>
       )}
@@ -179,10 +192,10 @@ export default function GameMenu() {
             ) : (
               /* ─── 글 목록 ─── */
               <>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, textDecoration: 'none' }}>
                   <img src="/icon/logo.svg" alt="" style={{ height: 18, opacity: 0.5 }} />
                   <span style={{ fontSize: 14, color: '#f0dfad', letterSpacing: 1 }}>복길의 서고</span>
-                </div>
+                </a>
 
                 {loading && <div style={{ textAlign: 'center', padding: '40px 0', color: '#889' }}>불러오는 중...</div>}
 
@@ -232,6 +245,42 @@ export default function GameMenu() {
                 )}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ iframe 오버레이 (FAQ/문의/약관/개인정보) ═══ */}
+      {overlay === 'iframe' && iframeUrl && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 70,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+          display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+        }}>
+          <div style={{
+            width: '100%', maxWidth: 440,
+            margin: '40px 16px', height: 'calc(100vh - 80px)',
+            background: '#1e2329',
+            border: '1px solid rgba(240,223,173,0.15)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            position: 'relative',
+          }}>
+            <button onClick={closeOverlay} style={{
+              position: 'absolute', top: 12, right: 12, zIndex: 2,
+              background: 'rgba(26,30,36,0.8)', border: 'none', color: '#889',
+              fontSize: 18, cursor: 'pointer', lineHeight: 1,
+              width: 32, height: 32, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              ✕
+            </button>
+            <iframe
+              src={iframeUrl}
+              style={{
+                width: '100%', height: '100%', border: 'none',
+                background: '#1a1e24',
+              }}
+            />
           </div>
         </div>
       )}

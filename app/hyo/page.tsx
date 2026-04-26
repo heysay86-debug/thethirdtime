@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { performSambyeon, getGuaName, type YaoResult } from '@/src/hyo/sicho';
 import { trackEvent } from '@/src/analytics';
 import { STAGES, START_POS, ALTAR_POS } from '@/src/hyo/stages';
@@ -9,7 +9,7 @@ import { interpretCast, type GuaInterpretation, type YaoInterpretation } from '@
 import { getGuaPalace, getPalaceLabel, liuqinKorean, type GuaPalaceInfo } from '@/src/hyo/gua-palace';
 import { generateTraditionalReading } from '@/src/hyo/gua-reading';
 
-type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'complete';
+type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'complete';
 
 // 픽셀 도트 1개
 function Dot({ color, glow }: { color: string; glow?: boolean }) {
@@ -528,6 +528,15 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
 export default function HyoPage() {
   const [stageIndex, setStageIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('entrance');
+  const [blocked, setBlocked] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('thethirdtime_ch1_clear') === 'true') {
+        setBlocked(false);
+      }
+    } catch {}
+  }, []);
   const [entranceStep, setEntranceStep] = useState(0);
   const [yaos, setYaos] = useState<YaoResult[]>([]);
   const [currentByeon, setCurrentByeon] = useState(0); // 0~2 (삼변)
@@ -597,8 +606,7 @@ export default function HyoPage() {
       });
     } else {
       setCharPos(ALTAR_POS);
-      setGameComplete(true);
-      setPhase('complete');
+      setPhase('incantation');
       trackEvent('hyo_complete');
     }
   }, [stageIndex]);
@@ -612,6 +620,31 @@ export default function HyoPage() {
   // 괘 해석
   const castResult = gameComplete ? interpretCast(yaos) : null;
 
+  if (blocked) {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#1a1e24', color: '#dde1e5',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        fontFamily: '"Pretendard Variable", sans-serif', padding: '40px 20px', textAlign: 'center',
+      }}>
+        <div style={{ fontSize: 14, color: '#f0dfad', marginBottom: 12 }}>
+          이전 챕터를 먼저 완료해야 합니다
+        </div>
+        <div style={{ fontSize: 12, color: '#889', marginBottom: 24, lineHeight: 1.6 }}>
+          사주풀이를 먼저 진행해주세요.
+        </div>
+        <a href="/" style={{
+          padding: '10px 24px',
+          background: 'rgba(240,223,173,0.1)',
+          border: '1px solid rgba(240,223,173,0.3)',
+          borderRadius: 20, color: '#f0dfad', fontSize: 13, textDecoration: 'none',
+        }}>
+          메인으로 돌아가기
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -623,7 +656,7 @@ export default function HyoPage() {
       maxWidth: 440,
       margin: '0 auto',
     }}>
-      <BgmPlayer show src="/bgm/hyo.mp3" />
+      <BgmPlayer show src="/bgm/hyo.mp3" autoPlayFromMenu />
 
       {/* 배경 맵 + 캐릭터 */}
       <div style={{
@@ -909,6 +942,80 @@ export default function HyoPage() {
         </div>
         </div>
       )}
+
+      {/* ═══ 주문 섹션 (incantation) ═══ */}
+      {phase === 'incantation' && (() => {
+        // localStorage에서 유저 정보 가져오기
+        let userInfo = { name: '여행자', birthDate: '', gender: '' };
+        try {
+          const stored = localStorage.getItem('thethirdtime_user');
+          if (stored) userInfo = JSON.parse(stored);
+        } catch {}
+
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
+        const hourStr = `${now.getHours()}시`;
+        const birthParts = userInfo.birthDate ? userInfo.birthDate.split('-') : [];
+        const birthStr = birthParts.length === 3
+          ? `${birthParts[0]}년 ${parseInt(birthParts[1])}월 ${parseInt(birthParts[2])}일`
+          : '';
+        const sunMoon = userInfo.gender === 'F' ? '달' : '태양';
+
+        const incantationText = birthStr
+          ? `${sunMoon}의 기운을 받아\n${birthStr} 태어난 ${userInfo.name}이\n${todayStr} ${hourStr}\n천지신명의 밝은 가르침을 구하오니\n길을 열어주소서`
+          : `천지신명의 밝은 가르침을 구하오니\n${todayStr} ${hourStr}\n${userInfo.name}에게 길을 열어주소서`;
+
+        return (
+          <div
+            className="fixed inset-0 flex flex-col items-center justify-center"
+            style={{ zIndex: 10, background: 'rgba(0,0,0,0.7)' }}
+          >
+            <div style={{
+              maxWidth: 340, padding: '32px 24px',
+              textAlign: 'center',
+            }}>
+              <div style={{
+                fontSize: 11, color: '#f0dfad', letterSpacing: 3, marginBottom: 20,
+              }}>
+                주문
+              </div>
+              <div style={{
+                fontSize: 16, lineHeight: 2.2, color: '#dde1e5',
+                fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+                whiteSpace: 'pre-wrap',
+                animation: 'fade-in-slow 2s ease',
+              }}>
+                {incantationText}
+              </div>
+              <button
+                onClick={() => {
+                  setGameComplete(true);
+                  setPhase('complete');
+                }}
+                style={{
+                  marginTop: 32,
+                  padding: '10px 28px',
+                  background: 'rgba(240,223,173,0.1)',
+                  border: '1px solid rgba(240,223,173,0.3)',
+                  borderRadius: 20,
+                  color: '#f0dfad',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  animation: 'fade-in-slow 3s ease',
+                }}
+              >
+                괘를 열다
+              </button>
+            </div>
+            <style>{`
+              @keyframes fade-in-slow {
+                from { opacity: 0; }
+                to { opacity: 1; }
+              }
+            `}</style>
+          </div>
+        );
+      })()}
 
       {/* ═══ 결과 섹션 (complete) ═══ */}
       {phase === 'complete' && guaInfo && castResult && (

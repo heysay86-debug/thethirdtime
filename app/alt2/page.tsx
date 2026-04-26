@@ -30,7 +30,7 @@ import CtaButton from './components/upsell/CtaButton';
 import type { DialogueLine } from './components/base/DialogueBox';
 import { getCurrentPrices } from './utils/pricing';
 
-type Phase = 'opening' | 'dialogue' | 'transition' | 'result';
+type Phase = 'opening' | 'returning_check' | 'dialogue' | 'transition' | 'result';
 type TransitionPhase = 'idle' | 'zoom-out' | 'loading' | 'zoom-in' | 'done';
 
 function delay(ms: number) { return new Promise(r => setTimeout(r, ms)); }
@@ -85,6 +85,7 @@ export default function Alt2Page() {
   const [pdfProgress, setPdfProgress] = useState<'idle' | 'generating' | 'done' | 'error'>('idle');
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [resultSaved, setResultSaved] = useState(false);
+  const [returningStep, setReturningStep] = useState(0);
   const daeunSeunRef = useRef<HTMLDivElement>(null);
   const [introScript, setIntroScript] = useState<DialogueLine[]>([]);
   const [introInputFlow, setIntroInputFlow] = useState<DialogueLine[]>([]);
@@ -116,9 +117,10 @@ export default function Alt2Page() {
     const t3 = setTimeout(() => setPillarsOpen(true), 3350);
     const t4 = setTimeout(() => {
       setLogoVisible(false);
-      setPhase('dialogue');
+      setPhase('returning_check');
       trackEvent('opening_start');
     }, 5050);
+    // returning_check: 첫 대사 "누군가 오는군" 표시 후 분기 선택지
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [phase]);
 
@@ -228,7 +230,14 @@ export default function Alt2Page() {
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
       trackEvent('result_view');
-      try { localStorage.setItem('thethirdtime_ch1_clear', 'true'); } catch {}
+      try {
+        localStorage.setItem('thethirdtime_ch1_clear', 'true');
+        localStorage.setItem('thethirdtime_user', JSON.stringify({
+          name: userName || '여행자',
+          birthDate: data.engine?.birth?.solar || '',
+          gender: data.engine?.input?.gender || '',
+        }));
+      } catch {}
     } catch (e: any) {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
@@ -285,7 +294,14 @@ export default function Alt2Page() {
       setTransitionPhase('idle');
       window.scrollTo({ top: 0 });
       trackEvent('result_view', { is_redo: true });
-      try { localStorage.setItem('thethirdtime_ch1_clear', 'true'); } catch {}
+      try {
+        localStorage.setItem('thethirdtime_ch1_clear', 'true');
+        localStorage.setItem('thethirdtime_user', JSON.stringify({
+          name: userName || '여행자',
+          birthDate: data.engine?.birth?.solar || '',
+          gender: data.engine?.input?.gender || '',
+        }));
+      } catch {}
     } catch {
       alert('분석 중 오류가 발생했습니다. 다시 시도해주세요.');
       setPhase('dialogue');
@@ -339,8 +355,8 @@ export default function Alt2Page() {
       <PdfLoadingOverlay visible={pdfProgress !== 'idle'} progress={pdfProgress as any} />
       {/* Pillar Frame — always visible */}
       <PillarFrame isOpen={pillarsOpen} />
-      <BgmPlayer show={phase !== 'opening'} />
-      {phase !== 'opening' && <GameMenu />}
+      <BgmPlayer show={phase !== 'opening'} autoPlayFromMenu />
+      {phase !== 'opening' && phase !== 'returning_check' && <GameMenu />}
 
       {/* Opening: logo */}
       {phase === 'opening' && (
@@ -565,6 +581,111 @@ export default function Alt2Page() {
           />
         </div>
       )}
+
+      {/* 재방문 확인: "누군가 오는군" → 분기 선택 */}
+      {phase === 'returning_check' && (() => {
+        const [step, setStep] = [returningStep, setReturningStep];
+        return (
+          <div
+            className="fixed inset-0 flex flex-col justify-end"
+            style={{ zIndex: 10 }}
+          >
+            <div className="flex-1" onClick={() => { if (step === 0) setReturningStep(1); }} />
+            <div style={{
+              width: '100%', maxWidth: 440, margin: '0 auto',
+              paddingLeft: 38, paddingRight: 38,
+              paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            }}>
+              <div
+                style={{
+                  background: 'rgba(20, 25, 35, 0.92)',
+                  border: '2px solid #556677',
+                  padding: '14px 16px',
+                  cursor: step === 0 ? 'pointer' : 'default',
+                }}
+                onClick={() => { if (step === 0) setReturningStep(1); }}
+              >
+                {step === 0 && (
+                  <>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#f0dfad', marginBottom: 6 }}>???</div>
+                        <div style={{
+                          fontSize: 18, lineHeight: 1.6, color: '#dde1e5',
+                          fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+                        }}>
+                          ......누군가 오는군.
+                        </div>
+                      </div>
+                      <div style={{ flexShrink: 0, width: 72, height: 72, overflow: 'hidden' }}>
+                        <img src="/character/normal.svg" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)',
+                      color: '#f0dfad', fontSize: 12,
+                      animation: 'indicator-bounce 1s ease-in-out infinite',
+                    }}>▼</div>
+                  </>
+                )}
+                {step === 1 && (
+                  <>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#f0dfad', marginBottom: 6 }}>???</div>
+                        <div style={{
+                          fontSize: 18, lineHeight: 1.6, color: '#dde1e5',
+                          fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+                        }}>
+                          이전에 여기 와 본 적이 있나?
+                        </div>
+                      </div>
+                      <div style={{ flexShrink: 0, width: 72, height: 72, overflow: 'hidden' }}>
+                        <img src="/character/speak.svg" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button
+                        onClick={() => {
+                          setIsRedo(true);
+                          setRedoKey(prev => prev + 1);
+                          setPhase('dialogue');
+                        }}
+                        style={{
+                          flex: 1, padding: '10px',
+                          background: 'rgba(240,223,173,0.1)',
+                          border: '1px solid rgba(240,223,173,0.3)',
+                          borderRadius: 8, color: '#f0dfad',
+                          fontSize: 14, cursor: 'pointer',
+                          fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+                        }}
+                      >
+                        응, 와 봤어
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsRedo(false);
+                          setPhase('dialogue');
+                        }}
+                        style={{
+                          flex: 1, padding: '10px',
+                          background: 'rgba(104,128,151,0.1)',
+                          border: '1px solid rgba(104,128,151,0.2)',
+                          borderRadius: 8, color: '#dde1e5',
+                          fontSize: 14, cursor: 'pointer',
+                          fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+                        }}
+                      >
+                        아니, 처음이야
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ZONE A: RPG Dialogue */}
       {phase === 'dialogue' && (isRedo ? redoScript.length > 0 : introScript.length > 0) && (

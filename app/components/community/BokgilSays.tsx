@@ -59,7 +59,7 @@ export default function BokgilSays({ text }: BokgilSaysProps) {
           </div>
           <div
             style={{
-              fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+              fontFamily: '"Gaegu", cursive',
               fontSize: 17,
               color: '#dde1e5',
               lineHeight: 1.6,
@@ -70,7 +70,7 @@ export default function BokgilSays({ text }: BokgilSaysProps) {
           </div>
         </div>
         <img
-          src="/character/bokgil.svg"
+          src="/character/speak.svg"
           alt="복길"
           style={{
             width: 64,

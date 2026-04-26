@@ -18,33 +18,46 @@ export default function PageShell({ title, children }: PageShellProps) {
         alignItems: 'center',
       }}
     >
-      {/* Top bar */}
+      {/* Top bar — 복길의 서고와 동일 사이즈 */}
       <header
         style={{
           width: '100%',
           maxWidth: 440,
-          padding: '16px 20px 12px',
+          padding: '20px 20px 16px',
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: 10,
         }}
       >
-        <img
-          src="/icon/logo.svg"
-          alt="제3의시간"
-          style={{ width: 28, height: 28, opacity: 0.85 }}
-        />
-        <span
+        <a href="/" target="_top" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <img
+            src="/icon/logo.svg"
+            alt="제3의시간"
+            style={{ height: 20, opacity: 0.6 }}
+          />
+          <span
+            style={{
+              fontFamily: '"Pretendard Variable", "Pretendard", sans-serif',
+              fontSize: 14,
+              color: '#f0dfad',
+              letterSpacing: 1,
+            }}
+          >
+            {title}
+          </span>
+        </a>
+        <a
+          href="/"
+          target="_top"
           style={{
             fontFamily: '"Pretendard Variable", "Pretendard", sans-serif',
-            fontSize: 15,
-            fontWeight: 600,
-            color: '#c8cdd3',
-            letterSpacing: -0.3,
+            fontSize: 12,
+            color: '#688097',
+            textDecoration: 'none',
           }}
         >
-          {title}
-        </span>
+          메인으로
+        </a>
       </header>
 
       {/* Main content area */}
@@ -74,11 +87,12 @@ export default function PageShell({ title, children }: PageShellProps) {
         {[
           { label: '이용약관', href: '/terms' },
           { label: '개인정보처리방침', href: '/privacy' },
-          { label: '홈으로', href: '/alt2' },
+          { label: '메인으로', href: '/' },
         ].map((link, i) => (
           <a
             key={i}
             href={link.href}
+            target="_top"
             style={{
               fontFamily: '"Pretendard Variable", "Pretendard", sans-serif',
               fontSize: 12,

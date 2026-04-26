@@ -41,13 +41,13 @@ export default function BlogListPage() {
           padding: '20px 0 16px',
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <a href="/" target="_top" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <img src="/icon/logo.svg" alt="제3의시간" style={{ height: 20, opacity: 0.6 }} />
             <span style={{ fontSize: 14, color: '#f0dfad', letterSpacing: 1 }}>복길의 서고</span>
-          </div>
-          <Link href="/" style={{ fontSize: 12, color: '#688097', textDecoration: 'none' }}>
+          </a>
+          <a href="/" target="_top" style={{ fontSize: 12, color: '#688097', textDecoration: 'none' }}>
             메인으로
-          </Link>
+          </a>
         </div>
 
         {/* 소개 */}
@@ -80,7 +80,7 @@ export default function BlogListPage() {
             </div>
           )}
           {pagedPosts.map(post => (
-            <Link key={post.slug} href={`/blog/${post.slug}`} style={{ textDecoration: 'none' }}>
+            <a key={post.slug} href={`/blog/${post.slug}`} target="_top" style={{ textDecoration: 'none' }}>
               <div style={{
                 padding: '14px 16px',
                 background: 'rgba(26,30,36,0.9)',
@@ -114,7 +114,7 @@ export default function BlogListPage() {
                   </div>
                 )}
               </div>
-            </Link>
+            </a>
           ))}
         </div>
 
@@ -154,7 +154,7 @@ export default function BlogListPage() {
           <div style={{ fontSize: 12, color: '#889', marginBottom: 14, lineHeight: 1.6 }}>
             자네의 사주를 직접 풀어보게.
           </div>
-          <Link href="/alt2" style={{
+          <a href="/" target="_top" style={{
             display: 'inline-block',
             padding: '10px 28px',
             background: 'rgba(240,223,173,0.12)',
@@ -165,12 +165,12 @@ export default function BlogListPage() {
             textDecoration: 'none',
           }}>
             제3의시간 시작하기
-          </Link>
+          </a>
         </div>
 
         {/* 하단 돌아가기 */}
         <div style={{ textAlign: 'center', padding: '24px 0 16px' }}>
-          <Link href="/" style={{
+          <a href="/" target="_top" style={{
             display: 'inline-block',
             padding: '8px 20px',
             border: '1px solid rgba(104,128,151,0.2)',
@@ -180,17 +180,17 @@ export default function BlogListPage() {
             textDecoration: 'none',
           }}>
             ← 메인으로 돌아가기
-          </Link>
+          </a>
         </div>
 
         {/* 푸터 */}
         <div style={{ textAlign: 'center', padding: '12px 0 40px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <Link href="/" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>메인</Link>
-            <Link href="/faq" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>FAQ</Link>
-            <Link href="/contact" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>문의</Link>
-            <Link href="/terms" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>이용약관</Link>
-            <Link href="/privacy" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>개인정보</Link>
+            <a href="/" target="_top" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>메인</a>
+            <a href="/faq" target="_top" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>FAQ</a>
+            <a href="/contact" target="_top" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>문의</a>
+            <a href="/terms" target="_top" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>이용약관</a>
+            <a href="/privacy" target="_top" style={{ fontSize: 11, color: '#556', textDecoration: 'none' }}>개인정보</a>
           </div>
         </div>
       </div>

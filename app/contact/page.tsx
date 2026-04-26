@@ -85,7 +85,7 @@ export default function ContactPage() {
           </div>
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <a
-              href="/alt2"
+              href="/" target="_top"
               style={{
                 fontFamily: '"Pretendard Variable", "Pretendard", sans-serif',
                 fontSize: 14,

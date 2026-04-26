@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { engine, core, sections, userName = '분석 대상자', reportNo = null } = body;
+    const { engine, core, sections, easyReadings = null, userName = '분석 대상자', reportNo = null } = body;
 
     if (!engine || !core) {
       return NextResponse.json(
@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         gender: engine.gender === 'F' ? '여' : '남',
         sajuResult: engine,
         interpretation,
+        easyReadings,
         reportNo,
       }) as any
     );
