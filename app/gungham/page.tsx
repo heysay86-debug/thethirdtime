@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import BgmPlayer from '@/app/alt2/components/base/BgmPlayer';
 
 // ─── 타입 ───────────────────────────────────────────────────
 
@@ -10,6 +11,7 @@ type Phase =
   | 'input_self'
   | 'input_other'
   | 'input_third'
+  | 'cast'
   | 'analyzing'
   | 'result_data'
   | 'perspective_questions'
@@ -84,7 +86,11 @@ export default function GunghamPage() {
   const [perspectiveResult, setPerspectiveResult] = useState<any>(null);
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [perspectiveQuestions, setPerspectiveQuestions] = useState<any[]>([]);
+  const [castStep, setCastStep] = useState(0); // 0=back, 1=right, 2=summon
+  const [castFade, setCastFade] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [fromSaju, setFromSaju] = useState(false);
 
   // localStorage에서 본인 정보 자동 채움
   useEffect(() => {
@@ -102,6 +108,10 @@ export default function GunghamPage() {
         }));
       }
     } catch { /* ignore */ }
+    // ?from=saju일 때 표시
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'saju') {
+      setFromSaju(true);
+    }
   }, []);
 
   const scrollToBottom = useCallback(() => {
@@ -110,8 +120,22 @@ export default function GunghamPage() {
     }, 100);
   }, []);
 
-  // ── 분석 실행 ──
-  const runAnalysis = useCallback(async () => {
+  // ── cast 시퀀스 + 분석 실행 ──
+  const startCastAndAnalyze = useCallback(async () => {
+    // cast 시퀀스
+    setCastStep(0);
+    setCastFade(true);
+    setPhase('cast');
+    await delay(1000); // angel_back 디졸브 in + 유지
+
+    setCastFade(false);
+    setCastStep(1); // angel_right
+    await delay(500);
+
+    setCastStep(2); // angel_summon
+    await delay(500);
+
+    // 플래시 + 분석
     setPhase('analyzing');
     setError(null);
 
@@ -193,6 +217,9 @@ export default function GunghamPage() {
     setPhase('result_final');
   }, [result, relationType, has3rd]);
 
+  const isResultPhase = phase === 'result_data' || phase === 'perspective_questions' || phase === 'result_final';
+  const bgImage = isResultPhase ? '/background/mirror_after.jpeg' : '/background/mirror.jpeg';
+
   // ── 렌더링 ──
   return (
     <div
@@ -203,14 +230,135 @@ export default function GunghamPage() {
         color: '#dde1e5',
         fontFamily: '"Pretendard Variable", sans-serif',
         overflowY: 'auto',
+        position: 'relative',
+        maxWidth: 440,
+        margin: '0 auto',
+        overflow: 'hidden',
       }}
     >
       <link href="https://fonts.googleapis.com/css2?family=Gaegu&display=swap" rel="stylesheet" />
+      <BgmPlayer show src="/bgm/memorialfield.mp3" autoPlayFromMenu />
+
+      {/* 배경 맵 + 캐릭터 */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', height: '100%', maxWidth: 440, width: '100%' }}>
+          <img
+            src={bgImage}
+            alt=""
+            style={{
+              height: '100%', width: '100%',
+              objectFit: 'cover', opacity: 0.3,
+              transition: 'opacity 0.8s ease',
+            }}
+          />
+          {/* 복길 캐릭터 — 거울 위 하늘 */}
+          {phase === 'cast' ? (
+            <div style={{
+              position: 'absolute',
+              top: '22%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }}>
+              {/* sparkle 이펙트 */}
+              <div style={{
+                position: 'absolute',
+                inset: '-30px',
+                pointerEvents: 'none',
+              }}>
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} style={{
+                    position: 'absolute',
+                    width: 4, height: 4,
+                    backgroundColor: '#f0dfad',
+                    borderRadius: '50%',
+                    boxShadow: '0 0 6px #f0dfad, 0 0 12px rgba(240,223,173,0.5)',
+                    left: `${20 + Math.cos(i * Math.PI / 4) * 45}%`,
+                    top: `${20 + Math.sin(i * Math.PI / 4) * 45}%`,
+                    animation: `sparkle-${i % 3} ${1 + (i % 3) * 0.3}s ease-in-out infinite`,
+                    animationDelay: `${i * 0.15}s`,
+                  }} />
+                ))}
+              </div>
+              <img
+                src={['/character/angel_back.png', '/character/angel_right.png', '/character/angel_summon.png'][castStep]}
+                alt="복길"
+                style={{
+                  height: '14vh',
+                  width: 'auto',
+                  imageRendering: 'pixelated',
+                  filter: 'drop-shadow(0 0 20px rgba(240,223,173,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.5))',
+                  opacity: castFade ? 0 : 1,
+                  animation: castFade ? 'cast-fade-in 0.5s ease forwards' : undefined,
+                }}
+              />
+            </div>
+          ) : (
+            <img
+              src="/character/angel_dot.png"
+              alt="복길"
+              style={{
+                position: 'absolute',
+                top: '25%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                height: '5vh',
+                width: 'auto',
+                imageRendering: 'pixelated',
+                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
+                animation: 'float-gentle 2s ease-in-out infinite',
+                opacity: 0.85,
+              }}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* 화면전환 플래시 */}
+      {phase === 'analyzing' && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          background: 'rgba(240, 223, 173, 0.5)',
+          animation: 'gungham-flash 1.5s ease-in-out',
+          pointerEvents: 'none',
+        }} />
+      )}
+      <style>{`
+        @keyframes gungham-flash {
+          0% { opacity: 0; }
+          40% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes bounce-gentle {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-4px); }
+        }
+        @keyframes cast-fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes float-gentle {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-6px); }
+        }
+        @keyframes sparkle-0 {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.8); }
+        }
+        @keyframes sparkle-1 {
+          0%, 100% { opacity: 0.5; transform: scale(1.2); }
+          50% { opacity: 0.2; transform: scale(0.6); }
+        }
+        @keyframes sparkle-2 {
+          0%, 100% { opacity: 0.2; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.5); }
+        }
+      `}</style>
 
       <div style={{
         maxWidth: 440, margin: '0 auto',
         padding: '24px 20px 80px',
         display: 'flex', flexDirection: 'column', gap: 20,
+        position: 'relative', zIndex: 1,
       }}>
         {/* 헤더 */}
         <div style={{ textAlign: 'center', paddingTop: 16 }}>
@@ -245,7 +393,11 @@ export default function GunghamPage() {
           <RelationSelectSection
             onSelect={(rt) => {
               setRelationType(rt);
-              setPhase('input_self');
+              if (fromSaju && selfInfo.name && selfInfo.birthDate) {
+                setPhase('input_other');
+              } else {
+                setPhase('input_self');
+              }
             }}
           />
         )}
@@ -274,7 +426,7 @@ export default function GunghamPage() {
                 if (has3rd) {
                   setPhase('input_third');
                 } else {
-                  runAnalysis();
+                  startCastAndAnalyze();
                 }
               }}
               onBack={() => setPhase('input_self')}
@@ -310,7 +462,7 @@ export default function GunghamPage() {
             subtitle="3인 관계 분석"
             info={thirdInfo}
             onChange={setThirdInfo}
-            onNext={runAnalysis}
+            onNext={startCastAndAnalyze}
             onBack={() => setPhase('input_other')}
           />
         )}
@@ -437,21 +589,24 @@ function BokgilMessage({ text }: { text: string }) {
       display: 'flex', gap: 12, alignItems: 'flex-start',
     }}>
       <div style={{
-        width: 40, height: 40, borderRadius: '50%',
-        background: 'rgba(240,223,173,0.15)',
+        width: 44, height: 44, borderRadius: '50%',
+        background: 'rgba(240,223,173,0.1)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, fontSize: 18,
+        flexShrink: 0, overflow: 'hidden',
       }}>
         <img
-          src="/bokgil/magician.png"
+          src="/character/angel.svg"
           alt="복길"
-          style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }}
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          style={{ width: 40, height: 40, objectFit: 'contain' }}
+          onError={(e) => { (e.target as HTMLImageElement).src = '/bokgil/magician.png'; }}
         />
       </div>
       <div>
         <div style={{ fontSize: 11, color: '#f0dfad', fontWeight: 600, marginBottom: 4 }}>복길</div>
-        <div style={{ fontSize: 13, lineHeight: 1.7, color: '#c8cdd3', whiteSpace: 'pre-line' }}>
+        <div style={{
+          fontSize: 16, lineHeight: 1.7, color: '#dde1e5', whiteSpace: 'pre-line',
+          fontFamily: '"Gaegu", cursive',
+        }}>
           {text}
         </div>
       </div>

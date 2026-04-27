@@ -854,8 +854,17 @@ export default function Alt2Page() {
               <SectionDivider icon="stamp" />
 
               {/* 궁합 업셀 */}
-              <GunghamUpsell onPurchase={(count) => {
-                alert(`${count}인 궁합 결제 기능은 준비 중입니다`);
+              <GunghamUpsell onPurchase={() => {
+                // 유저 정보를 localStorage에 저장 후 궁합 페이지로 이동
+                try {
+                  const input: any = {};
+                  if (userName) input.name = userName;
+                  if (engine?.birth?.solar) input.birthDate = engine.birth.solar;
+                  if (engine?.birth?.time) input.birthTime = engine.birth.time;
+                  if (engine?.gender) input.gender = engine.gender === 'F' ? 'F' : 'M';
+                  localStorage.setItem('thethirdtime_saju_input', JSON.stringify(input));
+                } catch {}
+                window.location.href = '/gungham?from=saju';
               }} />
 
               <SectionDivider />

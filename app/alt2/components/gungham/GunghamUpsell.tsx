@@ -79,13 +79,12 @@ export default function GunghamUpsell({ onPurchase }: GunghamUpsellProps) {
       {step === 'offer' && (
         <div className="space-y-4">
           <InlineDialogue lines={OFFER_LINES[personCount]} autoPlay interactive={false} />
-          <CtaButton
-            label={`${personCount}인 궁합 분석`}
-            price={gPrices[personCount]}
-            originalPrice={prices.promotion ? DEFAULT_G_PRICES[personCount] : undefined}
-            promotion={prices.promotion}
+          <button
+            style={btnPrimary}
             onClick={() => onPurchase?.(personCount)}
-          />
+          >
+            궁합 보러 가기
+          </button>
         </div>
       )}
 

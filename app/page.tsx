@@ -258,22 +258,22 @@ export default function MainMenu() {
         width: '80%', maxWidth: 320,
         position: 'relative',
       }}>
-        {/* 보드 이미지 — 비율 유지 */}
+        {/* 보드 이미지 — 세로 늘림 */}
         <img
           src="/background/board.png"
           alt=""
-          style={{ width: '100%', display: 'block' }}
+          style={{ width: '100%', minHeight: 580, objectFit: 'fill', display: 'block' }}
         />
         {/* 버튼 오버레이 — 양피지 영역에 배치 */}
         <div style={{
           position: 'absolute',
-          top: '33%',
-          bottom: '4%',
+          top: '42%',
+          bottom: '3%',
           left: '14%',
           right: '14%',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
         }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {MENU_ITEMS.map(item => {
