@@ -1,8 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import BgmPlayer from './alt2/components/base/BgmPlayer';
+
+// ─── 유저 타입 ─────────────────────────────────────────────
+
+interface AuthUser {
+  kakaoId: string;
+  nickname: string;
+  profileImage: string;
+  golgolBalance: number;
+}
 
 const MENU_ITEMS = [
   {
@@ -58,11 +67,35 @@ export default function MainMenu() {
   const router = useRouter();
   const [ch1Clear, setCh1Clear] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const fetchUser = useCallback(async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      setUser(data.user ?? null);
+    } catch {
+      setUser(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const cleared = localStorage.getItem(STORAGE_KEY);
     if (cleared === 'true') setCh1Clear(true);
-  }, []);
+    fetchUser();
+  }, [fetchUser]);
+
+  const handleKakaoLogin = () => {
+    window.location.href = '/api/auth/kakao';
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUser(null);
+  };
 
   const [modalUrl, setModalUrl] = useState('');
   const [modalKey, setModalKey] = useState(0);
@@ -140,6 +173,75 @@ export default function MainMenu() {
           <p style={{ fontSize: 11, color: '#889', letterSpacing: 0.5, lineHeight: 1.8 }}>
             정통 명리학 중심의 깊이 있는 RPG형 사주풀이 서비스
           </p>
+
+          {/* 로그인/유저 정보 영역 */}
+          {!authLoading && (
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              {user ? (
+                <>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 16px',
+                    background: 'rgba(92,61,30,0.25)',
+                    border: '1px solid rgba(122,86,48,0.4)',
+                    borderRadius: 20,
+                  }}>
+                    {user.profileImage && (
+                      <img
+                        src={user.profileImage}
+                        alt=""
+                        style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    )}
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#f0dfad' }}>
+                      {user.nickname}
+                    </span>
+                    <span style={{
+                      fontSize: 11, color: '#97c6aa', fontWeight: 500,
+                      padding: '2px 8px',
+                      background: 'rgba(151,198,170,0.12)',
+                      borderRadius: 10,
+                    }}>
+                      {user.golgolBalance} 골골
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      fontSize: 11, color: '#889', background: 'none',
+                      border: 'none', cursor: 'pointer', textDecoration: 'underline',
+                      padding: '2px 4px',
+                    }}
+                  >
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleKakaoLogin}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '10px 24px',
+                    background: '#FEE500',
+                    color: '#191919',
+                    border: 'none',
+                    borderRadius: 8,
+                    fontSize: 14,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+                  onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M9 1C4.58 1 1 3.79 1 7.21c0 2.17 1.45 4.08 3.64 5.18-.16.58-.58 2.1-.66 2.43-.1.4.15.4.31.29.13-.08 2.04-1.38 2.86-1.94.6.09 1.22.13 1.85.13 4.42 0 8-2.79 8-6.22C17 3.79 13.42 1 9 1Z" fill="#191919"/>
+                  </svg>
+                  카카오로 시작하기
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
       {/* 메뉴 보드 */}

@@ -546,7 +546,7 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] src/db/supabase.ts: 지연 초기화 클라이언트 (빌드 타임 안전)
 - [x] PDF 생성 시 Supabase Storage 자동 업로드 + 로컬 폴백
 - [x] 업로드 비동기화 (fire-and-forget, PDF 응답 블로킹 없음)
-- [ ] Auth 연동 (회원가입/로그인)
+- [ ] Auth 연동 (카카오 로그인 → Supabase Auth)
 - [ ] DB 이전 (SQLite → Supabase PostgreSQL)
 
 ### M-PDF-QUALITY. PDF 콘텐츠 품질 ✅ (2026-04-22)
@@ -574,14 +574,22 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 이메일/전화번호 기재 (확정 후)
 - [ ] 결제 UI에 "전체 동의" 체크박스 추가 (이용약관 + 개인정보 + 환불제한 동의)
 
-### M-PAY. 결제 연동
+### M-AUTH. 카카오 로그인 + 골골 시스템
+- [ ] 카카오 로그인 연동 (OAuth, 고유 ID + 닉네임만 수집)
+- [ ] 유저 테이블: kakao_id, nickname, golgol_balance, created_at
+- [ ] 골골(골骨) 시스템: 서비스 내 통용 화폐. 1골골 = ₩1,000 (부가세 별도)
+- [ ] 카카오 채널 친구추가 시 골골 지급 (무료 체험)
+- [ ] 골골 차감: 서비스 이용 시 소모 (리포트, 궁합 등 서비스별 단가 설정)
+- [ ] 골골 잔액 UI 표시
+
+### M-PAY. 결제 연동 (골골 충전)
 - [x] 토스페이먼츠 가입 완료 (2026-04-27)
-- [ ] 토스페이먼츠 SDK 연동
+- [ ] 토스페이먼츠 SDK 연동 → 골골 충전
 - [ ] 결제 전 동의 체크박스 (이용약관 + 개인정보 + 환불제한)
+- [ ] 충전 패키지 설계 (예: 10골골 / 30골골 / 50골골 + 보너스)
+- [ ] 결제 완료 → 골골 즉시 반영
 - [ ] 결제 시작 시점에 백그라운드 Phase 1+2 호출 (대기시간 단축)
-- [ ] 결제 완료 → 웹 결과 즉시 표시 → PDF 다운로드
 - [ ] savePaidReport() + upgradeToPaid() 연동
-- [ ] 가격: 심층해석 ₩13,900 / 2인궁합 ₩18,900 / 3인궁합 ₩23,900
 
 ### M-SHARE. 친구 공유 카드
 - [ ] 공유용 카드 이미지 생성 (사주 요약 + QR/링크)
@@ -706,6 +714,14 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 ### M-SNS. SNS 콘텐츠 ✅ (2026-04-26)
 - [x] `.claude/commands/sns-content.md` — SNS 콘텐츠 생성 커맨드
 - [x] `docs/sns-design-guide.md` — SNS 디자인 가이드
+
+### M-CHAT. 카카오 채널 실시간 상담
+- [ ] 카카오 채널 개설 (사업자 인증)
+- [ ] 챗봇 API 연동 (카카오 i 오픈빌더 또는 웹훅)
+  - Haiku 기반 복길 자동 응대 (건당 ~$0.001)
+  - 사주/육효 FAQ 자동 답변, 복잡한 문의는 수동 전환
+- [ ] 사이트 내 카카오 채널 상담 버튼 (친구추가 → 바로 채팅)
+- [ ] (선택) 네이버 톡톡 — 스마트플레이스 유입 시 추가 검토
 
 ### M-ADS. 애드센스 (선택)
 - [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입
