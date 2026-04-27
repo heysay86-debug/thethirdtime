@@ -57,6 +57,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-P88RY9HF2E');
           `}
         </Script>
+        <script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8002064106147760"
+          crossOrigin="anonymous"
+        />
       </head>
       <body className="min-h-screen" style={{ backgroundColor: '#1a1e24' }}>
         {children}

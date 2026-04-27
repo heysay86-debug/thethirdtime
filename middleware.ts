@@ -28,8 +28,16 @@ const BLOCKED_BOTS = [
 
 const BLOCKED_RE = new RegExp(BLOCKED_BOTS.join('|'), 'i');
 
+// 구글 공식 크롤러는 항상 허용 (검색엔진 + 애드센스)
+const GOOGLE_ALLOWED = /Googlebot|Mediapartners-Google|AdsBot-Google|Google-InspectionTool/i;
+
 export function middleware(request: NextRequest) {
   const ua = request.headers.get('user-agent') || '';
+
+  // 구글 공식 크롤러는 무조건 허용
+  if (GOOGLE_ALLOWED.test(ua)) {
+    return NextResponse.next();
+  }
 
   if (BLOCKED_RE.test(ua)) {
     return new NextResponse('Forbidden', { status: 403 });
