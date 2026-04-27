@@ -65,6 +65,7 @@ export default function MainMenu() {
   }, []);
 
   const [modalUrl, setModalUrl] = useState('');
+  const [modalKey, setModalKey] = useState(0);
 
   const MODAL_ITEMS = new Set(['blog', 'faq', 'contact']);
 
@@ -76,6 +77,7 @@ export default function MainMenu() {
     }
     if (MODAL_ITEMS.has(item.id)) {
       setModalUrl(item.href);
+      setModalKey(k => k + 1);
     } else {
       router.push(item.href);
     }
@@ -209,19 +211,6 @@ export default function MainMenu() {
         </div>
       </div>
 
-      {/* 하단 링크 */}
-      <div style={{
-        display: 'flex', gap: 12, marginTop: 40,
-        fontSize: 10, color: '#778',
-      }}>
-        <a href="/terms" style={{ color: '#778', textDecoration: 'none' }}>이용약관</a>
-        <span>·</span>
-        <a href="/privacy" style={{ color: '#778', textDecoration: 'none' }}>개인정보처리방침</a>
-      </div>
-      <div style={{ marginTop: 12, fontSize: 9, color: '#667', letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.6 }}>
-        Copyright 2026. Ⓒ Betterdan studio(베러댄 스튜디오). All rights reserved.
-      </div>
-
       {/* 잠금 알림 */}
       {showAlert && (
         <div style={{
@@ -240,6 +229,23 @@ export default function MainMenu() {
           이전 챕터 클리어 시 이용 가능합니다
         </div>
       )}
+
+      {/* 푸터 */}
+      <div style={{
+        textAlign: 'center', padding: '40px 20px 24px',
+        maxWidth: 440, margin: '0 auto',
+      }}>
+        <div className="flex justify-center gap-3" style={{ marginBottom: 12 }}>
+          <a href="/terms" style={{ fontSize: 9, color: '#688097', textDecoration: 'none' }}>이용약관</a>
+          <span style={{ fontSize: 9, color: '#556677' }}>·</span>
+          <a href="/privacy" style={{ fontSize: 9, color: '#688097', textDecoration: 'none' }}>개인정보처리방침</a>
+          <span style={{ fontSize: 9, color: '#556677' }}>·</span>
+          <a href="/business" style={{ fontSize: 9, color: '#688097', textDecoration: 'none' }}>사업자 정보</a>
+        </div>
+        <div style={{ fontSize: 9, color: '#667788' }}>
+          © 2026 베러댄스튜디오. All rights reserved.
+        </div>
+      </div>
 
       </div>
 
@@ -269,6 +275,7 @@ export default function MainMenu() {
               ✕
             </button>
             <iframe
+              key={modalKey}
               src={modalUrl}
               style={{ width: '100%', height: '100%', border: 'none', background: '#1a1e24' }}
             />

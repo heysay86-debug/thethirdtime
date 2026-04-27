@@ -1067,14 +1067,18 @@ export default function Alt2Page() {
                   다른 사주 분석하기
                 </button>
 
-                {/* 사업자 정보 */}
-                <div className="mt-6 text-center text-[9px]" style={{ color: '#688097' }}>베러댄스튜디오 · 사업자등록번호 207-27-94576</div>
-                <div className="mt-2 flex justify-center gap-3">
-                  <a href="/business" className="text-[9px]" style={{ color: '#688097' }}>사업자 정보</a>
-                  <span className="text-[9px]" style={{ color: '#688097' }}>·</span>
+                {/* 법적 링크 */}
+                <div className="mt-6 flex justify-center gap-3">
                   <a href="/terms" className="text-[9px]" style={{ color: '#688097' }}>이용약관</a>
-                  <span className="text-[9px]" style={{ color: '#688097' }}>·</span>
+                  <span className="text-[9px]" style={{ color: '#556677' }}>·</span>
                   <a href="/privacy" className="text-[9px]" style={{ color: '#688097' }}>개인정보처리방침</a>
+                  <span className="text-[9px]" style={{ color: '#556677' }}>·</span>
+                  <a href="/business" className="text-[9px]" style={{ color: '#688097' }}>사업자 정보</a>
+                </div>
+
+                {/* 사업자 정보 */}
+                <div className="mt-12 text-center text-[9px]" style={{ color: '#667788' }}>
+                  © 2026 베러댄스튜디오. All rights reserved.
                 </div>
               </footer>
           </div>
