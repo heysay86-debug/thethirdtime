@@ -7,7 +7,7 @@ import BgmPlayer from './alt2/components/base/BgmPlayer';
 const MENU_ITEMS = [
   {
     id: 'saju',
-    label: '시간의 신전 (사주풀이)',
+    label: '1장 - 시간의 신전 (사주풀이)',
     subtitle: '',
     href: '/alt2',
     locked: false,
@@ -16,7 +16,7 @@ const MENU_ITEMS = [
   },
   {
     id: 'hyo',
-    label: '운명의 제단 (육효점)',
+    label: '2장 - 운명의 제단 (육효점)',
     subtitle: '',
     href: '/hyo',
     locked: true,

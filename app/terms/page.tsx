@@ -97,7 +97,7 @@ export default function TermsPage() {
 
         <section>
           <h2 className="font-bold text-base mb-2" style={{ color: '#dde1e5' }}>부칙</h2>
-          <p>이 약관은 ________년 __월 __일부터 시행합니다.</p>
+          <p>이 약관은 2026년 5월 20일부터 시행합니다.</p>
         </section>
 
       </div>

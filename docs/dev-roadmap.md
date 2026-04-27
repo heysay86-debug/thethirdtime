@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-25
+최종 업데이트: 2026-04-27
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -41,31 +41,25 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 
 > Claude와 병행 개발하며 기록 누락이 있었던 부분을 보완하기 위해, 로컬 코드베이스 기준으로 실제 구현 범위를 재확인함.
 
-### 확인 결과 요약
+### 확인 결과 요약 (2026-04-27 갱신)
 
-- 문서상 큰 줄기는 대체로 맞지만, 실제 구현은 로드맵 상단 요약보다 더 진행되어 있음.
-- 현재 코드베이스에는 사주 엔진, LLM 게이트웨이, 웹 API, alt1/alt2 프론트엔드, PDF 리포트, 어드민, SQLite/Supabase 연동, GA4, 육효점(`/hyo`)까지 구현 흔적이 확인됨.
-- 부가 콘텐츠 페이지 `/contact`, `/faq`, `/guide/saju` 와 문의 API `/api/contact` 도 실제 존재함.
+- 사주 엔진, LLM 게이트웨이 (Phase 1~3), 웹 API, alt2 프론트엔드, PDF 리포트, 어드민, SQLite/Supabase 연동, GA4, 육효점(`/hyo`) 구현 완료.
+- 부가 콘텐츠: `/contact`, `/faq`, `/guide/saju`, `/blog` (25편), 메인 메뉴, 게임 메뉴.
+- 엔진 확장: 오행 분석, 지지합(삼합/방합/육합/반합), 천간충, 연애운.
+- PDF 확장: 일간 상세, 오행 상태, 십성 상세, 지지 합충, 대운 상세, Phase 3 쉬운 풀이.
+- 보안: CSP/보안 헤더, 어드민 쿠키 인증 전환.
 
 ### 로컬 검증 결과
 
-- `npm run build`:
-  - 2026-04-25 기준 로컬 빌드 성공.
-  - 단, Turbopack 경고 1건 존재: `next.config.ts` → `src/db/pdf-storage.ts` 경유 파일 추적으로 인해 NFT tracing 경고 발생.
-- `npm test -- --runInBand`:
-  - 22개 테스트 스위트 중 20개 통과, 2개 실패.
-  - 총 276개 테스트 중 272개 통과, 4개 실패.
-  - 실패 파일: `tests/prompts.test.ts`, `tests/gateway.test.ts`
-  - 실패 원인:
-    - 시스템 프롬프트 테스트가 예전 문구(`이석영`, `사주첩경`)를 기대하지만, 현재 구현은 "본문에 특정 학자명·서적명 직접 표기 금지" 방향으로 바뀌어 있음.
-    - Phase 2 tool 테스트가 `pillarAnalysis` 포함 구조를 기대하지만, 현재 `src/gateway/tools/saju_interpretation.ts`는 `pillarAnalysis` 제외 구조로 구현되어 있음.
-  - 즉, 현재 실패는 "기능 미구현"보다는 "테스트/문서와 현 구현의 불일치" 성격이 강함.
+- `npm run build`: 2026-04-27 기준 빌드 성공.
+- `npm test`: 279개 테스트 통과 (2026-04-27 기준).
 
 ### 특히 기억할 현재 상태
 
-- Phase 3 통변 확장은 아직 미완료.
-- 다만 `src/gateway/prompts/phase3-examples/04-core-judgment-sample.md` 예시 파일 1건은 이미 존재함.
-- 반면 `analyzePhase3()` 와 `src/gateway/prompts/phase3-system.ts` 는 아직 확인되지 않음.
+- Phase 3 통변 확장 (쉬운 풀이) 구현 완료 (`analyzePhase3()`, `phase3-system.ts`).
+- 연애운 엔진 구현 완료 (`love_reading.ts`). 금전운/사업운은 미구현.
+- 블로그 25편 + 도표 5종 + 콘텐츠 페이지 3종 구현.
+- 메인 메뉴 + 게임 메뉴 + 보안 헤더 추가.
 
 ---
 
@@ -252,7 +246,7 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] Phase 1: tool use + `messages.create()` (Haiku, ~10초)
 - [x] Phase 2: 텍스트 스트리밍 + `JSON.parse()` + `Phase2ResultSchema.parse()` (TTFT ~1초, 212 chunks)
 - [x] 캐시 히트율 로깅 (`cache_creation_input_tokens`, `cache_read_input_tokens`)
-- [ ] 개인정보 주입 방지 검증 → Phase 3으로 이관
+- [x] 개인정보 주입 방지 검증 — analyze/interpret/pdf/admin-pdf 4개 API 모두 sanitize 적용
 
 ### M17. 엔진-게이트웨이 E2E 테스트 ✅
 - [x] 1986-09-15 01:17 레퍼런스 사주 전체 파이프라인 동작 확인
@@ -274,48 +268,24 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 >
 > 파이프라인: 엔진 → LLM(농축 해석) → **통변 후처리** → 최종 리포트
 
-### M17.5. 통변 확장 (LLM Phase 3)
-- [ ] Phase 3 LLM 호출: Phase 2 농축 해석 + 엔진 데이터 → 5원칙 기반 장문 확장
-  - 해석 관점 5원칙:
-    ① 철학적 프레임 — 명리학은 변화의 관조
-    ② 반점술적 태도 — 길흉 부정, 삶의 순환 인정
-    ③ 한자 원의에서 출발하는 개념 전개
-    ④ 개인 사주 데이터와의 유기적 연결
-    ⑤ 투출·지장간 등 구조 개념의 비유 해체
-  - 입력: Phase2 농축 sections + SajuResult (엔진 데이터)
-  - 출력: 동일 구조의 장문 확장 sections
-  - 프롬프트: 5원칙 + 페어 예시 2~3개 (농축→장문 변환 쌍)
-  - 예상: ~60~80초, ~57원/건 추가 (합계 ~102원/건)
-- [ ] `src/gateway/gateway.ts` — `analyzePhase3()` 메서드 추가
-- [ ] `src/gateway/prompts/phase3-system.ts` — Phase 3 전용 프롬프트
-- [ ] `src/gateway/prompts/phase3-examples/` — 페어 예시 파일 (사용자 제공 원고)
-- [ ] PDF 파이프라인 통합: Phase3 장문이 있으면 PDF에 장문 사용
+### M17.5. 통변 확장 (LLM Phase 3) ✅ (2026-04-27)
+- [x] Phase 3 LLM 호출: Phase 2 농축 해석 + 엔진 데이터 → 쉬운 풀이 확장
+  - Haiku + tool use 방식으로 구현
+- [x] `src/gateway/gateway.ts` — `analyzePhase3()` 메서드 추가
+- [x] `src/gateway/prompts/phase3-system.ts` — Phase 3 전용 프롬프트
+- [x] `src/gateway/prompts/phase3-examples/` — 페어 예시 파일
+- [x] PDF 파이프라인 통합: `EasyReadingBox` 컴포넌트로 Phase 3 쉬운 풀이 삽입
 - [ ] 웹 파이프라인: Phase2 즉시 표시 → Phase3 도착 시 교체
-- [ ] 선행 조건: 사용자가 2~3개 섹션의 페어 예시(농축+장문) 제공
 
-실구현 점검 메모 (2026-04-25):
-- `src/gateway/prompts/phase3-examples/04-core-judgment-sample.md` 1건 존재
-- `analyzePhase3()` 미구현
-- `src/gateway/prompts/phase3-system.ts` 미존재
-
-### M17.6. 번외편 — 연애운·금전운·사업운
-- [ ] Phase 2 출력 스키마 확장: `sections`에 번외편 3개 섹션 추가
-  ```
-  extras: {
-    love: "...",           // 연애운
-    finance: "...",        // 금전운
-    business: "..."        // 사업운
-  }
-  ```
+### M17.6. 번외편 — 연애운·금전운·사업운 🟡 진행 중
+- [x] 연애운 엔진: `src/engine/love_reading.ts`
+  - 3단계 구조: 배우자궁 + 연애성향 + 인연 초상화
+  - 생지/왕지/고지 프레임, 도화/홍염/원진 신살 연동, 대운 시기 + 도화 세운 산출
+- [ ] 금전운 엔진
+- [ ] 사업운 엔진
 - [ ] Phase 2 프롬프트에 번외편 섹션 지침 추가
-  - 연애운: 일간·일지 궁합 구조, 재성(남)/관성(여) 배치, 도화살·홍염살·원진살 유무, 대운별 인연 시기
-  - 금전운: 편재/정재 분포, 식상생재 여부, 재성 강약, 대운별 재물 흐름
-  - 사업운: 식상생재 구조, 관성과 인성 균형, 역마살·장성살, 적합 업종 방향
-- [ ] `Phase2SectionsSchema` (Zod) 업데이트: extras 필드 추가 (optional — 기존 호환)
-- [ ] PDF 번외편 섹션 컴포넌트: `ExtrasSection.tsx`
-- [ ] PDF 목차 업데이트
+- [ ] PDF 번외편 섹션 컴포넌트
 - [ ] 웹 Zone B에 번외편 영역 추가
-- [ ] 엔진 추가 로직 불필요 — 기존 데이터(재성·관성·신살·대운)로 LLM이 재구성
 
 ---
 
@@ -464,7 +434,7 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 통변 지침 보강: DAN이 PDF 해석문을 직접 첨삭 → 첨삭본을 references/ 에 추가
   → `chunks.ts` CHAPTER_MAP에 신규 챕터 매핑
   → Phase 2 프롬프트에 "통변 지침" 섹션으로 주입
-- [ ] 종합해석(10번 섹션) 누락 원인 조사 및 수정
+- [x] 종합해석(10번 섹션) 누락 — 현재 정상 출력 확인 (2026-04-27)
 
 **중기**
 - [ ] Phase 2 섹션별 분리 호출 검토 (콘텐츠 품질이 여전히 부족할 경우)
@@ -590,27 +560,23 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] 표지 별 배치: 의사난수, 중앙 텍스트 영역 회피
 - [ ] 리포트 톤 다듬기: 레퍼런스 텍스트 제공 후 프롬프트 반영 (대기 중)
 
-### M-LEGAL. 법적 고지 사항
+### M-LEGAL. 법적 고지 사항 🟡 진행 중
 - [x] 이용약관 페이지 (`/terms`) — 표준약관 제10023호 준용, 11개 조항
 - [x] 개인정보처리방침 페이지 (`/privacy`) — 개인정보보호법 제30조 기반, 9개 항목
 - [x] 사업자 정보 페이지 (`/business`) — 전자상거래법 제13조 기반
 - [x] 푸터 링크 삽입 (opacity 0.01, 사업자 등록 후 노출)
-- [ ] 사업자 등록 후 블랭크(________) 항목 채우기: 상호, 대표자, 사업자등록번호, 통판번호, 주소, 연락처, 이메일, 시행일자
-- [ ] 푸터 링크 opacity 0.01 → 1 변경
+- [x] 사업자 등록 완료 (베러댄스튜디오, 207-27-94576, 2026-04-27)
+- [x] 사업자 정보 페이지 실데이터 반영 (상호, 대표자, 사업자번호, 소재지)
+- [x] 푸터: 상호명 + 사업자번호 표시, 법적 링크 opacity 1로 변경
+- [x] 이용약관/개인정보처리방침 시행일 반영 (2026-05-20)
+- [ ] 통신판매업 신고 (준비 중)
+- [ ] 통판번호 발급 후 사업자 정보 페이지 업데이트
+- [ ] 이메일/전화번호 기재 (확정 후)
 - [ ] 결제 UI에 "전체 동의" 체크박스 추가 (이용약관 + 개인정보 + 환불제한 동의)
 
-### M-GA. GA4 이벤트 추적 (배포 후 즉시)
-- [ ] `gtag.js` 삽입 (Next.js Script 컴포넌트)
-- [ ] 퍼널 이벤트 설계 및 발송:
-  - `opening_start` → `dialogue_start` → `input_name` → `input_gender`
-  - `input_birthdate` → `input_birthtime` → `input_city` → `submit`
-  - `result_view` → `upsell_view` → `purchase_click` → `purchase_complete`
-  - `gungham_click` → `redo_click`
-- [ ] GA4 퍼널 리포트 설정 (단계별 이탈률 확인)
-- [ ] 이탈 구간 분석 → UX 개선 피드백 루프
-
-### M-PAY. 결제 연동 (사업자 등록 후)
-- [ ] 토스페이먼츠 연동
+### M-PAY. 결제 연동
+- [x] 토스페이먼츠 가입 완료 (2026-04-27)
+- [ ] 토스페이먼츠 SDK 연동
 - [ ] 결제 전 동의 체크박스 (이용약관 + 개인정보 + 환불제한)
 - [ ] 결제 시작 시점에 백그라운드 Phase 1+2 호출 (대기시간 단축)
 - [ ] 결제 완료 → 웹 결과 즉시 표시 → PDF 다운로드
@@ -641,8 +607,8 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] 변효 개수별 안내 (RPG 톤) + 효별 상세 카테고리 17종
 - [x] 복사 버튼 (전체 + 효별) + 브랜드 출처 삽입
 - [x] GA4 이벤트 (hyo_start, hyo_complete, hyo_copy)
-- [ ] sitemap.xml에 /hyo 추가
-- [ ] robots.txt에 /hyo 허용
+- [x] sitemap.xml에 /hyo 추가 (이미 포함됨)
+- [x] robots.txt에 /hyo + /blog + /faq + /contact + /guide 허용
 - [ ] 괘 도표에 변효 하이라이트
 - [ ] 맵 스크롤 (캐릭터 따라 뷰포트 이동)
 
@@ -671,12 +637,75 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] `gtag.js` 삽입 (Next.js Script 컴포넌트, G-P88RY9HF2E)
 - [x] `src/analytics.ts` — trackEvent 유틸
 - [x] 퍼널 이벤트: opening_start → dialogue_complete → submit → result_view → upsell_click → pdf_download → redo_click
-- [ ] GA4 퍼널 리포트 설정 (단계별 이탈률 확인)
+- [ ] GA4 퍼널 리포트 설정 (사업자등록+통판 완료 후 진행 예정)
 - [ ] 이탈 구간 분석 → UX 개선 피드백 루프
 
 ### M-CABINET. 어드민 캐비넷 ✅ (2026-04-24)
 - [x] `/api/admin/cabinet` — Supabase Storage PDF 목록 조회 + 서명 URL 다운로드
 - [x] 어드민 캐비넷 탭 (검색, 페이지네이션, 개별 다운로드)
+
+### M-SECURITY. 보안 보강 ✅ (2026-04-26)
+- [x] CSP / X-Frame-Options / 보안 헤더 추가 (next.config.ts)
+- [x] X-Frame-Options SAMEORIGIN (iframe 모달용) + frame-ancestors 'self'
+- [x] 어드민 인증 쿠키 방식 전환 (URL 토큰 노출 제거, `src/middleware/admin-auth.ts`)
+
+### M-CONTENT. 콘텐츠 페이지 ✅ (2026-04-26)
+- [x] `/contact` 문의 페이지 + `/api/contact` 문의 API
+- [x] `/faq` FAQ 페이지
+- [x] `/guide/saju` 사주 가이드 페이지
+- [x] 공통 레이아웃 컴포넌트: `PageShell`, `BoardFrame`, `BokgilSays`
+
+### M-BLOG. 복길의 서고 (블로그) ✅ (2026-04-26~27)
+- [x] `/blog` 목록 + `/blog/[slug]` 상세 (마크다운 기반)
+- [x] `content/blog/` 25편 (사주 기초, 일간 10종, 십성 5종, 합충형, 대운세운, 육효점 등)
+- [x] `src/lib/blog.ts` — 마크다운 파서 + frontmatter
+- [x] `content/blog/CONTENT-GUIDE.md` — 블로그 작성 가이드
+- [x] 도표 PNG 5종 (`public/blog/`: 삼합/방합/육합/오행/십신)
+- [x] `scripts/generate-blog-diagrams.ts` — 도표 자동 생성 스크립트
+- [x] 마크다운 이미지 렌더러 추가
+- [x] `references/blog-chunks.json` — 블로그 RAG 청크 (1139줄)
+- [x] `scripts/build-blog-chunks.ts` — 블로그 청크 빌드 스크립트
+- [x] 게임 내 오버레이 서고 + 페이지네이션
+- [x] 블로그 CTA 배너
+- [x] sitemap.xml에 블로그 페이지 추가
+
+### M-ENGINE-EXT. 엔진 확장 ✅ (2026-04-26~27)
+- [x] `src/engine/oheng_analysis.ts` — 오행 분석 (왕상휴수사/발달/과다/고립)
+- [x] `src/engine/relations.ts` — 지지합 확장 (삼합/방합/육합/반합) + 천간충 (4쌍)
+- [x] `src/engine/love_reading.ts` — 연애운 엔진 (배우자궁+연애성향+인연초상화)
+- [x] `src/gateway/chunks.ts` — RAG 청크 선별 주입 (사주 맞춤)
+
+### M-PDF-EXT. PDF 섹션 확장 ✅ (2026-04-26~27)
+- [x] `IlganDetailSection` — 일간 상세 프로필 섹션
+- [x] `OhengStatusSection` — 오행 상태 분석 섹션
+- [x] `SipseongDetailSection` — 십성 상세 해설 섹션
+- [x] `JijiHapChungSection` — 지지 합충 관계 섹션
+- [x] `DaeunDetailSection` — 대운별 한 줄 요약 추가
+- [x] `EasyReadingBox` — Phase 3 쉬운 풀이 박스
+- [x] 관계별 해설 텍스트 보강 (형충파해합 8종)
+- [x] Paperlogy italic 폰트 에러 수정
+
+### M-UX-3. 프론트엔드 UX 추가 개선 ✅ (2026-04-26~27)
+- [x] 메인 메뉴 페이지 (board.png 배경, 히어로 섹션, 로고+카피)
+- [x] 게임 메뉴 (햄버거, `GameMenu.tsx`) — 서고/FAQ/문의 iframe 모달, BGM 유지
+- [x] 메뉴 버튼 탭 모션 (inset shadow)
+- [x] 메인 BGM (Crystal Labyrinth, `crystal-labyrinth.mp3`)
+- [x] BGM 자동재생 (첫 터치 시) + 볼륨 30% 감소
+- [x] 오프닝 분기 ("와 본 적 있나?" 선택지)
+- [x] 육효점 URL 직접 접근 차단 (메인 메뉴 해금 필요)
+- [x] 카피라이트 추가
+- [x] `OhengWangSang` 오행 왕상 결과 컴포넌트
+- [x] 결과 저장 UX (`EmailSaveModal`, `SavePromptCard`, `SaveResultButton`)
+- [x] 모달 내 링크 target="_top" 전역 적용
+- [x] PageShell 로고 클릭 → 메인 이동
+
+### M-ADMIN-EXT. 어드민 확장 ✅ (2026-04-27)
+- [x] 의뢰서(문의) 탭: 조회/답변/완료 관리
+- [x] 어드민 인증 API (`/api/admin/auth`)
+
+### M-SNS. SNS 콘텐츠 ✅ (2026-04-26)
+- [x] `.claude/commands/sns-content.md` — SNS 콘텐츠 생성 커맨드
+- [x] `docs/sns-design-guide.md` — SNS 디자인 가이드
 
 ### M-ADS. 애드센스 (선택)
 - [ ] 무료 랜딩(`app/free/`) 또는 Zone B 섹션 사이 광고 삽입
@@ -702,7 +731,7 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 ### SEO·노출 전략
 - [ ] 도메인 확정 및 구매
 - [ ] 배포 후 외부 디렉토리 등재 (Product Hunt, AlternativeTo, 네이버 플레이스 등)
-- [ ] 콘텐츠 페이지 설계: "사주란?", "용신이란?" 등 설명 페이지 (GEO 대비)
+- [x] 콘텐츠 페이지: /guide/saju, /faq, /contact + 블로그 25편 (GEO 대비)
 
 ### 명리학 교재 참조 데이터 구축
 - [ ] PDF 교재 목록 정리 (보유 교재 + 우선순위)

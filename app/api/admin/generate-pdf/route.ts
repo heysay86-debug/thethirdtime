@@ -15,6 +15,7 @@ import { SajuGateway } from '@/src/gateway/gateway';
 import { saveReport } from '@/src/db';
 import SajuReport from '@/src/pdf/SajuReport';
 import { savePdfCopy } from '@/src/db/pdf-storage';
+import { sanitizeSections } from '@/src/middleware/sanitize';
 import { adminAuth } from '@/src/middleware/admin-auth';
 
 export async function POST(request: NextRequest) {
@@ -57,20 +58,24 @@ export async function POST(request: NextRequest) {
     const [hh, mm] = birthTime ? birthTime.split(':').map(Number) : [12, 0];
     const birthDateUtc = new Date(Date.UTC(y, m - 1, d, hh - 9, mm));
 
+    // 개인정보 마스킹
+    const safeCore = sanitizeSections(phase1.core);
+    const safeSections = sanitizeSections(phase2.sections);
+
     const interpretation = {
-      summary: phase1.core.summary,
+      summary: safeCore.summary,
       sections: {
-        basics: phase2.sections.basics,
+        basics: safeSections.basics,
         coreJudgment: {
-          strengthReading: phase1.core.strengthReading,
-          gyeokGukReading: phase1.core.gyeokGukReading,
-          yongSinReading: phase1.core.yongSinReading,
+          strengthReading: safeCore.strengthReading,
+          gyeokGukReading: safeCore.gyeokGukReading,
+          yongSinReading: safeCore.yongSinReading,
         },
-        ohengAnalysis: phase2.sections.ohengAnalysis,
-        sipseongAnalysis: phase2.sections.sipseongAnalysis,
-        relations: phase2.sections.relations,
-        daeunReading: phase2.sections.daeunReading,
-        overallReading: phase2.sections.overallReading,
+        ohengAnalysis: safeSections.ohengAnalysis,
+        sipseongAnalysis: safeSections.sipseongAnalysis,
+        relations: safeSections.relations,
+        daeunReading: safeSections.daeunReading,
+        overallReading: safeSections.overallReading,
       },
     };
 

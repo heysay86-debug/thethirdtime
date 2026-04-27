@@ -8,13 +8,27 @@ import BokgilSays from '../components/community/BokgilSays';
 export default function ContactPage() {
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
+  const [category, setCategory] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const CATEGORIES = [
+    { value: '서비스문의', label: '서비스 이용 문의' },
+    { value: '결과오류', label: '분석 결과 오류 제보' },
+    { value: '결제환불', label: '결제 / 환불' },
+    { value: '제휴협업', label: '제휴 / 협업 제안' },
+    { value: '버그제보', label: '버그 / 오류 제보' },
+    { value: '기타', label: '기타' },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!category) {
+      setError('문의 유형을 선택해 주세요.');
+      return;
+    }
     if (!message.trim()) {
       setError('문의 내용을 입력해 주세요.');
       return;
@@ -30,6 +44,7 @@ export default function ContactPage() {
         body: JSON.stringify({
           nickname: nickname.trim() || undefined,
           email: email.trim() || undefined,
+          category,
           message: message.trim(),
         }),
       });
@@ -146,6 +161,30 @@ export default function ContactPage() {
                 maxLength={100}
                 style={inputStyle}
               />
+            </div>
+
+            {/* Category */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={labelStyle}>
+                문의 유형 <span style={{ fontWeight: 400, color: '#a04040' }}>*</span>
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  appearance: 'none',
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%238a7a60\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E")',
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 12px center',
+                  paddingRight: 32,
+                }}
+              >
+                <option value="">선택해 주세요</option>
+                {CATEGORIES.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
             </div>
 
             {/* Message */}

@@ -12,11 +12,54 @@ interface Inquiry {
   id: string;
   nickname: string;
   email: string;
+  category: string;
   message: string;
   createdAt: string;
   reply?: string;
   repliedAt?: string;
   status?: 'open' | 'done';
+}
+
+const NOTIFY_EMAIL = 'info@betterdan.net';
+
+async function sendNotificationEmail(inquiry: Inquiry) {
+  try {
+    const subject = `[제3의시간][${inquiry.category}] ${inquiry.nickname || '익명'} 님의 문의`;
+    const body = [
+      `문의 유형: ${inquiry.category}`,
+      `닉네임: ${inquiry.nickname || '(미입력)'}`,
+      `이메일: ${inquiry.email || '(미입력)'}`,
+      `접수 시각: ${inquiry.createdAt}`,
+      `문의 ID: ${inquiry.id}`,
+      '',
+      '--- 문의 내용 ---',
+      inquiry.message,
+    ].join('\n');
+
+    // ImprovMX 포워딩을 활용: 자기 자신에게 보내면 Gmail로 전달됨
+    // Node.js 내장 fetch로 간단한 mailto 대안 — Resend/SendGrid 없이 SMTP 직접 사용
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"제3의시간" <${process.env.GMAIL_USER}>`,
+      to: NOTIFY_EMAIL,
+      subject,
+      text: body,
+      replyTo: inquiry.email || undefined,
+    });
+  } catch (err) {
+    console.error('[Contact] 이메일 발송 실패:', err);
+    // 이메일 실패해도 문의 접수는 성공 처리
+  }
 }
 
 function loadInquiries(): Inquiry[] {
@@ -67,9 +110,10 @@ export async function PATCH(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { nickname, email, message } = body as {
+    const { nickname, email, category, message } = body as {
       nickname?: string;
       email?: string;
+      category?: string;
       message?: string;
     };
 
@@ -101,6 +145,7 @@ export async function POST(request: NextRequest) {
       id: `inq_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       nickname: (nickname && typeof nickname === 'string') ? nickname.trim().slice(0, 50) : '',
       email: (email && typeof email === 'string') ? email.trim().slice(0, 100) : '',
+      category: (category && typeof category === 'string') ? category.trim() : '기타',
       message: message.trim(),
       createdAt: new Date().toISOString(),
       status: 'open',
@@ -109,6 +154,9 @@ export async function POST(request: NextRequest) {
     const inquiries = loadInquiries();
     inquiries.push(inquiry);
     saveInquiries(inquiries);
+
+    // 이메일 알림 (비동기, 실패해도 접수는 성공)
+    sendNotificationEmail(inquiry).catch(() => {});
 
     return NextResponse.json({ success: true, id: inquiry.id });
   } catch {

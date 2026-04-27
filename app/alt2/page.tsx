@@ -1065,8 +1065,9 @@ export default function Alt2Page() {
                   다른 사주 분석하기
                 </button>
 
-                {/* 사업자 정보 링크 — 사업자 등록 후 opacity 조정 */}
-                <div className="mt-6 flex justify-center gap-3" style={{ opacity: 0.01 }}>
+                {/* 사업자 정보 */}
+                <div className="mt-6 text-center text-[9px]" style={{ color: '#688097' }}>베러댄스튜디오 · 사업자등록번호 207-27-94576</div>
+                <div className="mt-2 flex justify-center gap-3">
                   <a href="/business" className="text-[9px]" style={{ color: '#688097' }}>사업자 정보</a>
                   <span className="text-[9px]" style={{ color: '#688097' }}>·</span>
                   <a href="/terms" className="text-[9px]" style={{ color: '#688097' }}>이용약관</a>

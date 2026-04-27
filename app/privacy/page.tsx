@@ -55,7 +55,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="font-bold text-base mb-2" style={{ color: '#dde1e5' }}>6. 이용자의 권리와 행사 방법</h2>
           <p>이용자는 언제든지 개인정보의 열람·정정·삭제·처리정지를 요청할 수 있습니다.</p>
-          <p>요청 방법: 이메일 ________@________ 으로 연락</p>
+          <p>요청 방법: 문의 페이지를 통해 연락</p>
         </section>
 
         <section>
@@ -70,14 +70,14 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="font-bold text-base mb-2" style={{ color: '#dde1e5' }}>8. 개인정보 보호책임자</h2>
-          <p>성명: ________</p>
-          <p>연락처: ________@________</p>
+          <p>성명: 이대운</p>
+          <p>연락처: info@betterdan.net</p>
           <p>이용자는 서비스 이용 중 발생한 모든 개인정보 관련 문의를 개인정보 보호책임자에게 할 수 있습니다.</p>
         </section>
 
         <section>
           <h2 className="font-bold text-base mb-2" style={{ color: '#dde1e5' }}>9. 개인정보 처리방침 변경</h2>
-          <p>이 개인정보처리방침은 ________년 __월 __일부터 적용됩니다.</p>
+          <p>이 개인정보처리방침은 2026년 5월 20일부터 적용됩니다.</p>
           <p>변경 시 서비스 화면을 통해 공지합니다.</p>
         </section>
 

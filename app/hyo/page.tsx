@@ -32,7 +32,19 @@ function YaoSymbol({ yao, size = 32 }: { yao: YaoResult; size?: number }) {
   const glowColor = '#f0dfad';
   const isGlow = yao.isChanging;
 
-  const totalWidth = dotCount * 4 + (dotCount - 1) * 2; // 도트 + gap 총 너비
+  // 양효 기준 totalWidth를 공통으로 사용 → 양/음 동일 너비
+  const totalWidth = dotCount * 4 + (dotCount - 1) * 2;
+
+  const changingDot = yao.isChanging ? (
+    <div style={{
+      position: 'absolute', left: '50%', top: '50%',
+      transform: 'translate(-50%, -50%)',
+      width: 6, height: 6, borderRadius: '50%',
+      backgroundColor: glowColor,
+      boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
+      animation: 'pixel-pulse 1.5s ease-in-out infinite',
+    }} />
+  ) : null;
 
   if (yao.isYang) {
     return (
@@ -45,15 +57,7 @@ function YaoSymbol({ yao, size = 32 }: { yao: YaoResult; size?: number }) {
             <Dot key={i} color={baseColor} glow={isGlow} />
           ))}
         </div>
-        {yao.isChanging && (
-          <div style={{
-            position: 'absolute',
-            width: 6, height: 6, borderRadius: '50%',
-            backgroundColor: glowColor,
-            boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
-            animation: 'pixel-pulse 1.5s ease-in-out infinite',
-          }} />
-        )}
+        {changingDot}
       </div>
     );
   }
@@ -63,7 +67,7 @@ function YaoSymbol({ yao, size = 32 }: { yao: YaoResult; size?: number }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       width: totalWidth, height: size * 0.25, position: 'relative',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
         <div style={{ display: 'flex', gap: 2 }}>
           {Array.from({ length: halfDots }).map((_, i) => (
             <Dot key={`l${i}`} color={baseColor} glow={isGlow} />
@@ -76,15 +80,7 @@ function YaoSymbol({ yao, size = 32 }: { yao: YaoResult; size?: number }) {
           ))}
         </div>
       </div>
-      {yao.isChanging && (
-        <div style={{
-          position: 'absolute',
-          width: 6, height: 6, borderRadius: '50%',
-          backgroundColor: glowColor,
-          boxShadow: `0 0 6px ${glowColor}, 0 0 12px ${glowColor}`,
-          animation: 'pixel-pulse 1.5s ease-in-out infinite',
-        }} />
-      )}
+      {changingDot}
     </div>
   );
 }
@@ -563,7 +559,10 @@ export default function HyoPage() {
     { speaker: '', style: 'thought' as const, text: '어... 신전에서 봤던 차림이네...?' },
     { speaker: '복길', style: 'normal' as const, text: '오, 자네인가.\n여기까지 올 줄은 몰랐는데.' },
     { speaker: '', style: 'thought' as const, text: '복길이...? 분위기가 다르다.' },
-    { speaker: '복길', style: 'normal' as const, text: '사주는 타고난 그릇을 보는 것이라면,\n육효는 지금 이 순간의 물음에\n답을 구하는 것이야.' },
+    { speaker: '복길', style: 'normal' as const, text: '이 곳은 [운명의 제단]일세.\n[시간의 신전]에서 사주풀이를 통해\n자신의 그릇을 발견했다면,' },
+    { speaker: '복길', style: 'normal' as const, text: '이 곳에서는 자네가 가진\n현재의 질문에 대한\n답을 구하는 곳이지.' },
+    { speaker: '복길', style: 'normal' as const, text: '3천 년 전 주나라 때부터\n전해 내려온 점술이지.\n역경, 주역이라고도 부른다네.' },
+    { speaker: '복길', style: 'normal' as const, text: '운명의 흐름은 시시각각 변화하지.\n그 변화의 흐름을 무작위추출의\n행위로 읽어내는 것이 육효라네.' },
     { speaker: '복길', style: 'normal' as const, text: '마음속에 묻고 싶은 것 하나만\n품고 오게.' },
     { speaker: '복길', style: 'normal' as const, text: '준비가 되면,\n여섯 그루의 나무에서\n가지를 모아오게 될 걸세.' },
   ];

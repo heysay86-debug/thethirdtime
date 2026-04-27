@@ -10,6 +10,7 @@ import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import SajuReport from '@/src/pdf/SajuReport';
 import { savePdfCopy } from '@/src/db/pdf-storage';
+import { sanitizeSections } from '@/src/middleware/sanitize';
 import { corsHeaders, handleOptions } from '../../cors';
 
 export async function OPTIONS(request: NextRequest) {
@@ -41,22 +42,27 @@ export async function POST(request: NextRequest) {
     const [hh, mm] = (birth?.time || '12:00').split(':').map(Number);
     const birthDateUtc = new Date(Date.UTC(y, m - 1, d, hh - 9, mm)); // KST → UTC
 
+    // 방어적 마스킹: 클라이언트에서 이미 마스킹된 데이터가 오지만, 한 번 더 확인
+    const safeCore = sanitizeSections(core);
+    const safeSections = sections ? sanitizeSections(sections) : null;
+    const safeEasyReadings = easyReadings ? sanitizeSections(easyReadings) : null;
+
     // LLM 해석 결과를 InterpretationResult 형태로 합성
-    const interpretation = sections ? {
-      summary: core.summary || '',
+    const interpretation = safeSections ? {
+      summary: safeCore.summary || '',
       sections: {
-        basics: { description: sections.basics?.description || '' },
+        basics: { description: safeSections.basics?.description || '' },
         coreJudgment: {
-          strengthReading: core.strengthReading || '',
-          gyeokGukReading: core.gyeokGukReading || '',
-          yongSinReading: core.yongSinReading || '',
+          strengthReading: safeCore.strengthReading || '',
+          gyeokGukReading: safeCore.gyeokGukReading || '',
+          yongSinReading: safeCore.yongSinReading || '',
         },
-        pillarAnalysis: sections.pillarAnalysis || { year: '', month: '', day: '', hour: null },
-        ohengAnalysis: sections.ohengAnalysis || { distribution: '', johu: '' },
-        sipseongAnalysis: sections.sipseongAnalysis || { reading: '' },
-        relations: sections.relations || { reading: '' },
-        daeunReading: sections.daeunReading || null,
-        overallReading: sections.overallReading || { primary: '', modernApplication: '' },
+        pillarAnalysis: safeSections.pillarAnalysis || { year: '', month: '', day: '', hour: null },
+        ohengAnalysis: safeSections.ohengAnalysis || { distribution: '', johu: '' },
+        sipseongAnalysis: safeSections.sipseongAnalysis || { reading: '' },
+        relations: safeSections.relations || { reading: '' },
+        daeunReading: safeSections.daeunReading || null,
+        overallReading: safeSections.overallReading || { primary: '', modernApplication: '' },
       },
     } : null;
 
@@ -70,7 +76,7 @@ export async function POST(request: NextRequest) {
         gender: engine.gender === 'F' ? '여' : '남',
         sajuResult: engine,
         interpretation,
-        easyReadings,
+        easyReadings: safeEasyReadings,
         reportNo,
       }) as any
     );
