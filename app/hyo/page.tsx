@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { performSambyeon, getGuaName, type YaoResult } from '@/src/hyo/sicho';
 import { trackEvent } from '@/src/analytics';
 import { STAGES, START_POS, ALTAR_POS } from '@/src/hyo/stages';
@@ -9,7 +9,7 @@ import { interpretCast, type GuaInterpretation, type YaoInterpretation } from '@
 import { getGuaPalace, getPalaceLabel, liuqinKorean, type GuaPalaceInfo } from '@/src/hyo/gua-palace';
 import { generateTraditionalReading } from '@/src/hyo/gua-reading';
 
-type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'complete';
+type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete';
 
 // 픽셀 도트 1개
 function Dot({ color, glow }: { color: string; glow?: boolean }) {
@@ -169,16 +169,106 @@ function formatYaoText(yao: YaoInterpretation, bonGuaName: string): string {
   return text;
 }
 
-// 카테고리 아이콘 (제거됨)
+// 주문 나레이션 — 한 줄씩 아래→위 페이드인 후 디졸브
+function IncantationNarration({ lines, onComplete }: { lines: string[]; onComplete: () => void }) {
+  const [lineIndex, setLineIndex] = useState(0);
+  const [showButton, setShowButton] = useState(false);
+  const [animState, setAnimState] = useState<'entering' | 'visible' | 'exiting'>('entering');
 
-function CompleteView({ guaInfo, castResult, yaos, onReset }: {
+  useEffect(() => {
+    if (lineIndex >= lines.length) {
+      setShowButton(true);
+      return;
+    }
+
+    // entering → visible (0.8s)
+    setAnimState('entering');
+    const visibleTimer = setTimeout(() => setAnimState('visible'), 800);
+    // visible → exiting (1.5s 후)
+    const exitTimer = setTimeout(() => setAnimState('exiting'), 2300);
+    // exiting → next line (0.8s 후)
+    const nextTimer = setTimeout(() => setLineIndex(i => i + 1), 3100);
+
+    return () => {
+      clearTimeout(visibleTimer);
+      clearTimeout(exitTimer);
+      clearTimeout(nextTimer);
+    };
+  }, [lineIndex, lines.length]);
+
+  const animStyle: React.CSSProperties = animState === 'entering'
+    ? { opacity: 0, transform: 'translateY(20px)', transition: 'all 0.8s ease-out' }
+    : animState === 'visible'
+    ? { opacity: 1, transform: 'translateY(0)', transition: 'all 0.8s ease-out' }
+    : { opacity: 0, transform: 'translateY(-10px)', transition: 'all 0.8s ease-in' };
+
+  return (
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center"
+      style={{ zIndex: 10, background: 'rgba(0,0,0,0.7)' }}
+    >
+      <div style={{
+        minHeight: 80,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 32px',
+      }}>
+        {lineIndex < lines.length && (
+          <div
+            key={lineIndex}
+            style={{
+              fontSize: 20,
+              lineHeight: 1.6,
+              color: '#f0dfad',
+              fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
+              textAlign: 'center',
+              ...animStyle,
+            }}
+          >
+            {lines[lineIndex]}
+          </div>
+        )}
+      </div>
+
+      {showButton && (
+        <button
+          onClick={onComplete}
+          style={{
+            marginTop: 40,
+            padding: '12px 32px',
+            background: 'rgba(240,223,173,0.1)',
+            border: '1px solid rgba(240,223,173,0.3)',
+            borderRadius: 20,
+            color: '#f0dfad',
+            fontSize: 14,
+            cursor: 'pointer',
+            opacity: 0,
+            animation: 'narration-btn-in 1s ease 0.3s forwards',
+          }}
+        >
+          괘를 열다
+        </button>
+      )}
+
+      <style>{`
+        @keyframes narration-btn-in {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
   guaInfo: { name: string; korean: string };
   castResult: ReturnType<typeof interpretCast>;
   yaos: YaoResult[];
   onReset: () => void;
+  userQuestion: string;
 }) {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedYao, setSelectedYao] = useState<YaoInterpretation | null>(null);
+  const [showChangedGua, setShowChangedGua] = useState(false);
 
   const bonGua = castResult.bonGua;
   const changingYao = castResult.changingYao;
@@ -247,11 +337,26 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
 
   if (showDetail && bonGua) {
     // 총론 + 변효 목록
+    const jiName = changedGua?.name || bonGua.name;
+    const isSameGua = bonGua.name === jiName;
     return (
       <>
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#f0dfad', marginBottom: 4 }}>
-          {bonGua.name}
+        {/* 본괘 → 지괘 흐름 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+          marginBottom: 16, padding: '8px 0',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: '#889' }}>본괘</div>
+            <div style={{ fontSize: 16, color: '#f0dfad', fontWeight: 700 }}>{bonGua.name}</div>
+          </div>
+          <div style={{ fontSize: 16, color: '#889' }}>→</div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 10, color: '#889' }}>{isSameGua ? '(변화 없음)' : '지괘'}</div>
+            <div style={{ fontSize: 16, color: isSameGua ? '#889' : '#f0dfad', fontWeight: 700 }}>{jiName}</div>
+          </div>
         </div>
+
         <div style={{ fontSize: 11, color: '#889', marginBottom: 12 }}>
           {guaInfo.name}
           {palaceInfo && (
@@ -345,6 +450,7 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
 
         {changingYao.length > 0 && (
           <>
+            {/* 읽는 법 안내 */}
             <div style={{
               fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 10,
               padding: '8px 10px',
@@ -352,11 +458,18 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
               borderRadius: 8,
             }}>
               {changingYao.length === 1
-                ? '움직이는 기운이 하나 있네. 이것이 핵심 답이야.'
+                ? '움직이는 기운이 하나 있네. 아래의 효사가 핵심 답이야.'
                 : changingYao.length === 2
-                ? '두 개의 기운이 움직이고 있어. 둘 다 읽어보되, 위쪽 기운을 더 눈여겨보게.'
-                : `${changingYao.length}개의 기운이 요동치고 있군. 하나하나보다 전체 흐름을 느껴보게.`
+                ? '두 개의 기운이 움직이고 있어. 둘 다 읽되, 위쪽 효사를 중심으로 보게. 지괘는 두 기운이 모두 변한 최종 모습이야.'
+                : changingYao.length === 3
+                ? '세 개의 기운이 요동치고 있군. 위의 본괘 총론과 아래의 지괘 총론을 함께 읽게.'
+                : `${changingYao.length}개나 움직이고 있어. 아래의 지괘 총론을 중심으로 읽게.`
               }
+            </div>
+
+            {/* 개별 효사 — 동효 3개 이하일 때 강조 */}
+            <div style={{ fontSize: 11, color: '#889', marginBottom: 6 }}>
+              ▸ 각 효가 변하면
             </div>
             {changingYao.map((yao) => {
               const yaoLabel = ['첫', '둘', '셋', '넷', '다섯', '여섯'][yao.yao - 1] || yao.yao;
@@ -386,26 +499,74 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
                   <div style={{ color: '#999', marginTop: 4, fontSize: 11 }}>
                     {yao.general.split('\n')[0]}
                   </div>
+                  {/* 주요 카테고리 미리보기 */}
+                  <div style={{
+                    display: 'flex', flexWrap: 'wrap', gap: '2px 8px',
+                    marginTop: 6, paddingTop: 6,
+                    borderTop: '1px solid rgba(240,223,173,0.08)',
+                  }}>
+                    {['희망', '재물', '건강', '연애'].map(cat => {
+                      const val = yao.categories[cat];
+                      return val ? (
+                        <span key={cat} style={{ fontSize: 10, color: '#889' }}>
+                          <span style={{ color: '#a89070' }}>{cat}</span> {val}
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
                 </button>
               );
             })}
 
+            {/* 지괘 — 모든 동효가 변한 최종 모습 */}
             {changedGua && (
-              <div style={{
-                marginTop: 8, padding: '10px 12px',
-                background: 'rgba(240,223,173,0.04)',
-                borderRadius: 10,
-                fontSize: 12, color: '#999', lineHeight: 1.7,
-              }}>
-                기운이 흘러간 끝에는 <span style={{ color: '#f0dfad' }}>{changedGua.name}</span>의 모습이 기다리고 있네.
-              </div>
+              <>
+                <div style={{ fontSize: 11, color: '#889', marginTop: 10, marginBottom: 6 }}>
+                  ▸ 모든 기운이 변한 뒤의 최종 모습 (지괘)
+                </div>
+                <button
+                  onClick={() => setShowChangedGua(prev => !prev)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'rgba(240,223,173,0.06)',
+                    border: '1px solid rgba(240,223,173,0.2)',
+                    borderRadius: 10,
+                    color: '#dde1e5',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    lineHeight: 1.7,
+                  }}
+                >
+                  <span style={{ color: '#f0dfad', fontWeight: 600 }}>{changedGua.name}</span>
+                  <span style={{ color: '#889', marginLeft: 8, fontSize: 11 }}>
+                    {showChangedGua ? '▲ 접기' : '▼ 총론 보기'}
+                  </span>
+                  {showChangedGua && (
+                    <div style={{
+                      marginTop: 8, paddingTop: 8,
+                      borderTop: '1px solid rgba(240,223,173,0.1)',
+                      color: '#bbb', whiteSpace: 'pre-line',
+                    }}>
+                      {changedGua.chongron}
+                    </div>
+                  )}
+                </button>
+              </>
             )}
           </>
         )}
 
         {changingYao.length === 0 && (
-          <div style={{ fontSize: 12, color: '#999', lineHeight: 1.7, marginBottom: 8 }}>
-            모든 기운이 고요하이. 위의 해석이 곧 자네의 답이야.
+          <div style={{
+            fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 8,
+            padding: '8px 10px',
+            background: 'rgba(240,223,173,0.04)',
+            borderRadius: 8,
+          }}>
+            모든 기운이 고요하네. 변화 없이 이 괘의 뜻 그대로가 자네의 답이야.
+            지금은 움직일 때가 아니라, 있는 그대로를 받아들일 때라는 뜻이지.
           </div>
         )}
 
@@ -452,42 +613,132 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
     );
   }
 
-  // 첫 화면: 괘 이름 + 짧은 총론 + 해석 보기 버튼
+  // 카테고리 데이터: 동효 중 가장 위 효, 없으면 본괘 1효
+  const categorySource = changingYao.length > 0
+    ? changingYao[changingYao.length - 1]
+    : bonGua?.yao?.[0] || null;
+  const categories = categorySource?.categories || {};
+
+  const categoryCardRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadCard = async () => {
+    if (!categoryCardRef.current) return;
+    const html2canvas = (await import('html2canvas')).default;
+    const canvas = await html2canvas(categoryCardRef.current, {
+      backgroundColor: '#f5f0e1',
+      scale: 2,
+    });
+    const link = document.createElement('a');
+    link.download = `육효점-${bonGua?.name || '결과'}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+
+  // 첫 화면: 괘 이름 + 카테고리 카드 + 해석 보기 버튼
+  const jiName = changedGua?.name || bonGua?.name;
+  const isSameGua2 = bonGua?.name === jiName;
+
   return (
     <>
-      <div style={{ fontSize: 18, fontWeight: 700, color: '#f0dfad', marginBottom: 4 }}>
-        {bonGua?.name || guaInfo.korean}
-      </div>
-      <div style={{ fontSize: 13, color: '#889', marginBottom: 16 }}>
-        {guaInfo.name}
-      </div>
-      <div style={{ fontSize: 14, lineHeight: 1.8, marginBottom: 4 }}>
+      {/* 유저 질문 */}
+      {userQuestion && (
+        <div style={{
+          fontSize: 13, color: '#a1c5ac', fontStyle: 'italic', marginBottom: 12,
+          padding: '8px 12px',
+          background: 'rgba(151, 198, 170, 0.08)',
+          borderRadius: 8,
+          borderLeft: '2px solid rgba(151, 198, 170, 0.3)',
+        }}>
+          "{userQuestion}"
+        </div>
+      )}
+
+      <div style={{ fontSize: 14, lineHeight: 1.8, marginBottom: 12 }}>
         여섯 가지의 기운이 모두 드러났네.
       </div>
-      {changingYao.length === 1 && (
-        <div style={{ fontSize: 12, color: '#f0dfad', lineHeight: 1.7, marginBottom: 12 }}>
-          기운 하나가 뒤집히려 하고 있군.
-          {'\n'}이것이 자네에게 보내는 핵심 메시지일세.
-        </div>
+
+      {/* 카테고리 카드 — 이미지 다운로드 가능 */}
+      {Object.keys(categories).length > 0 && (
+        <>
+          <div
+            ref={categoryCardRef}
+            style={{
+              background: '#f5f0e1',
+              borderRadius: 12,
+              padding: '20px 18px 16px',
+              marginBottom: 12,
+            }}
+          >
+            {/* 카드 상단: 괘 이름 + 질문 */}
+            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                marginBottom: 6,
+              }}>
+                <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{bonGua?.name}</span>
+                {!isSameGua2 && (
+                  <>
+                    <span style={{ fontSize: 14, color: '#8a7a60' }}>→</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{jiName}</span>
+                  </>
+                )}
+              </div>
+              {userQuestion && (
+                <div style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic' }}>
+                  "{userQuestion}"
+                </div>
+              )}
+            </div>
+
+            {/* 카테고리 표 */}
+            <div style={{ display: 'grid', gap: 4 }}>
+              {Object.entries(categories).map(([cat, val]) => (
+                <div key={cat} style={{
+                  display: 'flex', gap: 8, alignItems: 'flex-start',
+                  padding: '5px 8px',
+                  background: 'rgba(139, 115, 85, 0.06)',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  fontFamily: '"Pretendard Variable", sans-serif',
+                }}>
+                  <span style={{ color: '#8a6a3e', fontWeight: 600, flexShrink: 0, minWidth: 52 }}>
+                    {cat.replace(/\(.*\)/, '')}
+                  </span>
+                  <span style={{ color: '#3a2e1e' }}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 하단: 로고 */}
+            <div style={{
+              marginTop: 12, paddingTop: 10,
+              borderTop: '1px solid rgba(139, 115, 85, 0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <img src="/icon/logo.svg" alt="" style={{ height: 14, opacity: 0.4 }} />
+              <span style={{ fontSize: 10, color: '#a89070', letterSpacing: 1 }}>제3의시간 · 육효점</span>
+            </div>
+          </div>
+
+          {/* 다운로드 버튼 */}
+          <button
+            onClick={handleDownloadCard}
+            style={{
+              padding: '8px 20px',
+              background: 'rgba(240, 223, 173, 0.1)',
+              border: '1px solid rgba(240, 223, 173, 0.2)',
+              borderRadius: 16,
+              color: '#f0dfad',
+              fontSize: 12,
+              cursor: 'pointer',
+              marginBottom: 12,
+            }}
+          >
+            카드 이미지 저장
+          </button>
+        </>
       )}
-      {changingYao.length === 2 && (
-        <div style={{ fontSize: 12, color: '#f0dfad', lineHeight: 1.7, marginBottom: 12 }}>
-          기운 둘이 움직이고 있어.
-          {'\n'}두 이야기 모두 들어보되, 위쪽 기운에 더 귀 기울여보게.
-        </div>
-      )}
-      {changingYao.length >= 3 && (
-        <div style={{ fontSize: 12, color: '#f0dfad', lineHeight: 1.7, marginBottom: 12 }}>
-          무려 {changingYao.length}개의 기운이 요동치고 있군.
-          {'\n'}이럴 땐 개별 기운보다 전체 흐름을 읽는 게 좋겠어.
-        </div>
-      )}
-      {changingYao.length === 0 && (
-        <div style={{ fontSize: 12, color: '#999', lineHeight: 1.7, marginBottom: 12 }}>
-          모든 기운이 제자리에 머물러 있네.
-          {'\n'}지금 그대로의 뜻이 자네의 답일세.
-        </div>
-      )}
+
       <button
         onClick={() => setShowDetail(true)}
         style={{
@@ -501,7 +752,7 @@ function CompleteView({ guaInfo, castResult, yaos, onReset }: {
           marginBottom: 8,
         }}
       >
-        해석 보기
+        상세 해석 보기
       </button>
       <button
         onClick={onReset}
@@ -540,6 +791,20 @@ export default function HyoPage() {
   const [gameComplete, setGameComplete] = useState(false);
   const [charPos, setCharPos] = useState(START_POS);
   const [isWalking, setIsWalking] = useState(false);
+  const [bubbleText, setBubbleText] = useState('');
+  const [resultBg, setResultBg] = useState(false);
+  const [bgFlash, setBgFlash] = useState(false);
+  const [userQuestion, setUserQuestion] = useState('');
+  const [showQuestionInput, setShowQuestionInput] = useState(false);
+
+  const BUBBLE_MESSAGES = [
+    '복잡한 계산은 내게 맡기게',
+    '자네의 무의식이\n하늘과 공명하는 과정이야',
+    '마음 속 질문에\n계속 집중해야 해',
+    '서두르지 말게.\n하늘의 뜻은 천천히 열리는 법이야',
+    '시초의 수가\n자네의 답을 품고 있다네',
+    '너무 복잡한 질문은\n적중률만 떨어뜨릴 뿐이야',
+  ];
 
   const stage = STAGES[stageIndex];
 
@@ -563,14 +828,16 @@ export default function HyoPage() {
     { speaker: '복길', style: 'normal' as const, text: '이 곳에서는 자네가 가진\n현재의 질문에 대한\n답을 구하는 곳이지.' },
     { speaker: '복길', style: 'normal' as const, text: '3천 년 전 주나라 때부터\n전해 내려온 점술이지.\n역경, 주역이라고도 부른다네.' },
     { speaker: '복길', style: 'normal' as const, text: '운명의 흐름은 시시각각 변화하지.\n그 변화의 흐름을 무작위추출의\n행위로 읽어내는 것이 육효라네.' },
-    { speaker: '복길', style: 'normal' as const, text: '마음속에 묻고 싶은 것 하나만\n품고 오게.' },
-    { speaker: '복길', style: 'normal' as const, text: '준비가 되면,\n여섯 그루의 나무에서\n가지를 모아오게 될 걸세.' },
+    { speaker: '복길', style: 'normal' as const, text: '자네 마음 속 깊은 곳의 질문을\n하나 구체적으로 떠올려보게.' },
+    { speaker: '복길', style: 'normal' as const, text: '마음을 비우고,\n자네가 원하는 질문 하나에\n집중하게.\n단, 너무 먼 미래의 일보다\n지금 눈 앞에 직면한\n궁금증이어야 하네.', action: 'question_input' as const },
+    { speaker: '복길', style: 'normal' as const, text: '좋네. 그 질문을 마음에 품고,\n여섯 그루의 나무에서\n가지를 모아오게 될 걸세.' },
   ];
 
   // 시초 나누기 (탭)
   const handleSplit = useCallback(async () => {
     if (stageIndex === 0 && yaos.length === 0) trackEvent('hyo_start');
     setPhase('counting');
+    setBubbleText(BUBBLE_MESSAGES[Math.floor(Math.random() * BUBBLE_MESSAGES.length)]);
 
     // 삼변 애니메이션
     const result = performSambyeon();
@@ -588,6 +855,7 @@ export default function HyoPage() {
     await new Promise(r => setTimeout(r, 1200));
 
     // 효 추가
+    setBubbleText('');
     const newYaos = [...yaos, result.yao];
     setYaos(newYaos);
     setPhase('result');
@@ -605,7 +873,12 @@ export default function HyoPage() {
       });
     } else {
       setCharPos(ALTAR_POS);
-      setPhase('incantation');
+      setBgFlash(true);
+      setTimeout(() => {
+        setResultBg(true);
+        setBgFlash(false);
+        setPhase('incantation');
+      }, 600);
       trackEvent('hyo_complete');
     }
   }, [stageIndex]);
@@ -664,13 +937,14 @@ export default function HyoPage() {
       }}>
         <div style={{ position: 'relative', height: '100%', maxWidth: 440, width: '100%' }}>
           <img
-            src="/background/hyo.jpeg"
+            src={resultBg ? '/background/hyo_result.jpeg' : '/background/hyo.jpeg'}
             alt=""
             style={{
               height: '100%',
               width: '100%',
               objectFit: 'cover',
               opacity: 0.35,
+              transition: 'opacity 0.8s ease',
             }}
           />
           {/* 복길 캐릭터 — 신령 패스 이동 */}
@@ -697,6 +971,55 @@ export default function HyoPage() {
           </div>
         </div>
       </div>
+
+      {/* 말풍선 — 대화창 위 독립 레이어 */}
+      {bubbleText && (
+        <div style={{
+          position: 'fixed',
+          left: '50%',
+          top: '25%',
+          transform: 'translateX(-50%)',
+          zIndex: 12,
+          padding: '10px 16px',
+          backgroundColor: 'rgba(20, 25, 35, 0.95)',
+          border: '1px solid rgba(240, 223, 173, 0.4)',
+          borderRadius: 12,
+          color: '#f0dfad',
+          fontSize: 13,
+          lineHeight: 1.6,
+          whiteSpace: 'pre-line',
+          textAlign: 'center',
+          maxWidth: 220,
+          pointerEvents: 'none',
+          animation: 'bubble-float 0.5s ease-out',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+        }}>
+          {bubbleText}
+        </div>
+      )}
+      <style>{`
+        @keyframes bubble-float {
+          from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+          to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+      `}</style>
+
+      {/* 화면전환 플래시 */}
+      {bgFlash && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          background: 'rgba(240, 223, 173, 0.6)',
+          animation: 'bg-flash 0.6s ease-out forwards',
+          pointerEvents: 'none',
+        }} />
+      )}
+      <style>{`
+        @keyframes bg-flash {
+          0% { opacity: 0; }
+          30% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
 
       {/* 상단: 로고 + 진행 표시 */}
       <div style={{
@@ -734,21 +1057,31 @@ export default function HyoPage() {
             paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
           }}>
             {(() => {
-              const line = ENTRANCE_LINES[entranceStep];
+              const line = ENTRANCE_LINES[entranceStep] as any;
               const isThought = line.style === 'thought';
               const isLast = entranceStep === ENTRANCE_LINES.length - 1;
+              const hasQuestionAction = line.action === 'question_input';
               const advance = () => {
+                if (hasQuestionAction && !showQuestionInput) {
+                  setShowQuestionInput(true);
+                  return;
+                }
+                if (hasQuestionAction && showQuestionInput) {
+                  setShowQuestionInput(false);
+                  setEntranceStep(s => s + 1);
+                  return;
+                }
                 if (isLast) runSpiritPath(STAGES[0].spiritPath, () => setPhase('intro'));
                 else setEntranceStep(s => s + 1);
               };
               return (
                 <div
-                  onClick={advance}
+                  onClick={showQuestionInput ? undefined : advance}
                   style={{
                     background: 'rgba(20, 25, 35, 0.92)',
                     border: '2px solid #556677',
                     padding: '14px 16px',
-                    cursor: 'pointer',
+                    cursor: showQuestionInput ? 'default' : 'pointer',
                     position: 'relative',
                   }}
                 >
@@ -772,8 +1105,53 @@ export default function HyoPage() {
                       }}>
                         {line.text}
                       </div>
+                      {/* 질문 입력 필드 */}
+                      {showQuestionInput && (
+                        <div style={{ marginTop: 12 }} onClick={e => e.stopPropagation()}>
+                          <input
+                            type="text"
+                            value={userQuestion}
+                            onChange={e => setUserQuestion(e.target.value)}
+                            placeholder="예) 이직해도 될까?"
+                            maxLength={50}
+                            autoFocus
+                            style={{
+                              width: '100%',
+                              padding: '10px 12px',
+                              fontSize: 16,
+                              color: '#f0dfad',
+                              backgroundColor: 'rgba(240, 223, 173, 0.08)',
+                              border: '1px solid rgba(240, 223, 173, 0.3)',
+                              borderRadius: 8,
+                              outline: 'none',
+                              fontFamily: '"Pretendard Variable", sans-serif',
+                              boxSizing: 'border-box',
+                            }}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && userQuestion.trim()) advance();
+                            }}
+                          />
+                          <button
+                            onClick={() => { if (userQuestion.trim()) advance(); }}
+                            style={{
+                              marginTop: 8,
+                              width: '100%',
+                              padding: '10px 0',
+                              fontSize: 14,
+                              color: userQuestion.trim() ? '#f0dfad' : '#556',
+                              backgroundColor: userQuestion.trim() ? 'rgba(240, 223, 173, 0.12)' : 'transparent',
+                              border: '1px solid rgba(240, 223, 173, 0.2)',
+                              borderRadius: 8,
+                              cursor: userQuestion.trim() ? 'pointer' : 'default',
+                              fontFamily: '"Pretendard Variable", sans-serif',
+                            }}
+                          >
+                            이 질문으로 점치기
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    {!isThought && (
+                    {!isThought && !showQuestionInput && (
                       <div style={{ flexShrink: 0, width: 72, height: 72, overflow: 'hidden' }}>
                         <img src="/character/hyo.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                       </div>
@@ -810,7 +1188,7 @@ export default function HyoPage() {
 
           {/* 미니게임 카드 */}
           <div style={{
-            background: 'rgba(26, 30, 36, 0.9)',
+            background: phase === 'counting' ? 'rgba(26, 30, 36, 0.55)' : 'rgba(26, 30, 36, 0.9)',
             backdropFilter: 'blur(12px)',
             border: '1px solid rgba(240, 223, 173, 0.2)',
             borderRadius: 16,
@@ -818,6 +1196,7 @@ export default function HyoPage() {
             maxWidth: 340,
             width: '100%',
             textAlign: 'center',
+            transition: 'background 0.5s ease',
           }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: '#f0dfad', marginBottom: 8 }}>
               복길
@@ -914,9 +1293,9 @@ export default function HyoPage() {
                 {stage.complete}
               </div>
               {/* 현재 효 크게 표시 */}
-              <div style={{ margin: '12px 0', position: 'relative' }}>
+              <div style={{ margin: '12px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <YaoSymbol yao={yaos[yaos.length - 1]} size={80} />
-                <div style={{ fontSize: 11, color: '#889', marginTop: 6 }}>
+                <div style={{ fontSize: 11, color: '#889', marginTop: 6, textAlign: 'center' }}>
                   {yaos[yaos.length - 1].label} ({yaos[yaos.length - 1].value})
                 </div>
               </div>
@@ -942,76 +1321,116 @@ export default function HyoPage() {
         </div>
       )}
 
-      {/* ═══ 주문 섹션 (incantation) ═══ */}
+      {/* ═══ 주문 섹션 (incantation) — 나레이션 방식 ═══ */}
       {phase === 'incantation' && (() => {
-        // localStorage에서 유저 정보 가져오기
-        let userInfo = { name: '여행자', birthDate: '', gender: '' };
-        try {
-          const stored = localStorage.getItem('thethirdtime_user');
-          if (stored) userInfo = JSON.parse(stored);
-        } catch {}
-
         const now = new Date();
-        const todayStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일`;
-        const hourStr = `${now.getHours()}시`;
-        const birthParts = userInfo.birthDate ? userInfo.birthDate.split('-') : [];
-        const birthStr = birthParts.length === 3
-          ? `${birthParts[0]}년 ${parseInt(birthParts[1])}월 ${parseInt(birthParts[2])}일`
-          : '';
-        const sunMoon = userInfo.gender === 'F' ? '달' : '태양';
+        const dateTimeStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${now.getHours()}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
 
-        const incantationText = birthStr
-          ? `${sunMoon}의 기운을 받아\n${birthStr} 태어난 ${userInfo.name}이\n${todayStr} ${hourStr}\n천지신명의 밝은 가르침을 구하오니\n길을 열어주소서`
-          : `천지신명의 밝은 가르침을 구하오니\n${todayStr} ${hourStr}\n${userInfo.name}에게 길을 열어주소서`;
+        const lines = [
+          '천지신명의 크고 밝은 뜻이여',
+          dateTimeStr,
+          '내 앞에 나타난 여행자의 앞길을',
+          '밝히는 등불이 되소서',
+        ];
 
         return (
-          <div
-            className="fixed inset-0 flex flex-col items-center justify-center"
-            style={{ zIndex: 10, background: 'rgba(0,0,0,0.7)' }}
-          >
+          <IncantationNarration
+            lines={lines}
+            onComplete={() => {
+              setGameComplete(true);
+              setPhase('preview');
+            }}
+          />
+        );
+      })()}
+
+      {/* ═══ 프리뷰 섹션 (preview) — 읽는 법 안내 ═══ */}
+      {phase === 'preview' && guaInfo && castResult && (() => {
+        const changingCount = yaos.filter(y => y.isChanging).length;
+        const bonName = castResult.bonGua?.name || '?';
+        const jiName = castResult.changedGua?.name || bonName;
+        const isSame = bonName === jiName;
+
+        const readingGuide = changingCount === 0
+          ? '움직이는 효가 없으니, 본괘의 총론이 곧 자네의 답이야.\n지금은 변화를 꾀할 때가 아니라,\n있는 그대로를 받아들일 때라는 뜻이지.'
+          : changingCount === 1
+          ? '움직이는 기운이 하나 있네.\n그 효의 효사가 핵심 답이야.\n지괘는 상황이 흘러갈 방향을 보여주네.'
+          : changingCount === 2
+          ? '두 개의 기운이 움직이고 있어.\n둘 다 읽되, 위쪽 효사를 중심으로 보게.\n지괘는 두 기운이 모두 변한 뒤의 최종 모습이야.'
+          : changingCount === 3
+          ? '세 개의 기운이 움직이고 있군.\n본괘 총론과 지괘 총론을 함께 읽게.\n효사는 세부 참고로 보면 되네.'
+          : changingCount <= 5
+          ? `${changingCount}개나 움직이고 있어.\n지괘 총론을 중심으로 읽고,\n움직이지 않은 효의 효사를 참고하게.`
+          : '모든 효가 움직이고 있군.\n지괘의 총론이 자네의 답이야.\n본괘는 지나온 상황이라 보면 되네.';
+
+        return (
+          <div style={{
+            position: 'relative', zIndex: 10,
+            padding: '40px 24px 120px',
+            maxWidth: 440,
+            margin: '0 auto',
+            textAlign: 'center',
+          }}>
+            {/* 괘 흐름: 본괘 → 지괘 */}
             <div style={{
-              maxWidth: 340, padding: '32px 24px',
-              textAlign: 'center',
+              fontSize: 11, color: '#889', letterSpacing: 3, marginBottom: 24,
             }}>
-              <div style={{
-                fontSize: 11, color: '#f0dfad', letterSpacing: 3, marginBottom: 20,
-              }}>
-                주문
-              </div>
-              <div style={{
-                fontSize: 16, lineHeight: 2.2, color: '#dde1e5',
-                fontFamily: 'var(--font-gaegu), "Gaegu", cursive',
-                whiteSpace: 'pre-wrap',
-                animation: 'fade-in-slow 2s ease',
-              }}>
-                {incantationText}
-              </div>
-              <button
-                onClick={() => {
-                  setGameComplete(true);
-                  setPhase('complete');
-                }}
-                style={{
-                  marginTop: 32,
-                  padding: '10px 28px',
-                  background: 'rgba(240,223,173,0.1)',
-                  border: '1px solid rgba(240,223,173,0.3)',
-                  borderRadius: 20,
-                  color: '#f0dfad',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  animation: 'fade-in-slow 3s ease',
-                }}
-              >
-                괘를 열다
-              </button>
+              괘의 흐름
             </div>
-            <style>{`
-              @keyframes fade-in-slow {
-                from { opacity: 0; }
-                to { opacity: 1; }
-              }
-            `}</style>
+
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+              marginBottom: 32,
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#889', marginBottom: 6 }}>본괘</div>
+                <div style={{ fontSize: 20, color: '#f0dfad', fontWeight: 700 }}>{bonName}</div>
+              </div>
+              <div style={{ fontSize: 20, color: '#889' }}>→</div>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#889', marginBottom: 6 }}>{isSame ? '(변화 없음)' : '지괘'}</div>
+                <div style={{ fontSize: 20, color: isSame ? '#889' : '#f0dfad', fontWeight: 700 }}>{jiName}</div>
+              </div>
+            </div>
+
+            {/* 동효 요약 */}
+            {changingCount > 0 && (
+              <div style={{
+                fontSize: 12, color: '#ccc', marginBottom: 16,
+              }}>
+                동효 {changingCount}개
+              </div>
+            )}
+
+            {/* 읽는 법 */}
+            <div style={{
+              padding: '16px 20px',
+              background: 'rgba(240,223,173,0.06)',
+              border: '1px solid rgba(240,223,173,0.15)',
+              borderRadius: 12,
+              fontSize: 13, color: '#ccc', lineHeight: 1.8,
+              whiteSpace: 'pre-line',
+              textAlign: 'left',
+              marginBottom: 32,
+            }}>
+              <div style={{ fontSize: 11, color: '#f0dfad', marginBottom: 8, letterSpacing: 1 }}>읽는 법</div>
+              {readingGuide}
+            </div>
+
+            <button
+              onClick={() => setPhase('complete')}
+              style={{
+                padding: '12px 32px',
+                background: 'rgba(240,223,173,0.12)',
+                border: '1px solid rgba(240,223,173,0.3)',
+                borderRadius: 20,
+                color: '#f0dfad',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              결과 확인
+            </button>
           </div>
         );
       })()}
@@ -1028,6 +1447,7 @@ export default function HyoPage() {
             guaInfo={guaInfo}
             castResult={castResult}
             yaos={yaos}
+            userQuestion={userQuestion}
             onReset={() => {
               setStageIndex(0);
               setPhase('intro');
@@ -1036,6 +1456,8 @@ export default function HyoPage() {
               setCurrentByeon(0);
               setCountingText('');
               setCharPos(START_POS);
+              setResultBg(false);
+              setUserQuestion('');
             }}
           />
         </div>

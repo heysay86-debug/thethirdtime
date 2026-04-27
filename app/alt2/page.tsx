@@ -649,6 +649,8 @@ export default function Alt2Page() {
                         onClick={() => {
                           setIsRedo(true);
                           setRedoKey(prev => prev + 1);
+                          setBgOpacity(0.6);
+                          setZonaBg('before');
                           setPhase('dialogue');
                         }}
                         style={{
