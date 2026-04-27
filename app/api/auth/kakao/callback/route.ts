@@ -68,9 +68,10 @@ export async function GET(request: NextRequest) {
     const kakaoId = String(userData.id);
     const nickname = userData.kakao_account?.profile?.nickname || userData.properties?.nickname || '';
     const profileImage = userData.kakao_account?.profile?.thumbnail_image_url || userData.properties?.thumbnail_image || '';
+    const email = userData.kakao_account?.email || '';
 
     // 3. DB upsert
-    upsertKakaoUser(kakaoId, nickname, profileImage);
+    upsertKakaoUser(kakaoId, nickname, profileImage, email);
 
     // 4. 세션 쿠키 발급 + 메인 리다이렉트
     const token = createAuthToken(kakaoId);

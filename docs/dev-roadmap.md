@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-27
+최종 업데이트: 2026-04-28
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -574,13 +574,16 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 이메일/전화번호 기재 (확정 후)
 - [ ] 결제 UI에 "전체 동의" 체크박스 추가 (이용약관 + 개인정보 + 환불제한 동의)
 
-### M-AUTH. 카카오 로그인 + 골골 시스템
-- [ ] 카카오 로그인 연동 (OAuth, 고유 ID + 닉네임만 수집)
-- [ ] 유저 테이블: kakao_id, nickname, golgol_balance, created_at
-- [ ] 골골(골骨) 시스템: 서비스 내 통용 화폐. 1골골 = ₩1,000 (부가세 별도)
+### M-AUTH. 카카오 로그인 + 골골 시스템 🟡 진행 중
+- [x] 카카오 로그인 연동 (OAuth, REST API + client_secret)
+- [x] 유저 테이블: kakao_id, nickname, profile_image, email, golgol_balance, created_at, last_login_at
+- [x] 메인 메뉴: 카카오로 시작하기 버튼 / 로그인 시 프로필+골골 잔액 표시
+- [x] 로그아웃 기능
+- [ ] 골골(骨) 시스템: 서비스 내 통용 화폐. 1골골 = ₩1,000 (부가세 별도)
 - [ ] 카카오 채널 친구추가 시 골골 지급 (무료 체험)
 - [ ] 골골 차감: 서비스 이용 시 소모 (리포트, 궁합 등 서비스별 단가 설정)
-- [ ] 골골 잔액 UI 표시
+- [ ] 카카오톡 공유 API (추천 링크, 심사 불필요)
+- [ ] (비즈니스 심사 후) 알림톡 — 리포트 완료 알림, PDF 이메일 자동 발송
 
 ### M-PAY. 결제 연동 (골골 충전)
 - [x] 토스페이먼츠 가입 완료 (2026-04-27)
