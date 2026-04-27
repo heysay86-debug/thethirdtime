@@ -778,8 +778,19 @@ export default function Alt2Page() {
               {/* ② 대운 + 세운 (복사 영역) */}
               <div ref={daeunSeunRef}>
                 {/* DaeunTimeline */}
-                {daeunPeriods.length > 0 && (
+                {daeunPeriods.length > 0 ? (
                   <DaeunTimeline periods={daeunPeriods} currentAge={currentAge} startAge={daeunStartAge} />
+                ) : (
+                  <div style={{
+                    padding: '16px 20px', marginBottom: 16,
+                    background: 'rgba(240,223,173,0.04)',
+                    border: '1px solid rgba(240,223,173,0.1)',
+                    borderRadius: 12,
+                    fontSize: 12, color: '#889', lineHeight: 1.7, textAlign: 'center',
+                  }}>
+                    출생 시각을 알 수 없어 대운 분석이 제공되지 않습니다.
+                    <br />정확한 시각을 입력하시면 대운 흐름을 확인하실 수 있습니다.
+                  </div>
                 )}
 
                 {/* 양피지 해설: 대운 */}
@@ -810,7 +821,7 @@ export default function Alt2Page() {
 
               {/* ④ OhengRelation + OhengRadar + WangSang */}
               <OhengRelation />
-              <OhengRadar distribution={ohengDistribution} />
+              <OhengRadar counts={engine?.ohengAnalysis?.counts} distribution={ohengDistribution} />
               {engine?.ohengAnalysis && (
                 <OhengWangSang
                   counts={engine.ohengAnalysis.counts}

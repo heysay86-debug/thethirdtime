@@ -1,31 +1,55 @@
 'use client';
 
+interface OhengCount {
+  element: string;
+  count: number;
+  state: string; // 旺/相/休/囚/死
+}
+
 interface OhengRadarProps {
-  distribution: Record<string, number>;
+  counts?: OhengCount[];
+  distribution?: Record<string, number>; // fallback
 }
 
 const LABELS = ['목', '화', '토', '금', '수'] as const;
+const ELEMENT_MAP: Record<string, typeof LABELS[number]> = {
+  '木': '목', '火': '화', '土': '토', '金': '금', '水': '수',
+};
 
-export default function OhengRadar({ distribution }: OhengRadarProps) {
+const STATE_VALUE: Record<string, number> = {
+  '旺': 5, '相': 4, '休': 3, '囚': 2, '死': 1,
+};
+
+const STATE_LABEL: Record<string, string> = {
+  '旺': '왕', '相': '상', '休': '휴', '囚': '수', '死': '사',
+};
+
+export default function OhengRadar({ counts, distribution }: OhengRadarProps) {
   const cx = 150, cy = 150;
   const maxR = 100;
-  const maxVal = Math.max(...LABELS.map(l => distribution[l]), 1);
+  const maxVal = 5; // 왕이 최대값
+
+  // counts가 있으면 왕상휴수사 기반, 없으면 개수 기반 fallback
+  const stateMap: Record<string, { value: number; state: string }> = {};
+  if (counts) {
+    for (const c of counts) {
+      const label = ELEMENT_MAP[c.element] || c.element;
+      stateMap[label] = { value: STATE_VALUE[c.state] || 0, state: c.state };
+    }
+  }
+
+  const useStates = counts && Object.keys(stateMap).length > 0;
+  const values = LABELS.map(l => useStates ? (stateMap[l]?.value || 0) : (distribution?.[l] || 0));
+  const effectiveMax = useStates ? maxVal : Math.max(...values, 1);
 
   const getPoint = (index: number, value: number) => {
     const angle = (index * 72 - 90) * (Math.PI / 180);
-    const r = (value / maxVal) * maxR;
+    const r = (value / effectiveMax) * maxR;
     return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
   };
 
-  // Grid lines
-  const gridLevels = [0.25, 0.5, 0.75, 1];
-
-  // Data polygon
-  const dataPoints = LABELS.map((_, i) => getPoint(i, distribution[LABELS[i]]));
-  const dataPath = dataPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z';
-
-  // Axis labels
-  const labelPos = LABELS.map((_, i) => getPoint(i, maxVal + 20 / maxR * maxVal));
+  const gridLevels = useStates ? [1/5, 2/5, 3/5, 4/5, 1] : [0.25, 0.5, 0.75, 1];
+  const dataPoints = LABELS.map((_, i) => getPoint(i, values[i]));
 
   return (
     <div className="flex flex-col items-center">
@@ -48,9 +72,32 @@ export default function OhengRadar({ distribution }: OhengRadarProps) {
           );
         })}
 
+        {/* Grid labels (왕상휴수사) */}
+        {useStates && (
+          <>
+            {[
+              { label: '사', level: 1/5 },
+              { label: '수', level: 2/5 },
+              { label: '휴', level: 3/5 },
+              { label: '상', level: 4/5 },
+              { label: '왕', level: 1 },
+            ].map(({ label, level }) => (
+              <text
+                key={label}
+                x={cx + 8}
+                y={cy - level * maxR + 4}
+                fill="rgba(104, 128, 151, 0.4)"
+                fontSize={9}
+              >
+                {label}
+              </text>
+            ))}
+          </>
+        )}
+
         {/* Axes */}
         {LABELS.map((_, i) => {
-          const p = getPoint(i, maxVal);
+          const p = getPoint(i, effectiveMax);
           return (
             <line
               key={i}
@@ -77,8 +124,9 @@ export default function OhengRadar({ distribution }: OhengRadarProps) {
         {/* Labels */}
         {LABELS.map((label, i) => {
           const angle = (i * 72 - 90) * (Math.PI / 180);
-          const lx = cx + (maxR + 24) * Math.cos(angle);
-          const ly = cy + (maxR + 24) * Math.sin(angle);
+          const lx = cx + (maxR + 28) * Math.cos(angle);
+          const ly = cy + (maxR + 28) * Math.sin(angle);
+          const state = stateMap[label];
           return (
             <text
               key={label}
@@ -89,7 +137,7 @@ export default function OhengRadar({ distribution }: OhengRadarProps) {
               fontSize={13}
               fontWeight={600}
             >
-              {label} {distribution[label]}
+              {label} {useStates ? STATE_LABEL[state?.state] || '' : (distribution?.[label] || 0)}
             </text>
           );
         })}

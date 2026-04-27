@@ -231,6 +231,146 @@ const OhengAnalysisSchema = z.object({
   monthElement: ElementSchema,
 });
 
+// ── 연애운 ──
+
+const LoveReadingSchema = z.object({
+  spouseHouse: z.object({
+    dayJi: z.string(),
+    branchType: z.enum(['생지', '왕지', '고지']),
+    branchTypeLabel: z.string(),
+    meetingStyle: z.string(),
+    relationStyle: z.string(),
+    dayJiLove: z.string(),
+    goji: z.object({
+      element: ElementSchema,
+      stem: z.string(),
+      desc: z.string(),
+    }).optional(),
+  }),
+  loveStyle: z.object({
+    dayGanElement: ElementSchema,
+    dayGanLoveStyle: z.string(),
+    spouseStarType: z.enum(['재성', '관성']),
+    spouseStarElement: ElementSchema,
+    jeongOrPyeon: z.enum(['jeong', 'pyeon']),
+    jeongPyeonLabel: z.string(),
+    jeongPyeonDesc: z.string(),
+    hasDohwa: z.boolean(),
+    hasHongyeom: z.boolean(),
+    hasWonjin: z.boolean(),
+    twelveStageDay: z.string(),
+  }),
+  idealPartner: z.object({
+    element: ElementSchema,
+    keywords: z.array(z.string()),
+    personalityDesc: z.string(),
+    yongsinElement: ElementSchema,
+    yongsinDesc: z.string(),
+    idealSajuFeatures: z.array(z.string()),
+  }),
+  timing: z.object({
+    spouseStarDaeun: z.array(z.object({
+      startAge: z.number(),
+      endAge: z.number(),
+      gan: z.string(),
+      ji: z.string(),
+      rating: z.string(),
+    })),
+    dohwaYears: z.array(z.number()),
+  }),
+});
+
+// ── 금전운 ──
+
+const JaeseongStrengthResultSchema = z.object({
+  level: z.enum(['strong', 'moderate', 'weak']),
+  count: z.number(),
+  jijangganJeonggiCount: z.number(),
+});
+
+const MoneyReadingSchema = z.object({
+  jaeseongGung: z.object({
+    jaeseongElement: ElementSchema,
+    primaryType: z.enum(['편재', '정재']).nullable(),
+    pyeonjaeCount: z.number(),
+    jeongjaeCount: z.number(),
+    jaeseongStrength: JaeseongStrengthResultSchema,
+    monthJiElement: ElementSchema,
+    dayJiElement: ElementSchema,
+  }),
+  moneyStyle: z.object({
+    dayGanElement: ElementSchema,
+    earningStyle: z.string(),
+    spendingStyle: z.string(),
+    strengthJaeseong: z.object({
+      label: z.string(),
+      desc: z.string(),
+    }),
+    hasYeokma: z.boolean(),
+    hasGwimungwan: z.boolean(),
+    hasSiksangSaengjae: z.boolean(),
+  }),
+  timing: z.object({
+    jaeseongDaeun: z.array(z.object({
+      startAge: z.number(),
+      endAge: z.number(),
+      gan: z.string(),
+      ji: z.string(),
+      rating: z.string(),
+    })),
+    pyeonjaeSeunyears: z.array(z.number()),
+    jeongjaeSeunyears: z.array(z.number()),
+  }),
+});
+
+// ── 사업운 ──
+
+const BusinessScoreBreakdownSchema = z.object({
+  pyeonjae: z.number(),
+  siksangSaengjae: z.number(),
+  yeokma: z.number(),
+  pyeongwanJehwa: z.number(),
+  singang: z.number(),
+  total: z.number(),
+});
+
+const BusinessReadingSchema = z.object({
+  gwanJaeAnalysis: z.object({
+    gwanseongElement: ElementSchema,
+    gwanseongCount: z.number(),
+    pyeongwanCount: z.number(),
+    jeonggwanCount: z.number(),
+    jaeseongElement: ElementSchema,
+    jaeseongCount: z.number(),
+    combination: z.enum(['관강재강', '관강재약', '관약재강', '관약재약']),
+    combinationLabel: z.string(),
+    combinationDesc: z.string(),
+    businessScore: BusinessScoreBreakdownSchema,
+  }),
+  industryFit: z.object({
+    yongsinElement: ElementSchema,
+    recommended: z.array(z.string()),
+    notRecommended: z.array(z.string()),
+  }),
+  timing: z.object({
+    bestDaeun: z.array(z.object({
+      startAge: z.number(),
+      endAge: z.number(),
+      gan: z.string(),
+      ji: z.string(),
+      rating: z.string(),
+    })),
+    cautionPeriods: z.array(z.object({
+      type: z.enum(['비겁대운', '편관무제화']),
+      startAge: z.number(),
+      endAge: z.number(),
+      gan: z.string(),
+      ji: z.string(),
+      reason: z.string(),
+    })),
+  }),
+});
+
 // ── 통합 스키마 ──
 
 export const SajuResultSchema = z.object({
@@ -272,6 +412,12 @@ export const SajuResultSchema = z.object({
   jijiHap: z.array(JijiHapSchema),
   /** 천간충 */
   cheonganChung: z.array(CheonganChungSchema),
+  /** 연애운 (성별 입력 시) */
+  loveReading: LoveReadingSchema.optional(),
+  /** 금전운 */
+  moneyReading: MoneyReadingSchema.optional(),
+  /** 사업운 */
+  businessReading: BusinessReadingSchema.optional(),
 });
 
 export type SajuResult = z.infer<typeof SajuResultSchema>;

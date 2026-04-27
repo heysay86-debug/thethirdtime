@@ -17,6 +17,9 @@ import { calculateTwelveStages } from './twelve_stages';
 import { SajuResultSchema, SajuResult } from './schema';
 import { analyzeOheng } from './oheng_analysis';
 import { detectJijiHap, detectCheonganChung } from './relations';
+import { analyzeLove } from './love_reading';
+import { analyzeMoney } from './money_reading';
+import { analyzeBusiness } from './business_reading';
 
 export function analyzeSaju(input: SajuInput): SajuResult {
   // M8: 4기둥
@@ -55,9 +58,10 @@ export function analyzeSaju(input: SajuInput): SajuResult {
   const yongSinElement = yongSin.final.primary as '木' | '火' | '土' | '金' | '水';
 
   let daeun = null;
-  if (input.gender && input.birthTime) {
+  if (input.gender) {
     const [y, m, d] = saju.birth.solar.split('-').map(Number);
-    const [hh, mm] = (saju.birth.adjustedTime ?? input.birthTime).split(':').map(Number);
+    const hh = input.birthTime ? parseInt((saju.birth.adjustedTime ?? input.birthTime).split(':')[0]) : 12;
+    const mm = input.birthTime ? parseInt((saju.birth.adjustedTime ?? input.birthTime).split(':')[1]) : 0;
     const adjustedBirthDate = new Date(y, m - 1, d, hh, mm);
 
     daeun = calculateDaeun(
@@ -84,6 +88,22 @@ export function analyzeSaju(input: SajuInput): SajuResult {
   // 천간충
   const cheonganChung = detectCheonganChung(pillars);
 
+  // 번외편: 연애운, 금전운, 사업운
+  const readingInput = {
+    pillars,
+    tenGods,
+    sinsal,
+    twelveStages,
+    yongSin,
+    strength,
+    daeun,
+    seun,
+  };
+
+  const loveReading = input.gender ? analyzeLove(readingInput, input.gender) : undefined;
+  const moneyReading = analyzeMoney(readingInput);
+  const businessReading = analyzeBusiness(readingInput);
+
   const result: SajuResult = {
     pillars,
     birth: saju.birth,
@@ -99,6 +119,9 @@ export function analyzeSaju(input: SajuInput): SajuResult {
     ohengAnalysis,
     jijiHap,
     cheonganChung,
+    loveReading,
+    moneyReading,
+    businessReading,
   };
 
   // Zod 검증
