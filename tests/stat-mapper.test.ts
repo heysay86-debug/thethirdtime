@@ -344,5 +344,46 @@ describe('stat-mapper: 레퍼런스 사주 통합 검증', () => {
 
     // 신강도 점수
     expect(card.strengthScore).toBe(70);
+
+    // HP / MP
+    // STR=14, DEX=5 → HP = 14×30 + 5×10 = 420 + 50 = 470
+    // WIS=5,  INT=7  → MP = 5×30  + 7×10 = 150 + 70 = 220
+    expect(card.hp).toBe(card.stats.str * 30 + card.stats.dex * 10);
+    expect(card.mp).toBe(card.stats.wis * 30 + card.stats.int * 10);
+  });
+});
+
+describe('stat-mapper: HP / MP 산출', () => {
+  it('T18 — HP = STR×30 + DEX×10', () => {
+    // STR=14(score 70), DEX=5(식신 1개, 역마 없음)
+    const card = mapSajuToCard(makeMock());
+    expect(card.hp).toBe(card.stats.str * 30 + card.stats.dex * 10);
+  });
+
+  it('T19 — MP = WIS×30 + INT×10', () => {
+    const card = mapSajuToCard(makeMock());
+    expect(card.mp).toBe(card.stats.wis * 30 + card.stats.int * 10);
+  });
+
+  it('T20 — HP 최솟값 보호 (스탯 모두 최소 3 → HP ≥ 120)', () => {
+    // 십성 0개, score 0 → str=1, dex=3 → HP = 30+30 = 60
+    // score=0이면 scoreStat(0)=1 → STR=1, tenGodStat(0,0)=3 → DEX=3
+    // HP = 1×30 + 3×10 = 60
+    const lowCard = mapSajuToCard(makeMock({
+      strength: { ...makeMock().strength, score: 0 },
+      tenGods: {
+        yearGan: '비견', monthGan: '비견', dayGan: '비견', hourGan: '비견',
+        yearJi: '비견', monthJi: '비견', dayJi: '비견', hourJi: '비견',
+      },
+      daeun: {
+        direction: '순행', startAge: 8,
+        periods: [{ index: 0, startAge: 8, endAge: 17, gan: '戊', ji: '戌',
+          analysis: { ganTenGod: '편관', jiTenGod: '편관', yongSinRelation: '기신',
+            cheonganHaps: [], jijiRelations: [], score: 0, rating: '대흉' },
+          sinsal: [] }],
+      },
+    }));
+    expect(lowCard.hp).toBeGreaterThan(0);
+    expect(lowCard.mp).toBeGreaterThan(0);
   });
 });

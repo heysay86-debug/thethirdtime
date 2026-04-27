@@ -33,6 +33,15 @@ const MENU_ITEMS = [
     isService: true,
   },
   {
+    id: 'gungham',
+    label: '3장 - 인연의 거울 (궁합)',
+    subtitle: '',
+    href: '/gungham',
+    locked: true,
+    chapter: 3,
+    isService: true,
+  },
+  {
     id: 'blog',
     label: '복길의 서고',
     subtitle: '',

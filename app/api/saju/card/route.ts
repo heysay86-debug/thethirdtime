@@ -41,7 +41,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const cardData = mapSajuToCard(parsed.data.sajuResult);
     const pngBuf = await renderCard(cardData);
 
-    return new NextResponse(pngBuf, {
+    return new NextResponse(new Uint8Array(pngBuf), {
       status: 200,
       headers: {
         'Content-Type': 'image/png',

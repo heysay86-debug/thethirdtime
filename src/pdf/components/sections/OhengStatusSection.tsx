@@ -149,8 +149,42 @@ export default function OhengStatusSection({ sajuResult }: Props) {
         {/* 섹션 헤더 */}
         <Text style={s.sectionBadge}>07</Text>
         <Text style={commonStyles.sectionTitle}>오행 상태 분석</Text>
-        <Text style={commonStyles.sectionSubtitle}>왕상휴수사(旺相休囚死) 및 발달 · 과다 · 고립</Text>
+        <Text style={commonStyles.sectionSubtitle}>발달 · 과다 · 고립 및 왕상휴수사(旺相休囚死)</Text>
         <View style={s.titleDivider} />
+
+        {/* 발달/과다/고립 상세 — 원국 오행 개수 기반 (먼저 표시) */}
+        <Text style={s.subTitle}>오행별 발달 상태</Text>
+        <Text style={[s.bodyText, { marginBottom: 12 }]}>
+          원국 내 오행 분포를 종합하여 발달, 과다, 고립, 부족 여부를 판정합니다.
+        </Text>
+
+        {notableStatuses.length === 0 ? (
+          <Text style={s.bodyText}>모든 오행이 보통 수준으로, 특별히 과다하거나 부족한 오행이 없습니다.</Text>
+        ) : (
+          notableStatuses.map((st) => {
+            const el = st.element as keyof typeof OHENG_KEYWORDS;
+            const keywords = OHENG_KEYWORDS[el];
+            const levelKey = st.level === '발달' ? 'developed' : st.level === '과다' ? 'excessive' : st.level === '고립' ? 'isolated' : null;
+
+            return (
+              <View key={`top-${st.element}`} style={s.statusCard}>
+                <View style={s.statusHeader}>
+                  <Text style={[s.statusElement, { color: ELEMENT_COLOR[st.element] }]}>{ELEMENT_KOREAN[st.element]}</Text>
+                  <Text style={[s.statusBadge, { backgroundColor: st.level === '발달' ? '#2d6a40' : st.level === '과다' ? '#a83228' : '#8a6820' }]}>{st.level}</Text>
+                </View>
+                <Text style={s.statusDesc}>{st.description}</Text>
+                {keywords && levelKey && (keywords as any)[levelKey] && (
+                  <>
+                    <Text style={s.keywordLabel}>성격 키워드</Text>
+                    <Text style={s.keywordText}>{(keywords as any)[levelKey].personality?.join(', ')}</Text>
+                    <Text style={s.keywordLabel}>건강 주의</Text>
+                    <Text style={s.keywordText}>{(keywords as any)[levelKey].health}</Text>
+                  </>
+                )}
+              </View>
+            );
+          })
+        )}
 
         <Text style={s.bodyText}>
           월지 본기 오행 {ELEMENT_KOREAN[monthElement]}을 기준으로 각 오행의 세력(왕상휴수사)을 판정합니다. 旺은 가장 강한 상태, 死는 가장 약한 상태를 나타냅니다.
@@ -202,63 +236,6 @@ export default function OhengStatusSection({ sajuResult }: Props) {
         <Text style={s.bodyText}>
           旺(왕)은 월령과 같은 오행으로 가장 힘이 강하고, 相(상)은 월령이 생해주어 왕성합니다. 休(휴)는 힘을 빼주는 상태, 囚(수)는 극당하면서 약해지는 상태, 死(사)는 극을 받아 가장 약한 상태입니다.
         </Text>
-      </PageLayout>
-
-      <PageLayout>
-        {/* 발달/과다/고립 상세 */}
-        <Text style={s.subTitle}>오행별 발달 상태</Text>
-        <Text style={[s.bodyText, { marginBottom: 12 }]}>
-          원국 내 오행 분포를 종합하여 발달, 과다, 고립, 부족 여부를 판정합니다.
-        </Text>
-
-        {notableStatuses.length === 0 ? (
-          <Text style={s.bodyText}>모든 오행이 보통 수준으로, 특별히 과다하거나 부족한 오행이 없습니다.</Text>
-        ) : (
-          notableStatuses.map((st) => {
-            const el = st.element as keyof typeof OHENG_KEYWORDS;
-            const keywords = OHENG_KEYWORDS[el];
-            const levelKey = st.level === '발달' ? 'developed' : st.level === '과다' ? 'excessive' : st.level === '고립' ? 'isolated' : null;
-
-            return (
-              <View key={st.element} style={s.statusCard}>
-                <View style={s.statusHeader}>
-                  <Text style={[s.statusElement, { color: ELEMENT_COLOR[st.element] }]}>
-                    {ELEMENT_KOREAN[st.element]}
-                  </Text>
-                  <Text style={[s.statusBadge, { color: LEVEL_COLOR[st.level] }]}>
-                    {st.level}
-                  </Text>
-                </View>
-                <View style={s.statusBody}>
-                  <Text style={s.statusDesc}>{st.description}</Text>
-
-                  {levelKey && keywords[levelKey] && (
-                    <>
-                      <Text style={s.keywordLabel}>성격 키워드</Text>
-                      <Text style={s.keywordText}>
-                        {keywords[levelKey].personality.join(', ')}
-                      </Text>
-                      <Text style={s.keywordLabel}>건강 주의 영역</Text>
-                      <Text style={s.keywordText}>
-                        {keywords[levelKey].health}
-                      </Text>
-                    </>
-                  )}
-                </View>
-              </View>
-            );
-          })
-        )}
-
-        {/* 보통 오행 요약 */}
-        {statuses.filter(s => s.level === '보통').length > 0 && (
-          <View style={{ marginTop: 6 }}>
-            <Text style={s.keywordLabel}>보통 수준 오행</Text>
-            <Text style={s.keywordText}>
-              {statuses.filter(s => s.level === '보통').map(s => ELEMENT_KOREAN[s.element]).join(', ')}
-            </Text>
-          </View>
-        )}
       </PageLayout>
     </>
   );

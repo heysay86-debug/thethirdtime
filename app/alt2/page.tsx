@@ -819,9 +819,8 @@ export default function Alt2Page() {
 
               <SectionDivider icon="star" />
 
-              {/* ④ OhengRelation + OhengRadar + WangSang */}
+              {/* ④ OhengRelation + 발달/고립 → 왕상휴수사 순서 */}
               <OhengRelation />
-              <OhengRadar counts={engine?.ohengAnalysis?.counts} distribution={ohengDistribution} />
               {engine?.ohengAnalysis && (
                 <OhengWangSang
                   counts={engine.ohengAnalysis.counts}
@@ -829,6 +828,7 @@ export default function Alt2Page() {
                   monthElement={engine.ohengAnalysis.monthElement}
                 />
               )}
+              <OhengRadar counts={engine?.ohengAnalysis?.counts} distribution={ohengDistribution} />
 
               {/* 복길 코멘트 + core.strengthReading */}
               <InlineDialogue

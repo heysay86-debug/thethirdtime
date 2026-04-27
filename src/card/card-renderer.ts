@@ -1,219 +1,244 @@
 /**
  * card-renderer.ts
- * sharp + SVG overlay 방식으로 1080×1350 캐릭터 카드 PNG를 생성한다.
+ * card-template.png 기반 캐릭터 카드 PNG 생성기 (1080×1440)
  *
- * 렌더링 파이프라인:
- *  1. 배경 JPEG (일간 오행별) → 1080×1350 리사이즈 + 어두운 오버레이
- *  2. 캐릭터 PNG (angel/devil/basic) → 중앙 배치
- *  3. SVG 텍스트 레이어 (칭호, 스탯 바, 레지스턴스, 스킬, 워터마크)
- *  4. 최종 PNG 버퍼 반환
+ * 파이프라인:
+ *  1. public/card/card-template.png 로드
+ *  2. 캐릭터 PNG → 원형 클립 → 초상화 원에 합성
+ *  3. SVG 오버레이: HP/MP·스탯·오행%·칭호 커버 + 실제 수치 텍스트
+ *  4. PNG 버퍼 반환
  *
- * 에셋 경로 우선순위:
- *  CARD_ASSET_DIR 환경변수 > public/character|background 폴더
+ * 좌표 교정 기준:
+ *  - Python PIL 픽셀 스캔으로 각 수치 픽셀 아트 위치를 1px 단위로 확인
+ *  - 좌열 스탯 숫자: x=713-735 (STR/DEX/WIS/SPD)
+ *  - 우열 스탯 숫자: x=870-893 (INT/CHA/LUK)
+ *  - HP 숫자: y=402-431 / MP 숫자: y=454-482 (x≈728-894)
  */
 
 import path from 'path';
 import fs from 'fs';
 import sharp from 'sharp';
 import type { CharacterCardData } from './stat-mapper';
-import { STAT_COLORS, ELEMENT_EMOJI } from './card-data';
+import type { OhengElement } from './card-data';
 
-// ── 상수 ──────────────────────────────────────────────────────────────────────
+// ── 치수 ──────────────────────────────────────────────────────────────────────
 
 const CARD_W = 1080;
-const CARD_H = 1350;
+const CARD_H = 1440;
 
-// 기본 색상
-const C_DARK_NAVY  = '#3c4859';
-const C_YELLOW     = '#f4dea6';
-const C_WHITE      = '#ffffff';
-const C_OVERLAY    = 'rgba(60,72,89,0.72)';
+// ── 폰트 ──────────────────────────────────────────────────────────────────────
 
-// 영역 Y 좌표
-const TITLE_Y      = 80;
-const CHAR_TOP     = 180;
-const CHAR_H       = 480;
-const STATS_TOP    = CHAR_TOP + CHAR_H + 30;
-const RESIST_TOP   = STATS_TOP + 220;
-const EXTRA_TOP    = RESIST_TOP + 90;
-const BRAND_TOP    = EXTRA_TOP + 120;
+const FONT = "'Noto Sans KR','Apple Gothic',sans-serif";
+const MONO = "'Courier New','DejaVu Sans Mono',monospace";
 
-// ── 에셋 경로 해석 ─────────────────────────────────────────────────────────────
+// ── 픽셀-정밀 좌표 ────────────────────────────────────────────────────────────
 
-function resolveAssetDir(): { char: string; bg: string } {
+// 캐릭터 초상화 원 (변경 없음)
+const CHAR_CX = 257;
+const CHAR_CY = 430;
+const CHAR_R  = 148;
+
+// HP/MP: 템플릿 "195/120" / "26/30" 픽셀아트 위치
+//   HP 픽셀아트 y=402-431, MP y=454-482, x=728-894
+const HP_COVER = { x: 718, y: 400, w: 186, h: 86 }; // x=718-904, y=400-486 (양쪽 마진)
+const HP_TX = 722;  const HP_TY = 428;   // HP 텍스트 baseline
+const MP_TX = 722;  const MP_TY = 480;   // MP 텍스트 baseline
+
+// 좌열 스탯 숫자 (STR/DEX/WIS/SPD) — 픽셀아트 x=713-735
+const LC_X  = 711;   // 커버 rect 왼쪽 (2px 마진)
+const LC_W  = 27;    // 커버 너비 (x=711-737)
+const LC_TX = 714;   // 텍스트 x
+
+// 우열 스탯 숫자 (INT/CHA/LUK) — 픽셀아트 x=870-893
+const RC_X  = 868;   // 커버 rect 왼쪽
+const RC_W  = 28;    // 커버 너비 (x=868-896)
+const RC_TX = 871;   // 텍스트 x
+
+// 각 스탯 행의 y 범위 (픽셀 아트 digit 위치, 2px 마진 포함)
+// STR/INT 행: y=540-572
+// DEX/CHA 행: y=592-623
+// WIS/LUK 행: y=643-675
+// SPD 행:    y=694-726
+interface StatRow { cy: number; ch: number; ty: number; }
+const ROWS: Record<'R1'|'R2'|'R3'|'R4', StatRow> = {
+  R1: { cy: 540, ch: 32, ty: 568 },  // STR / INT
+  R2: { cy: 592, ch: 31, ty: 619 },  // DEX / CHA
+  R3: { cy: 643, ch: 32, ty: 671 },  // WIS / LUK
+  R4: { cy: 694, ch: 32, ty: 722 },  // SPD (좌열 전용)
+};
+
+// 오행 레지스턴스 % (5개 아이콘 중앙)
+const ELEM_XS: [number, number, number, number, number] = [152, 340, 528, 716, 904];
+const ELEM_Y  = 815;
+
+// 칭호 / 격국 패널
+// "TITLE: FARMER" / "JOB: ADVENTURER" 픽셀아트 시작: y≈1018
+const TITLE_COVER = { x: 88, y: 1010, w: 911, h: 158 };  // y=1010-1168
+const TITLE_TX = 92; const TITLE_TY = 1068;
+const CLASS_TX = 92; const CLASS_TY = 1112;
+
+// ── 유틸 ──────────────────────────────────────────────────────────────────────
+
+function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ── 에셋 경로 ─────────────────────────────────────────────────────────────────
+
+function resolveAssetPaths(): { template: string; charDir: string } {
   const envDir = process.env.CARD_ASSET_DIR;
-  if (envDir && fs.existsSync(path.join(envDir, 'character'))) {
-    return {
-      char: path.join(envDir, 'character'),
-      bg:   path.join(envDir, 'background'),
-    };
+  if (envDir) {
+    const tpl = path.join(envDir, 'card', 'card-template.png');
+    if (fs.existsSync(tpl)) {
+      return { template: tpl, charDir: path.join(envDir, 'character') };
+    }
   }
-  // 프로젝트 public 폴더 fallback
-  const publicDir = path.join(process.cwd(), 'public');
+  const pub = path.join(process.cwd(), 'public');
   return {
-    char: path.join(publicDir, 'character'),
-    bg:   path.join(publicDir, 'background'),
+    template: path.join(pub, 'card', 'card-template.png'),
+    charDir:  path.join(pub, 'character'),
   };
 }
 
-// ── SVG 생성 ──────────────────────────────────────────────────────────────────
+// ── SVG 오버레이 빌더 ─────────────────────────────────────────────────────────
 
 function buildSVG(card: CharacterCardData): string {
   const {
-    title, className, element, stats, resistance, skill,
-    gyeokGukType, gyeokGukState, strengthScore,
+    stats, hp, mp, resistance,
+    title, className, gyeokGukType, gyeokGukState,
+    strengthScore, skill,
   } = card;
 
-  // 스탯 바 6개
-  const statRows = [
-    { key: 'STR', label: '힘  STR', val: stats.str },
-    { key: 'INT', label: '지  INT', val: stats.int },
-    { key: 'WIS', label: '혜  WIS', val: stats.wis },
-    { key: 'DEX', label: '민  DEX', val: stats.dex },
-    { key: 'CHA', label: '매  CHA', val: stats.cha },
-    { key: 'LUK', label: '운  LUK', val: stats.luk },
+  const COVER_HP   = '#08101e';   // HP/MP 패널 어두운 배경
+  const COVER_STAT = '#0d0814';   // 스탯 숫자 위 커버
+  const COVER_TTL  = '#060610';    // 완전 불투명 — 투명도 사용 시 픽셀아트 텍스트가 비침
+
+  // ── HP / MP 커버 + 텍스트 ──────────────────────────────────────────────────
+  const hpmpSVG = `
+  <!-- HP/MP 커버 -->
+  <rect x="${HP_COVER.x}" y="${HP_COVER.y}" width="${HP_COVER.w}" height="${HP_COVER.h}" fill="${COVER_HP}"/>
+  <!-- HP 수치 -->
+  <text x="${HP_TX}" y="${HP_TY}" font-size="26" fill="#ff9090" font-family="${MONO}" font-weight="700">${hp}</text>
+  <!-- MP 수치 -->
+  <text x="${MP_TX}" y="${MP_TY}" font-size="26" fill="#88bbff" font-family="${MONO}" font-weight="700">${mp}</text>`;
+
+  // ── 스탯 숫자 커버 + 텍스트 ───────────────────────────────────────────────
+  // 좌열: STR(R1), DEX(R2), WIS(R3), SPD(R4)
+  // 우열: INT(R1), CHA(R2), LUK(R3)
+  const statPairs: Array<[string, number, string, number, string]> = [
+    //  [row key, left value, left color, right value, right color]
+    ['R1', stats.str, '#f4dea6', stats.int, '#f4dea6'],
+    ['R2', stats.dex, '#f4dea6', stats.cha, '#f4dea6'],
+    ['R3', stats.wis, '#f4dea6', stats.luk, '#f4dea6'],
   ];
 
-  const BAR_X     = 80;
-  const BAR_W     = 780;
-  const BAR_H     = 24;
-  const BAR_TRACK = '#1e2533';
+  const statSVG = [
+    // 좌열 3행
+    ...statPairs.map(([rowKey, lv, lc, rv, rc]) => {
+      const r = ROWS[rowKey as keyof typeof ROWS];
+      return `
+  <!-- 좌열 ${rowKey} 커버 -->
+  <rect x="${LC_X}" y="${r.cy}" width="${LC_W}" height="${r.ch}" fill="${COVER_STAT}"/>
+  <text x="${LC_TX}" y="${r.ty}" font-size="22" fill="${lc}" font-family="${MONO}" font-weight="700">${lv}</text>
+  <!-- 우열 ${rowKey} 커버 -->
+  <rect x="${RC_X}" y="${r.cy}" width="${RC_W}" height="${r.ch}" fill="${COVER_STAT}"/>
+  <text x="${RC_TX}" y="${r.ty}" font-size="22" fill="${rc}" font-family="${MONO}" font-weight="700">${rv}</text>`;
+    }),
+    // SPD (좌열 전용, 신강도 표시)
+    (() => {
+      const r = ROWS.R4;
+      return `
+  <!-- SPD 행 → 신강도 -->
+  <rect x="${LC_X}" y="${r.cy}" width="${LC_W}" height="${r.ch}" fill="${COVER_STAT}"/>
+  <text x="${LC_TX}" y="${r.ty}" font-size="22" fill="#c8a0ff" font-family="${MONO}" font-weight="700">${strengthScore}</text>`;
+    })(),
+  ].join('');
 
-  const statBarsSVG = statRows.map((row, i) => {
-    const y = STATS_TOP + i * 36;
-    const fillW = Math.round((row.val / 20) * BAR_W);
-    const color = STAT_COLORS[row.key] ?? C_YELLOW;
-    return `
-      <text x="${BAR_X}" y="${y}" font-size="22" fill="${C_WHITE}" font-family="'Noto Sans KR', 'Apple Gothic', sans-serif" font-weight="600">${row.label}</text>
-      <rect x="${BAR_X + 140}" y="${y - 18}" width="${BAR_W}" height="${BAR_H}" rx="12" fill="${BAR_TRACK}" />
-      <rect x="${BAR_X + 140}" y="${y - 18}" width="${fillW}" height="${BAR_H}" rx="12" fill="${color}" opacity="0.9" />
-      <text x="${BAR_X + 140 + BAR_W + 12}" y="${y}" font-size="22" fill="${C_YELLOW}" font-family="monospace" font-weight="700">${String(row.val).padStart(2, ' ')}</text>
-    `;
-  }).join('');
+  // ── 오행 레지스턴스 % ─────────────────────────────────────────────────────
+  const elements: OhengElement[] = ['木', '火', '土', '金', '水'];
+  const elemSVG = elements.map((el, i) =>
+    `<text x="${ELEM_XS[i]}" y="${ELEM_Y}"
+      font-size="26" fill="#ffe97d" font-family="${MONO}" font-weight="700"
+      text-anchor="middle">${resistance[el]}%</text>`
+  ).join('\n  ');
 
-  // 오행 레지스턴스
-  const elements = ['木', '火', '土', '金', '水'] as const;
-  const resistCols = elements.map((el, i) => {
-    const pct = resistance[el];
-    const emoji = ELEMENT_EMOJI[el];
-    const x = 80 + i * 192;
-    const fillH = Math.round((pct / 100) * 50);
-    return `
-      <text x="${x + 40}" y="${RESIST_TOP + 20}" font-size="26" fill="${C_WHITE}" text-anchor="middle">${emoji}</text>
-      <rect x="${x + 15}" y="${RESIST_TOP + 28}" width="50" height="50" rx="6" fill="#1e2533" />
-      <rect x="${x + 15}" y="${RESIST_TOP + 28 + (50 - fillH)}" width="50" height="${fillH}" rx="6" fill="${C_YELLOW}" opacity="0.8" />
-      <text x="${x + 40}" y="${RESIST_TOP + 95}" font-size="18" fill="${C_WHITE}" text-anchor="middle" font-family="monospace">${pct}%</text>
-    `;
-  }).join('');
-
-  // 구분선
-  const divider = (y: number) =>
-    `<line x1="60" y1="${y}" x2="${CARD_W - 60}" y2="${y}" stroke="${C_YELLOW}" stroke-width="1" opacity="0.3" />`;
+  // ── 칭호 / 격국 ───────────────────────────────────────────────────────────
+  const titleSVG = `
+  <!-- 칭호 커버 -->
+  <rect x="${TITLE_COVER.x}" y="${TITLE_COVER.y}" width="${TITLE_COVER.w}" height="${TITLE_COVER.h}" fill="${COVER_TTL}" rx="4"/>
+  <!-- 칭호 텍스트 -->
+  <text x="${TITLE_TX}" y="${TITLE_TY}" font-size="36" fill="#f4dea6" font-family="${FONT}" font-weight="700">${esc(title)}</text>
+  <!-- 격국·클래스·스킬 -->
+  <text x="${CLASS_TX}" y="${CLASS_TY}" font-size="28" fill="#cceeff" font-family="${FONT}">${esc(gyeokGukType)} (${esc(gyeokGukState)}) · ${esc(className)} · 🔮 ${esc(skill)}</text>`;
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${CARD_W}" height="${CARD_H}" xmlns="http://www.w3.org/2000/svg">
-  <!-- 반투명 오버레이 -->
-  <rect width="${CARD_W}" height="${CARD_H}" fill="${C_OVERLAY}" />
-
-  <!-- 상단 패널: 칭호 + 클래스 + 속성 -->
-  <rect x="40" y="${TITLE_Y - 10}" width="${CARD_W - 80}" height="90" rx="12" fill="rgba(0,0,0,0.45)" />
-  <text x="${CARD_W / 2}" y="${TITLE_Y + 28}" font-size="26" fill="${C_YELLOW}"
-        text-anchor="middle" font-family="'Noto Sans KR','Apple Gothic',sans-serif" font-weight="700">${escXml(title)}</text>
-  <text x="${CARD_W / 2}" y="${TITLE_Y + 62}" font-size="20" fill="${C_WHITE}"
-        text-anchor="middle" font-family="'Noto Sans KR','Apple Gothic',sans-serif">${escXml(element)}</text>
-
-  ${divider(TITLE_Y + 82)}
-
-  <!-- 스탯 영역 -->
-  <rect x="40" y="${STATS_TOP - 30}" width="${CARD_W - 80}" height="230" rx="12" fill="rgba(0,0,0,0.40)" />
-  ${statBarsSVG}
-
-  ${divider(STATS_TOP + 210)}
-
-  <!-- 오행 레지스턴스 -->
-  <rect x="40" y="${RESIST_TOP - 5}" width="${CARD_W - 80}" height="108" rx="12" fill="rgba(0,0,0,0.35)" />
-  ${resistCols}
-
-  ${divider(RESIST_TOP + 110)}
-
-  <!-- 스킬 / 격국 / 신강도 -->
-  <rect x="40" y="${EXTRA_TOP - 5}" width="${CARD_W - 80}" height="108" rx="12" fill="rgba(0,0,0,0.40)" />
-  <text x="80" y="${EXTRA_TOP + 32}" font-size="22" fill="${C_YELLOW}"
-        font-family="'Noto Sans KR','Apple Gothic',sans-serif">🔮 장착 스킬: ${escXml(skill)}</text>
-  <text x="80" y="${EXTRA_TOP + 64}" font-size="22" fill="${C_WHITE}"
-        font-family="'Noto Sans KR','Apple Gothic',sans-serif">📜 격국: ${escXml(gyeokGukType)} (${escXml(gyeokGukState)})</text>
-  <text x="80" y="${EXTRA_TOP + 96}" font-size="22" fill="${C_WHITE}"
-        font-family="'Noto Sans KR','Apple Gothic',sans-serif">⚖️ 신강도: ${strengthScore}/100</text>
-
-  ${divider(EXTRA_TOP + 112)}
-
-  <!-- 브랜드 워터마크 -->
-  <rect x="40" y="${BRAND_TOP - 5}" width="${CARD_W - 80}" height="70" rx="12" fill="rgba(0,0,0,0.50)" />
-  <text x="${CARD_W / 2}" y="${BRAND_TOP + 28}" font-size="26" fill="${C_YELLOW}"
-        text-anchor="middle" font-family="'Noto Sans KR','Apple Gothic',sans-serif" font-weight="700">제3의시간</text>
-  <text x="${CARD_W / 2}" y="${BRAND_TOP + 56}" font-size="18" fill="${C_WHITE}"
-        text-anchor="middle" font-family="'Noto Sans KR','Apple Gothic',sans-serif">ttt.betterdan.net</text>
+  ${hpmpSVG}
+  ${statSVG}
+  <!-- 오행 레지스턴스 % -->
+  ${elemSVG}
+  ${titleSVG}
 </svg>`;
 }
 
-function escXml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+// ── 원형 클립 캐릭터 ──────────────────────────────────────────────────────────
+
+async function buildCircularChar(charFile: string): Promise<Buffer> {
+  const diameter = CHAR_R * 2;
+  const resized = await sharp(charFile)
+    .resize(diameter, diameter, { fit: 'cover', position: 'centre' })
+    .png()
+    .toBuffer();
+
+  const mask = Buffer.from(
+    `<svg width="${diameter}" height="${diameter}">` +
+    `<circle cx="${CHAR_R}" cy="${CHAR_R}" r="${CHAR_R}" fill="white"/>` +
+    `</svg>`
+  );
+
+  return sharp(resized)
+    .composite([{ input: mask, blend: 'dest-in' }])
+    .png()
+    .toBuffer();
 }
 
 // ── 메인 렌더 함수 ─────────────────────────────────────────────────────────────
 
 /**
- * CharacterCardData를 받아 1080×1350 PNG 버퍼를 반환한다.
- * @throws 에셋 파일을 찾지 못한 경우 Error
+ * CharacterCardData를 받아 1080×1440 PNG 버퍼를 반환한다.
+ * @throws 템플릿 파일 미발견 시 Error
  */
 export async function renderCard(card: CharacterCardData): Promise<Buffer> {
-  const { char: charDir, bg: bgDir } = resolveAssetDir();
+  const { template: templatePath, charDir } = resolveAssetPaths();
 
-  // ── 1. 배경 이미지 ──
-  const bgFile = path.join(bgDir, card.backgroundFile);
-  if (!fs.existsSync(bgFile)) {
-    throw new Error(`배경 이미지를 찾을 수 없습니다: ${bgFile}`);
+  if (!fs.existsSync(templatePath)) {
+    throw new Error(`카드 템플릿을 찾을 수 없습니다: ${templatePath}`);
   }
 
-  const bgResized = await sharp(bgFile)
-    .resize(CARD_W, CARD_H, { fit: 'cover', position: 'centre' })
+  const templateBuf = await sharp(templatePath)
+    .resize(CARD_W, CARD_H, { fit: 'fill' })
     .png()
     .toBuffer();
 
-  // ── 2. 캐릭터 이미지 (캐릭터 높이 CHAR_H) ──
+  const composites: sharp.OverlayOptions[] = [];
+
+  // 캐릭터 원형 클립
   const charFile = path.join(charDir, `${card.characterType}.png`);
-  let charComposite: sharp.OverlayOptions | null = null;
-
   if (fs.existsSync(charFile)) {
-    const charResized = await sharp(charFile)
-      .resize({ height: CHAR_H, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
-
-    // 캐릭터 X 중앙 정렬
-    const charMeta = await sharp(charResized).metadata();
-    const charW = charMeta.width ?? 400;
-    const charLeft = Math.round((CARD_W - charW) / 2);
-
-    charComposite = {
-      input: charResized,
-      top: CHAR_TOP,
-      left: charLeft,
-    };
+    const circularChar = await buildCircularChar(charFile);
+    composites.push({
+      input: circularChar,
+      top:  CHAR_CY - CHAR_R,
+      left: CHAR_CX - CHAR_R,
+    });
   }
 
-  // ── 3. SVG 오버레이 ──
+  // SVG 오버레이
   const svgBuf = Buffer.from(buildSVG(card));
-
-  // ── 4. 합성 ──
-  const composites: sharp.OverlayOptions[] = [];
-  if (charComposite) composites.push(charComposite);
   composites.push({ input: svgBuf, top: 0, left: 0 });
 
-  const output = await sharp(bgResized)
+  return sharp(templateBuf)
     .composite(composites)
     .png({ compressionLevel: 8 })
     .toBuffer();
-
-  return output;
 }

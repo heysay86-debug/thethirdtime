@@ -49,6 +49,11 @@ export interface CharacterCardData {
     luk: number;
   };
 
+  /** HP = STR×30 + DEX×10 */
+  hp: number;
+  /** MP = WIS×30 + INT×10 */
+  mp: number;
+
   /** 오행 레지스턴스 (0~100, 합계 ≈ 100) */
   resistance: {
     木: number;
@@ -204,6 +209,12 @@ export function mapSajuToCard(result: SajuResult): CharacterCardData {
   const yongSinElement: OhengElement = yongSin.final.primary as OhengElement;
   const skill = SKILL_TABLE[yongSinElement] ?? '알 수 없는 힘';
 
+  // ── HP / MP ──
+  // HP = STR×30 + DEX×10
+  // MP = WIS×30 + INT×10
+  const hp = stats.str * 30 + stats.dex * 10;
+  const mp = stats.wis * 30 + stats.int * 10;
+
   return {
     title,
     className: classEntry.className,
@@ -212,6 +223,8 @@ export function mapSajuToCard(result: SajuResult): CharacterCardData {
     characterType,
     backgroundFile,
     stats,
+    hp,
+    mp,
     resistance,
     skill,
     gyeokGukType: gyeokGuk.type,
