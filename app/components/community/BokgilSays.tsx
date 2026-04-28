@@ -63,10 +63,14 @@ export default function BokgilSays({ text }: BokgilSaysProps) {
               fontSize: 17,
               color: '#dde1e5',
               lineHeight: 1.6,
-              whiteSpace: 'pre-wrap',
             }}
           >
-            {text}
+            {text.split('\n').map((line, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <br />}
+                {line}
+              </React.Fragment>
+            ))}
           </div>
         </div>
         <img
