@@ -879,6 +879,14 @@ export default function Alt2Page() {
                   previewData={core}
                 />
                 <CtaButton
+                  label="5/20 오픈 예정 — 조금만 기다려주세요"
+                  price=""
+                  onClick={() => {
+                    alert('5월 20일 정식 오픈 예정입니다. 조금만 기다려주세요!');
+                  }}
+                />
+                {/* --- 오픈 후 아래 CtaButton으로 교체 ---
+                <CtaButton
                   label="구름 너머의 이야기를 만나보세요"
                   price={prices.deep}
                   originalPrice={prices.promotion ? DEFAULT_PRICES.deep : undefined}
@@ -920,6 +928,7 @@ export default function Alt2Page() {
                     setPhase2Loading(false);
                   }}
                 />
+                --- */}
               </div>
 
               {/* Phase 2 로딩 중 */}

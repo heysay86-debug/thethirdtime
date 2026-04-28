@@ -1,0 +1,63 @@
+{
+  "topic": "서비스 소개",
+  "brand": {
+    "bgColor": "#1a1e24",
+    "textColor": "#f0dfad",
+    "subTextColor": "#c8cdd3",
+    "accentColor": "#97c6aa",
+    "font": "Pretendard Variable, sans-serif",
+    "titleFont": "Gaegu, cursive",
+    "logo": "../sns/templates/CI/emb_1.png",
+    "character": "../sns/templates/character/speak.png"
+  },
+  "slides": [
+    {
+      "type": "cover",
+      "align": "left",
+      "valign": "bottom",
+      "title": "당신의 생년월일시 속에\n숨겨진 이야기가 있습니다",
+      "subtitle": "— 제3의시간",
+      "background": "../sns/templates/background/mok_yang.jpeg"
+    },
+    {
+      "type": "content",
+      "align": "left",
+      "valign": "bottom",
+      "title": "사주를 본 적\n있나요?",
+      "body": "\"올해 좋아요\" 말고,\n왜 그런지 궁금했던 적 없나요?",
+      "background": "../sns/templates/background/hwa_yang.jpeg"
+    },
+    {
+      "type": "content",
+      "align": "left",
+      "valign": "bottom",
+      "title": "사주는 타고난\n그릇입니다",
+      "body": "MBTI가 성격이라면,\n사주는 기질의 설계도입니다.",
+      "background": "../sns/templates/background/su_yang.jpeg"
+    },
+    {
+      "type": "content",
+      "align": "left",
+      "valign": "bottom",
+      "title": "RPG형 사주풀이,\n제3의시간",
+      "body": "복길이라는 캐릭터와 함께\n당신의 사주를 탐험합니다.",
+      "background": "../sns/templates/background/to_yang.jpeg"
+    },
+    {
+      "type": "content",
+      "align": "left",
+      "valign": "bottom",
+      "title": "990원짜리\n운세가 아닙니다",
+      "body": "4기둥·격국·용신·대운 분석\n+ 40페이지 PDF 리포트",
+      "background": "../sns/templates/background/keum_yang.jpeg"
+    },
+    {
+      "type": "cta",
+      "align": "left",
+      "valign": "bottom",
+      "title": "시간의 신전에서\n당신의 이야기를 만나보세요",
+      "subtitle": "www.betterdan.net",
+      "background": "../sns/templates/background/mok_yin.jpeg"
+    }
+  ]
+}

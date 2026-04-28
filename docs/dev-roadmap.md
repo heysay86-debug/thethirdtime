@@ -746,8 +746,8 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] `.claude/commands/sns-content.md` — SNS 콘텐츠 생성 커맨드
 - [x] `docs/sns-design-guide.md` — SNS 디자인 가이드
 
-### M-CHAT. 카카오 채널 실시간 상담
-- [ ] 카카오 채널 개설 (사업자 인증)
+### M-CHAT. 카카오 채널 실시간 상담 🟡 진행 중
+- [x] 카카오 비즈 채널 개설 완료 (2026-04-28)
 - [ ] 챗봇 API 연동 (카카오 i 오픈빌더 또는 웹훅)
   - Haiku 기반 복길 자동 응대 (건당 ~$0.001)
   - 사주/육효 FAQ 자동 답변, 복잡한 문의는 수동 전환
