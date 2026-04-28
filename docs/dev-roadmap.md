@@ -52,14 +52,16 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 ### 로컬 검증 결과
 
 - `npm run build`: 2026-04-27 기준 빌드 성공.
-- `npm test`: 279개 테스트 통과 (2026-04-27 기준).
+- `npm test`: 345개 테스트 통과 (2026-04-28 기준).
 
 ### 특히 기억할 현재 상태
 
-- Phase 3 통변 확장 (쉬운 풀이) 구현 완료 (`analyzePhase3()`, `phase3-system.ts`).
-- 연애운 엔진 구현 완료 (`love_reading.ts`). 금전운/사업운은 미구현.
-- 블로그 25편 + 도표 5종 + 콘텐츠 페이지 3종 구현.
-- 메인 메뉴 + 게임 메뉴 + 보안 헤더 추가.
+- Phase 3 통변 확장 (쉬운 풀이) 구현 완료.
+- 번외편 3종 엔진 완료: 연애운, 금전운, 사업운.
+- 3장 궁합 기능 완성: 엔진 + API + 프론트 + 비주얼.
+- 카카오 로그인 + 골골 시스템 기반 구축.
+- 애드센스 심사 요청 완료, betterdan.net 루트 도메인 SSL.
+- SNS 마케팅 준비: Buffer + Canva 템플릿 + 첫 캐러셀.
 
 ---
 
@@ -281,8 +283,12 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [x] 연애운 엔진: `src/engine/love_reading.ts`
   - 3단계 구조: 배우자궁 + 연애성향 + 인연 초상화
   - 생지/왕지/고지 프레임, 도화/홍염/원진 신살 연동, 대운 시기 + 도화 세운 산출
-- [ ] 금전운 엔진
-- [ ] 사업운 엔진
+- [x] 금전운 엔진: `src/engine/money_reading.ts` (2026-04-28)
+  - 3단계: 재성궁 분석 → 금전 성향 → 재물 시기
+  - 편재/정재 판별, 재성 세력, 신강약×재성 조합, 대운/세운 시기 추출
+- [x] 사업운 엔진: `src/engine/business_reading.ts` (2026-04-28)
+  - 3단계: 관성+재성 복합 → 업종 적성 → 사업 시기
+  - 사업적성 점수(0~100), 용신별 추천/비추 업종, 주의 시기
 - [ ] Phase 2 프롬프트에 번외편 섹션 지침 추가
 - [ ] PDF 번외편 섹션 컴포넌트
 - [ ] 웹 Zone B에 번외편 영역 추가
@@ -594,6 +600,28 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 결제 시작 시점에 백그라운드 Phase 1+2 호출 (대기시간 단축)
 - [ ] savePaidReport() + upgradeToPaid() 연동
 
+### M-GUNGHAM. 3장 — 인연의 거울 (궁합) ✅ (2026-04-28)
+- [x] 궁합 엔진: `src/engine/gungham.ts` (1219줄)
+  - 2인/3인 분석, 일간 오행 관계, 용신 교환, 지지 합충 교차 비교
+  - 궁합 점수(0~100) + 5단계 등급
+  - 관계 유형 5종별 해석 분기 (couple/parent_child/friend/business/boss_sub)
+  - 관점 질문 3개 × 관계별 다른 세트 + "잘 모르겠어요" 공통
+  - 관점 기반 2차 해석 재조합
+  - 3인 그룹 역학 분석
+- [x] API: `/api/saju/gungham` (LLM 없음, 비용 0원)
+- [x] 프론트: `app/gungham/page.tsx`
+  - 프리앰블 ("좋은 관계란" 4가지 메시지, 필수)
+  - 관계 유형 카드 선택 → 본인(자동채움) + 상대 입력 → 3인 추가
+  - 1차 결과 → 관점 질문 → 2차 맞춤 해석
+- [x] 배경 맵: mirror.jpeg / mirror_after.jpeg + 플래시 전환
+- [x] 복길 캐릭터: angel_dot (float) + cast 시퀀스 (angel_back/right/summon + sparkle)
+- [x] BGM: memorialfield.mp3 (1.2MB, 64kbps mono)
+- [x] Zone B 궁합 업셀 → /gungham?from=saju 연결 (유저 정보 자동 세팅)
+- [x] 메인 메뉴 "3장 - 인연의 거울 (궁합)" 추가
+- [x] 테스트 20건
+- [ ] 궁합 결과 PDF 리포트
+- [ ] 궁합 결과 공유 카드
+
 ### M-SHARE. 친구 공유 카드
 - [ ] 공유용 카드 이미지 생성 (사주 요약 + QR/링크)
 - [ ] 카카오톡 공유 API 연동
@@ -733,6 +761,19 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 유료 유저(골골 보유 or 구매 이력) 광고 제거 분기
 - [ ] 게임 몰입 구간(다이얼로그, 주문 등) 광고 제외 설정
 - [ ] 수익 데이터 기반 광고 위치 최적화
+
+### M-SNS-MARKETING. SNS 마케팅 🟡 진행 중 (2026-04-28)
+- [x] 인스타그램 비즈니스 계정 전환
+- [x] 스레드 계정 연결
+- [x] Buffer 가입 + 인스타/스레드 연동 (무료, 월 30개 예약)
+- [x] Canva 템플릿 폴더 생성 (제3의시간 — SNS 템플릿)
+- [x] 첫 캐러셀 5장 텍스트 완성 (서비스 소개)
+- [x] 인스타 프로필 소개글 확정
+- [x] `/sns-content` 스킬로 콘텐츠 생성 가능
+- [ ] 첫 캐러셀 CTA 페이지 마무리 + Buffer 예약 발행
+- [ ] 주 3회 콘텐츠 루틴 안착 (화 릴스, 목 캐러셀, 일 릴스)
+- [ ] 틱톡 계정 추가 (인스타 안착 후)
+- [ ] Meta Graph API 직접 연동 (트래픽 증가 시)
 
 ---
 
