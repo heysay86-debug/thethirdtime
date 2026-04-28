@@ -127,33 +127,83 @@ function CopyButton({ getText, label = '복사하기' }: { getText: () => string
   );
 }
 
-// 괘 해석 텍스트 포맷
+// 괘 해석 텍스트 포맷 — 총론 + 효사 + 카테고리 + 지괘 + 구조
 function formatGuaText(
   bonGua: GuaInterpretation,
   changingYao: YaoInterpretation[],
   changedGua: GuaInterpretation | null,
+  userQuestion: string,
+  palaceInfo: ReturnType<typeof getGuaPalace>,
+  yaos: YaoResult[],
 ): string {
-  let text = `[육효점 결과]\n\n`;
-  text += `괘: ${bonGua.name}\n\n`;
-  text += `${bonGua.chongron}\n`;
+  let text = `[${bonGua.name}]\n`;
+  if (userQuestion) text += `"${userQuestion}"\n`;
+
+  text += `\n── 총론 ──\n${bonGua.chongron}\n`;
 
   if (changingYao.length > 0) {
-    text += `\n---\n`;
+    text += `\n── 핵심 효사 ──\n`;
     for (const yao of changingYao) {
       const label = ['첫', '둘', '셋', '넷', '다섯', '여섯'][yao.yao - 1];
       text += `\n[${label}째 기운 → ${yao.byeonGuaName}]\n`;
-      text += `${yao.general}\n\n`;
-      for (const [cat, val] of Object.entries(yao.categories)) {
-        text += `${cat}: ${val}\n`;
-      }
+      text += `${yao.general}\n`;
     }
-    if (changedGua) {
-      text += `\n---\n흘러가는 괘: ${changedGua.name}\n${changedGua.chongron}\n`;
+  }
+
+  // 카테고리
+  const categorySource = getCategorySource(changingYao, bonGua, changedGua);
+  if (categorySource) {
+    text += `\n── 항목별 풀이 ──\n`;
+    for (const [cat, val] of Object.entries(categorySource)) {
+      text += `${cat}: ${val}\n`;
     }
+  }
+
+  if (changedGua && changingYao.length > 0) {
+    text += `\n── 흘러가는 괘 ──\n${changedGua.name}\n${changedGua.chongron}\n`;
+  }
+
+  // 구조 정보
+  if (palaceInfo) {
+    text += `\n── 참고: 괘 구조 ──\n`;
+    text += generateTraditionalReading(palaceInfo, bonGua.name, yaos);
+    text += '\n';
   }
 
   text += `\n— 제3의시간 · 육효점 (ttt.betterdan.net/hyo)`;
   return text;
+}
+
+// 동효 개수별 카테고리 소스 결정
+function getCategorySource(
+  changingYao: YaoInterpretation[],
+  bonGua: GuaInterpretation | null,
+  changedGua: GuaInterpretation | null,
+): Record<string, string> | null {
+  const count = changingYao.length;
+
+  if (count === 0) {
+    // 본괘 초효 카테고리
+    return bonGua?.yao?.[0]?.categories || null;
+  }
+  if (count === 1) {
+    // 해당 동효 카테고리
+    return changingYao[0].categories;
+  }
+  if (count === 2) {
+    // 위쪽 동효 카테고리
+    return changingYao[changingYao.length - 1].categories;
+  }
+  if (count === 3) {
+    // 본괘 총론 기준 (초효)
+    return bonGua?.yao?.[0]?.categories || null;
+  }
+  if (count === 6) {
+    // 지괘 초효 카테고리
+    return changedGua?.yao?.[0]?.categories || null;
+  }
+  // 4~5개: 지괘 해당 효 카테고리 — 지괘 초효 fallback
+  return changedGua?.yao?.[0]?.categories || null;
 }
 
 // 효별 해석 텍스트 포맷
@@ -266,360 +316,24 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
   onReset: () => void;
   userQuestion: string;
 }) {
-  const [showDetail, setShowDetail] = useState(false);
-  const [selectedYao, setSelectedYao] = useState<YaoInterpretation | null>(null);
-  const [showChangedGua, setShowChangedGua] = useState(false);
+  const [showStructure, setShowStructure] = useState(false);
+  const categoryCardRef = useRef<HTMLDivElement>(null);
 
   const bonGua = castResult.bonGua;
   const changingYao = castResult.changingYao;
   const changedGua = castResult.changedGua;
   const palaceInfo = getGuaPalace(castResult.originalGua);
 
-  if (selectedYao) {
-    // 효별 상세 카테고리 보기
-    return (
-      <>
-        <div style={{ fontSize: 13, color: '#f0dfad', marginBottom: 4 }}>
-          {['첫', '둘', '셋', '넷', '다섯', '여섯'][selectedYao.yao - 1] || selectedYao.yao}째 기운 · {selectedYao.byeonGuaName}
-        </div>
-        <div style={{
-          fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-line', marginBottom: 12,
-          color: '#ccc',
-        }}>
-          {selectedYao.general}
-        </div>
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr', gap: 6,
-          maxHeight: 280, overflowY: 'auto', width: '100%',
-          padding: '8px 0',
-        }}>
-          {Object.entries(selectedYao.categories).map(([cat, val]) => (
-            <div key={cat} style={{
-              display: 'flex', gap: 8, alignItems: 'flex-start',
-              padding: '6px 8px',
-              background: 'rgba(240,223,173,0.05)',
-              borderRadius: 8,
-              fontSize: 12,
-            }}>
-              <span style={{ color: '#f0dfad', flexShrink: 0, minWidth: 48 }}>
-                {cat.replace(/\(.*\)/, '')}
-              </span>
-              <span style={{ color: '#ccc' }}>{val}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-          <button
-            onClick={() => setSelectedYao(null)}
-            style={{
-              padding: '8px 20px',
-              background: 'rgba(240,223,173,0.1)',
-              border: '1px solid rgba(240,223,173,0.2)',
-              borderRadius: 16,
-              color: '#f0dfad',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            돌아가기
-          </button>
-          <CopyButton
-            getText={() => formatYaoText(selectedYao, bonGua?.name || '')}
-            label="이 해석 복사"
-          />
-        </div>
-        <div style={{ fontSize: 10, color: '#556', marginTop: 8, lineHeight: 1.5 }}>
-          보관해두게. 기억이 흐려지거든 누군가에게 다시 물을 수 있도록.
-        </div>
-      </>
-    );
-  }
+  // 동효 개수별 카테고리 소스
+  const categories = getCategorySource(changingYao, bonGua, changedGua) || {};
 
-  if (showDetail && bonGua) {
-    // 총론 + 변효 목록
-    const jiName = changedGua?.name || bonGua.name;
-    const isSameGua = bonGua.name === jiName;
-    return (
-      <>
-        {/* 본괘 → 지괘 흐름 */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-          marginBottom: 16, padding: '8px 0',
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: '#889' }}>본괘</div>
-            <div style={{ fontSize: 16, color: '#f0dfad', fontWeight: 700 }}>{bonGua.name}</div>
-          </div>
-          <div style={{ fontSize: 16, color: '#889' }}>→</div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 10, color: '#889' }}>{isSameGua ? '(변화 없음)' : '지괘'}</div>
-            <div style={{ fontSize: 16, color: isSameGua ? '#889' : '#f0dfad', fontWeight: 700 }}>{jiName}</div>
-          </div>
-        </div>
+  // 카드용 총론 요약 (앞 3줄)
+  const chongronSummary = bonGua?.chongron
+    ? bonGua.chongron.split('\n').slice(0, 3).join('\n')
+    : '';
 
-        <div style={{ fontSize: 11, color: '#889', marginBottom: 12 }}>
-          {guaInfo.name}
-          {palaceInfo && (
-            <span style={{ marginLeft: 8, color: '#667' }}>
-              {palaceInfo.palace.name}({palaceInfo.palace.wuxing}) · {getPalaceLabel(palaceInfo.palaceIndex)}
-            </span>
-          )}
-        </div>
-
-        {/* 괘 도표: 世應 · 지지 · 육친 */}
-        {palaceInfo && (
-          <div style={{
-            padding: '10px 12px',
-            background: 'rgba(240,223,173,0.04)',
-            borderRadius: 10,
-            marginBottom: 12,
-            fontFamily: 'monospace',
-            fontSize: 12,
-            lineHeight: 2,
-          }}>
-            {[5, 4, 3, 2, 1, 0].map(i => {
-              const isYang = castResult.originalGua[i] === 1;
-              const isShi = i + 1 === palaceInfo.shi;
-              const isYing = i + 1 === palaceInfo.ying;
-              const mark = isShi ? '世' : isYing ? '應' : '　';
-              const dotColor = isYang ? '#aab4be' : '#7a8490';
-              const dotCount = 7;
-              const halfDots = 3;
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 18 }}>
-                  <span style={{ color: isShi ? '#f0dfad' : isYing ? '#8cb4ff' : '#556', width: 16, textAlign: 'center', fontSize: 11, flexShrink: 0 }}>
-                    {mark}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'center', width: 52, flexShrink: 0 }}>
-                    {isYang ? (
-                      <div style={{ display: 'flex', gap: 2 }}>
-                        {Array.from({ length: dotCount }).map((_, j) => (
-                          <div key={j} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', gap: 2 }}>
-                          {Array.from({ length: halfDots }).map((_, j) => (
-                            <div key={`l${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
-                          ))}
-                        </div>
-                        <div style={{ width: 10 }} />
-                        <div style={{ display: 'flex', gap: 2 }}>
-                          {Array.from({ length: halfDots }).map((_, j) => (
-                            <div key={`r${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <span style={{ color: '#f0dfad', width: 14, textAlign: 'center', fontSize: 12, flexShrink: 0 }}>{palaceInfo.yaoDizhi[i]}</span>
-                  <span style={{ color: '#999', fontSize: 11 }}>{liuqinKorean(palaceInfo.yaoLiuqin[i])}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* 정통 읽기 */}
-        {palaceInfo && (
-          <div style={{
-            fontSize: 12, lineHeight: 1.9, whiteSpace: 'pre-line', marginBottom: 12,
-            textAlign: 'left', color: '#b8bcc0',
-            padding: '12px',
-            background: 'rgba(240,223,173,0.04)',
-            borderRadius: 10,
-            borderLeft: '2px solid rgba(136, 153, 170, 0.3)',
-          }}>
-            {generateTraditionalReading(palaceInfo, bonGua.name, yaos)}
-          </div>
-        )}
-
-        {/* 평서문 풀이 */}
-        <div style={{
-          fontSize: 13, lineHeight: 1.9, whiteSpace: 'pre-line', marginBottom: 16,
-          textAlign: 'left', color: '#ccc',
-          maxHeight: 200, overflowY: 'auto',
-          padding: '12px',
-          background: 'rgba(240,223,173,0.04)',
-          borderRadius: 10,
-          borderLeft: '2px solid rgba(240,223,173,0.3)',
-        }}>
-          {bonGua.chongron}
-        </div>
-
-        {changingYao.length > 0 && (
-          <>
-            {/* 읽는 법 안내 */}
-            <div style={{
-              fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 10,
-              padding: '8px 10px',
-              background: 'rgba(240,223,173,0.04)',
-              borderRadius: 8,
-            }}>
-              {changingYao.length === 1
-                ? '움직이는 기운이 하나 있네. 아래의 효사가 핵심 답이야.'
-                : changingYao.length === 2
-                ? '두 개의 기운이 움직이고 있어. 둘 다 읽되, 위쪽 효사를 중심으로 보게. 지괘는 두 기운이 모두 변한 최종 모습이야.'
-                : changingYao.length === 3
-                ? '세 개의 기운이 요동치고 있군. 위의 본괘 총론과 아래의 지괘 총론을 함께 읽게.'
-                : `${changingYao.length}개나 움직이고 있어. 아래의 지괘 총론을 중심으로 읽게.`
-              }
-            </div>
-
-            {/* 개별 효사 — 동효 3개 이하일 때 강조 */}
-            <div style={{ fontSize: 11, color: '#889', marginBottom: 6 }}>
-              ▸ 각 효가 변하면
-            </div>
-            {changingYao.map((yao) => {
-              const yaoLabel = ['첫', '둘', '셋', '넷', '다섯', '여섯'][yao.yao - 1] || yao.yao;
-              return (
-                <button
-                  key={yao.yao}
-                  onClick={() => setSelectedYao(yao)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    marginBottom: 6,
-                    background: 'rgba(240,223,173,0.08)',
-                    border: '1px solid rgba(240,223,173,0.15)',
-                    borderRadius: 10,
-                    color: '#dde1e5',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    lineHeight: 1.6,
-                  }}
-                >
-                  <span style={{ color: '#f0dfad', fontWeight: 600 }}>
-                    {yaoLabel}째 기운
-                  </span>
-                  <span style={{ color: '#889', margin: '0 6px' }}>→</span>
-                  <span>{yao.byeonGuaName}</span>
-                  <div style={{ color: '#999', marginTop: 4, fontSize: 11 }}>
-                    {yao.general.split('\n')[0]}
-                  </div>
-                  {/* 주요 카테고리 미리보기 */}
-                  <div style={{
-                    display: 'flex', flexWrap: 'wrap', gap: '2px 8px',
-                    marginTop: 6, paddingTop: 6,
-                    borderTop: '1px solid rgba(240,223,173,0.08)',
-                  }}>
-                    {['희망', '재물', '건강', '연애'].map(cat => {
-                      const val = yao.categories[cat];
-                      return val ? (
-                        <span key={cat} style={{ fontSize: 10, color: '#889' }}>
-                          <span style={{ color: '#a89070' }}>{cat}</span> {val}
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
-                </button>
-              );
-            })}
-
-            {/* 지괘 — 모든 동효가 변한 최종 모습 */}
-            {changedGua && (
-              <>
-                <div style={{ fontSize: 11, color: '#889', marginTop: 10, marginBottom: 6 }}>
-                  ▸ 모든 기운이 변한 뒤의 최종 모습 (지괘)
-                </div>
-                <button
-                  onClick={() => setShowChangedGua(prev => !prev)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    background: 'rgba(240,223,173,0.06)',
-                    border: '1px solid rgba(240,223,173,0.2)',
-                    borderRadius: 10,
-                    color: '#dde1e5',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    lineHeight: 1.7,
-                  }}
-                >
-                  <span style={{ color: '#f0dfad', fontWeight: 600 }}>{changedGua.name}</span>
-                  <span style={{ color: '#889', marginLeft: 8, fontSize: 11 }}>
-                    {showChangedGua ? '▲ 접기' : '▼ 총론 보기'}
-                  </span>
-                  {showChangedGua && (
-                    <div style={{
-                      marginTop: 8, paddingTop: 8,
-                      borderTop: '1px solid rgba(240,223,173,0.1)',
-                      color: '#bbb', whiteSpace: 'pre-line',
-                    }}>
-                      {changedGua.chongron}
-                    </div>
-                  )}
-                </button>
-              </>
-            )}
-          </>
-        )}
-
-        {changingYao.length === 0 && (
-          <div style={{
-            fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 8,
-            padding: '8px 10px',
-            background: 'rgba(240,223,173,0.04)',
-            borderRadius: 8,
-          }}>
-            모든 기운이 고요하네. 변화 없이 이 괘의 뜻 그대로가 자네의 답이야.
-            지금은 움직일 때가 아니라, 있는 그대로를 받아들일 때라는 뜻이지.
-          </div>
-        )}
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setShowDetail(false)}
-            style={{
-              padding: '8px 16px',
-              background: 'rgba(240,223,173,0.1)',
-              border: '1px solid rgba(240,223,173,0.2)',
-              borderRadius: 16,
-              color: '#f0dfad',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            돌아가기
-          </button>
-          {bonGua && (
-            <CopyButton
-              getText={() => formatGuaText(bonGua, changingYao, changedGua)}
-              label="전체 복사"
-            />
-          )}
-          <button
-            onClick={onReset}
-            style={{
-              padding: '8px 16px',
-              background: 'transparent',
-              border: '1px solid rgba(240,223,173,0.15)',
-              borderRadius: 16,
-              color: '#889',
-              fontSize: 12,
-              cursor: 'pointer',
-            }}
-          >
-            다시 점치기
-          </button>
-        </div>
-        <div style={{ fontSize: 10, color: '#556', marginTop: 8, lineHeight: 1.5 }}>
-          보관해두게. 오늘의 기억이 사라지거든 누군가에게 다시 물을 수 있도록 말이지.
-        </div>
-      </>
-    );
-  }
-
-  // 카테고리 데이터: 동효 중 가장 위 효, 없으면 본괘 1효
-  const categorySource = changingYao.length > 0
-    ? changingYao[changingYao.length - 1]
-    : bonGua?.yao?.[0] || null;
-  const categories = categorySource?.categories || {};
-
-  const categoryCardRef = useRef<HTMLDivElement>(null);
+  const jiName = changedGua?.name || bonGua?.name;
+  const isSameGua = bonGua?.name === jiName;
 
   const handleDownloadCard = async () => {
     if (!categoryCardRef.current) return;
@@ -634,140 +348,468 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
     link.click();
   };
 
-  // 첫 화면: 괘 이름 + 카테고리 카드 + 해석 보기 버튼
-  const jiName = changedGua?.name || bonGua?.name;
-  const isSameGua2 = bonGua?.name === jiName;
+  // 카테고리 키에서 괄호 분리
+  function parseCatKey(cat: string): { main: string; sub: string | null } {
+    const match = cat.match(/^(.+?)\((.+)\)$/);
+    if (match) return { main: match[1], sub: match[2].replace(/,/g, ' · ') };
+    return { main: cat, sub: null };
+  }
 
   return (
     <>
-      {/* 유저 질문 */}
+      {/* 1. 유저 질문 리마인드 */}
       {userQuestion && (
         <div style={{
-          fontSize: 13, color: '#a1c5ac', fontStyle: 'italic', marginBottom: 12,
+          fontSize: 13, color: '#a1c5ac', fontStyle: 'italic', marginBottom: 16,
           padding: '8px 12px',
           background: 'rgba(151, 198, 170, 0.08)',
           borderRadius: 8,
           borderLeft: '2px solid rgba(151, 198, 170, 0.3)',
         }}>
-          "{userQuestion}"
+          &ldquo;{userQuestion}&rdquo;
         </div>
       )}
 
-      <div style={{ fontSize: 14, lineHeight: 1.8, marginBottom: 12 }}>
-        여섯 가지의 기운이 모두 드러났네.
-      </div>
-
-      {/* 카테고리 카드 — 이미지 다운로드 가능 */}
-      {Object.keys(categories).length > 0 && (
+      {/* 2. 괘 이름 + 총론 전문 */}
+      {bonGua && (
         <>
-          <div
-            ref={categoryCardRef}
-            style={{
-              background: '#f5f0e1',
-              borderRadius: 12,
-              padding: '20px 18px 16px',
-              marginBottom: 12,
-            }}
-          >
-            {/* 카드 상단: 괘 이름 + 질문 */}
-            <div style={{ textAlign: 'center', marginBottom: 12 }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                marginBottom: 6,
-              }}>
-                <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{bonGua?.name}</span>
-                {!isSameGua2 && (
-                  <>
-                    <span style={{ fontSize: 14, color: '#8a7a60' }}>→</span>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{jiName}</span>
-                  </>
-                )}
+          <div style={{
+            textAlign: 'center', marginBottom: 16, padding: '8px 0',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 10, color: '#889' }}>본괘</div>
+                <div style={{ fontSize: 18, color: '#f0dfad', fontWeight: 700 }}>{bonGua.name}</div>
               </div>
-              {userQuestion && (
-                <div style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic' }}>
-                  "{userQuestion}"
-                </div>
+              {!isSameGua && (
+                <>
+                  <div style={{ fontSize: 16, color: '#889' }}>→</div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, color: '#889' }}>지괘</div>
+                    <div style={{ fontSize: 18, color: '#f0dfad', fontWeight: 700 }}>{jiName}</div>
+                  </div>
+                </>
               )}
             </div>
-
-            {/* 카테고리 표 */}
-            <div style={{ display: 'grid', gap: 4 }}>
-              {Object.entries(categories).map(([cat, val]) => (
-                <div key={cat} style={{
-                  display: 'flex', gap: 8, alignItems: 'flex-start',
-                  padding: '5px 8px',
-                  background: 'rgba(139, 115, 85, 0.06)',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontFamily: '"Pretendard Variable", sans-serif',
-                }}>
-                  <span style={{ color: '#8a6a3e', fontWeight: 600, flexShrink: 0, minWidth: 52 }}>
-                    {cat.replace(/\(.*\)/, '')}
-                  </span>
-                  <span style={{ color: '#3a2e1e' }}>{val}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* 하단: 로고 */}
-            <div style={{
-              marginTop: 12, paddingTop: 10,
-              borderTop: '1px solid rgba(139, 115, 85, 0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            }}>
-              <img src="/icon/logo.svg" alt="" style={{ height: 14, opacity: 0.4 }} />
-              <span style={{ fontSize: 10, color: '#a89070', letterSpacing: 1 }}>제3의시간 · 육효점</span>
+            <div style={{ fontSize: 11, color: '#667', marginTop: 6 }}>
+              {guaInfo.name}
             </div>
           </div>
 
-          {/* 다운로드 버튼 */}
-          <button
-            onClick={handleDownloadCard}
-            style={{
-              padding: '8px 20px',
-              background: 'rgba(240, 223, 173, 0.1)',
-              border: '1px solid rgba(240, 223, 173, 0.2)',
-              borderRadius: 16,
-              color: '#f0dfad',
-              fontSize: 12,
-              cursor: 'pointer',
-              marginBottom: 12,
-            }}
-          >
-            카드 이미지 저장
-          </button>
+          <div style={{
+            fontSize: 13, lineHeight: 1.9, whiteSpace: 'pre-line', marginBottom: 20,
+            textAlign: 'left', color: '#ccc',
+            padding: '12px',
+            background: 'rgba(240,223,173,0.04)',
+            borderRadius: 10,
+            borderLeft: '2px solid rgba(240,223,173,0.3)',
+          }}>
+            {bonGua.chongron}
+          </div>
         </>
       )}
 
-      <button
-        onClick={() => setShowDetail(true)}
-        style={{
-          padding: '10px 24px',
-          background: 'rgba(240, 223, 173, 0.15)',
-          border: '1px solid rgba(240, 223, 173, 0.3)',
-          borderRadius: 20,
-          color: '#f0dfad',
-          fontSize: 13,
-          cursor: 'pointer',
-          marginBottom: 8,
-        }}
-      >
-        상세 해석 보기
-      </button>
-      <button
-        onClick={onReset}
-        style={{
-          padding: '8px 20px',
-          background: 'transparent',
-          border: '1px solid rgba(240, 223, 173, 0.15)',
-          borderRadius: 20,
-          color: '#889',
-          fontSize: 12,
-          cursor: 'pointer',
-        }}
-      >
-        다시 점치기
-      </button>
+      {/* 3. 핵심 효사 + 동효 읽기 안내 */}
+      {changingYao.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            fontSize: 12, color: '#f0dfad', letterSpacing: 1, marginBottom: 10,
+            borderBottom: '1px solid rgba(240,223,173,0.15)',
+            paddingBottom: 6,
+          }}>
+            핵심 풀이
+          </div>
+
+          {/* 읽기 안내 */}
+          <div style={{
+            fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 12,
+            padding: '8px 10px',
+            background: 'rgba(240,223,173,0.04)',
+            borderRadius: 8,
+          }}>
+            {changingYao.length === 1
+              ? '움직이는 기운이 하나 있네. 아래의 효사가 핵심 답이야.'
+              : changingYao.length === 2
+              ? '두 개의 기운이 움직이고 있어. 둘 다 읽되, 위쪽 효사를 중심으로 보게.'
+              : changingYao.length === 3
+              ? '세 개의 기운이 요동치고 있군. 위의 본괘 총론과 아래의 지괘 총론을 함께 읽게.'
+              : `${changingYao.length}개나 움직이고 있어. 아래의 지괘 총론을 중심으로 읽게.`
+            }
+          </div>
+
+          {/* 효사 전문 표시 */}
+          {changingYao.map((yao) => {
+            const yaoLabel = ['첫', '둘', '셋', '넷', '다섯', '여섯'][yao.yao - 1] || yao.yao;
+            return (
+              <div
+                key={yao.yao}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                  background: 'rgba(240,223,173,0.06)',
+                  border: '1px solid rgba(240,223,173,0.12)',
+                  borderRadius: 10,
+                  textAlign: 'left',
+                  lineHeight: 1.7,
+                }}
+              >
+                <div style={{ marginBottom: 6 }}>
+                  <span style={{ color: '#f0dfad', fontWeight: 600, fontSize: 13 }}>
+                    {yaoLabel}째 기운
+                  </span>
+                  <span style={{ color: '#889', margin: '0 6px', fontSize: 12 }}>→</span>
+                  <span style={{ color: '#dde1e5', fontSize: 12 }}>{yao.byeonGuaName}</span>
+                </div>
+                <div style={{
+                  color: '#ccc', fontSize: 12, whiteSpace: 'pre-line', lineHeight: 1.8,
+                }}>
+                  {yao.general}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 동효 0개 안내 */}
+      {changingYao.length === 0 && (
+        <div style={{
+          fontSize: 12, color: '#ccc', lineHeight: 1.7, marginBottom: 16,
+          padding: '10px 12px',
+          background: 'rgba(240,223,173,0.04)',
+          borderRadius: 8,
+        }}>
+          모든 기운이 고요하네. 변화 없이 이 괘의 뜻 그대로가 자네의 답이야.
+          지금은 움직일 때가 아니라, 있는 그대로를 받아들일 때라는 뜻이지.
+        </div>
+      )}
+
+      {/* 4. 17개 카테고리 전체 — 잘림 없이 */}
+      {Object.keys(categories).length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            fontSize: 12, color: '#f0dfad', letterSpacing: 1, marginBottom: 10,
+            borderBottom: '1px solid rgba(240,223,173,0.15)',
+            paddingBottom: 6,
+          }}>
+            항목별 풀이
+          </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr', gap: 4,
+            width: '100%',
+          }}>
+            {Object.entries(categories).map(([cat, val]) => {
+              const { main, sub } = parseCatKey(cat);
+              return (
+                <div key={cat} style={{
+                  display: 'flex', gap: 8, alignItems: 'flex-start',
+                  padding: '7px 10px',
+                  background: 'rgba(240,223,173,0.05)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}>
+                  <div style={{ flexShrink: 0, minWidth: 52 }}>
+                    <div style={{ color: '#f0dfad', fontWeight: 600 }}>{main}</div>
+                    {sub && (
+                      <div style={{ color: '#667', fontSize: 10, marginTop: 1 }}>{sub}</div>
+                    )}
+                  </div>
+                  <span style={{ color: '#ccc', lineHeight: 1.6 }}>{val}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. 지괘 총론 (동효 있을 때) */}
+      {changedGua && changingYao.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{
+            fontSize: 12, color: '#f0dfad', letterSpacing: 1, marginBottom: 10,
+            borderBottom: '1px solid rgba(240,223,173,0.15)',
+            paddingBottom: 6,
+          }}>
+            흘러가는 괘 &mdash; {changedGua.name}
+          </div>
+          <div style={{
+            fontSize: 13, lineHeight: 1.9, whiteSpace: 'pre-line',
+            textAlign: 'left', color: '#bbb',
+            padding: '12px',
+            background: 'rgba(240,223,173,0.04)',
+            borderRadius: 10,
+            borderLeft: '2px solid rgba(136, 153, 170, 0.3)',
+          }}>
+            {changedGua.chongron}
+          </div>
+        </div>
+      )}
+
+      {/* 6. 카드 이미지 + 전체 복사 + 다시 점치기 */}
+      {Object.keys(categories).length > 0 && (
+        <div
+          ref={categoryCardRef}
+          style={{
+            background: '#f5f0e1',
+            borderRadius: 12,
+            padding: '20px 18px 16px',
+            marginBottom: 12,
+            width: '100%',
+            boxSizing: 'border-box',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          {/* 워터마크 엠블럼 */}
+          <img
+            src="/favicon-512.png"
+            alt=""
+            style={{
+              position: 'absolute',
+              right: -10,
+              bottom: 30,
+              width: 120,
+              height: 120,
+              opacity: 0.15,
+              filter: 'saturate(0) brightness(0.7)',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* 카드 상단: 괘 이름 + 질문 */}
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              marginBottom: 4,
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{bonGua?.name}</span>
+              {!isSameGua && (
+                <>
+                  <span style={{ fontSize: 14, color: '#8a7a60' }}>→</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{jiName}</span>
+                </>
+              )}
+            </div>
+            {userQuestion && (
+              <div style={{ fontSize: 12, color: '#6a5a40', fontStyle: 'italic', marginBottom: 4 }}>
+                &ldquo;{userQuestion}&rdquo;
+              </div>
+            )}
+          </div>
+
+          {/* 총론 요약 2~3줄 */}
+          {chongronSummary && (
+            <div style={{
+              fontSize: 11, color: '#5a4e3e', lineHeight: 1.6,
+              whiteSpace: 'pre-line',
+              padding: '8px 10px',
+              marginBottom: 10,
+              background: 'rgba(139, 115, 85, 0.06)',
+              borderRadius: 8,
+              borderLeft: '2px solid rgba(139, 115, 85, 0.2)',
+            }}>
+              {chongronSummary}
+            </div>
+          )}
+
+          {/* 카테고리 표 */}
+          <table style={{
+            width: '100%', borderCollapse: 'collapse',
+            fontFamily: '"Pretendard Variable", sans-serif', fontSize: 12,
+          }}>
+            <tbody>
+              {Object.entries(categories).map(([cat, val], i) => {
+                const { main, sub } = parseCatKey(cat);
+                return (
+                  <tr key={cat} style={{
+                    borderBottom: i < Object.entries(categories).length - 1 ? '1px solid rgba(139, 115, 85, 0.1)' : 'none',
+                  }}>
+                    <td style={{
+                      padding: '7px 10px', width: 70,
+                      color: '#8a6a3e', fontWeight: 600,
+                      verticalAlign: 'top',
+                    }}>
+                      <div>{main}</div>
+                      {sub && <div style={{ fontSize: 9, color: '#a89070', fontWeight: 400 }}>{sub}</div>}
+                    </td>
+                    <td style={{
+                      padding: '7px 10px',
+                      color: '#3a2e1e',
+                      verticalAlign: 'top',
+                    }}>
+                      {val}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* 하단: 브랜딩 */}
+          <div style={{
+            marginTop: 16, paddingTop: 12,
+            borderTop: '1px solid rgba(139, 115, 85, 0.15)',
+            textAlign: 'center',
+          }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <img src="/icon/logo.svg" alt="" style={{ height: 16, opacity: 0.5 }} />
+              <span style={{ fontSize: 11, color: '#a89070', letterSpacing: 1 }}>제3의시간 · 육효점</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 버튼 그룹 */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+        <button
+          onClick={handleDownloadCard}
+          style={{
+            padding: '8px 18px',
+            background: 'rgba(240, 223, 173, 0.1)',
+            border: '1px solid rgba(240, 223, 173, 0.2)',
+            borderRadius: 16,
+            color: '#f0dfad',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          카드 이미지 저장
+        </button>
+        {bonGua && (
+          <CopyButton
+            getText={() => formatGuaText(bonGua, changingYao, changedGua, userQuestion, palaceInfo, yaos)}
+            label="전체 복사"
+          />
+        )}
+        <button
+          onClick={onReset}
+          style={{
+            padding: '8px 18px',
+            background: 'transparent',
+            border: '1px solid rgba(240, 223, 173, 0.15)',
+            borderRadius: 16,
+            color: '#889',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          다시 점치기
+        </button>
+      </div>
+
+      {/* 7. 괘 구조 상세 — 접힘/아코디언 */}
+      {palaceInfo && bonGua && (
+        <div style={{ marginBottom: 16 }}>
+          <button
+            onClick={() => setShowStructure(prev => !prev)}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              background: 'rgba(240,223,173,0.04)',
+              border: '1px solid rgba(240,223,173,0.1)',
+              borderRadius: 10,
+              color: '#889',
+              fontSize: 12,
+              cursor: 'pointer',
+              textAlign: 'left',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span>
+              괘 구조 상세
+              <span style={{ color: '#556', marginLeft: 8, fontSize: 11 }}>
+                {palaceInfo.palace.name}({palaceInfo.palace.wuxing}) · {getPalaceLabel(palaceInfo.palaceIndex)}
+              </span>
+            </span>
+            <span style={{ color: '#667', fontSize: 11 }}>
+              {showStructure ? '▲' : '▼'}
+            </span>
+          </button>
+
+          {showStructure && (
+            <div style={{
+              padding: '12px',
+              background: 'rgba(240,223,173,0.03)',
+              border: '1px solid rgba(240,223,173,0.08)',
+              borderTop: 'none',
+              borderRadius: '0 0 10px 10px',
+            }}>
+              {/* 괘 도표: 世應 · 지지 · 육친 */}
+              <div style={{
+                padding: '10px 12px',
+                background: 'rgba(240,223,173,0.04)',
+                borderRadius: 10,
+                marginBottom: 12,
+                fontFamily: 'monospace',
+                fontSize: 12,
+                lineHeight: 2,
+              }}>
+                {[5, 4, 3, 2, 1, 0].map(i => {
+                  const isYang = castResult.originalGua[i] === 1;
+                  const isShi = i + 1 === palaceInfo.shi;
+                  const isYing = i + 1 === palaceInfo.ying;
+                  const mark = isShi ? '世' : isYing ? '應' : '　';
+                  const dotColor = isYang ? '#aab4be' : '#7a8490';
+                  const dotCount = 7;
+                  const halfDots = 3;
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, height: 18 }}>
+                      <span style={{ color: isShi ? '#f0dfad' : isYing ? '#8cb4ff' : '#556', width: 16, textAlign: 'center', fontSize: 11, flexShrink: 0 }}>
+                        {mark}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', width: 52, flexShrink: 0 }}>
+                        {isYang ? (
+                          <div style={{ display: 'flex', gap: 2 }}>
+                            {Array.from({ length: dotCount }).map((_, j) => (
+                              <div key={j} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 2 }}>
+                              {Array.from({ length: halfDots }).map((_, j) => (
+                                <div key={`l${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                              ))}
+                            </div>
+                            <div style={{ width: 10 }} />
+                            <div style={{ display: 'flex', gap: 2 }}>
+                              {Array.from({ length: halfDots }).map((_, j) => (
+                                <div key={`r${j}`} style={{ width: 4, height: 4, backgroundColor: dotColor }} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <span style={{ color: '#f0dfad', width: 14, textAlign: 'center', fontSize: 12, flexShrink: 0 }}>{palaceInfo.yaoDizhi[i]}</span>
+                      <span style={{ color: '#999', fontSize: 11 }}>{liuqinKorean(palaceInfo.yaoLiuqin[i])}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 정통 읽기 */}
+              <div style={{
+                fontSize: 12, lineHeight: 1.9, whiteSpace: 'pre-line',
+                textAlign: 'left', color: '#b8bcc0',
+                padding: '12px',
+                background: 'rgba(240,223,173,0.04)',
+                borderRadius: 10,
+                borderLeft: '2px solid rgba(136, 153, 170, 0.3)',
+              }}>
+                {generateTraditionalReading(palaceInfo, bonGua.name, yaos)}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div style={{ fontSize: 10, color: '#556', lineHeight: 1.5 }}>
+        보관해두게. 오늘의 기억이 사라지거든 누군가에게 다시 물을 수 있도록 말이지.
+      </div>
     </>
   );
 }
@@ -1042,8 +1084,14 @@ export default function HyoPage() {
           className="fixed inset-0 flex flex-col justify-end"
           style={{ zIndex: 10 }}
         >
-          {/* 탭 영역 (상단 빈 공간) */}
+          {/* 탭 영역 (상단 빈 공간) — 질문 입력 중엔 비활성 */}
           <div className="flex-1" onClick={() => {
+            if (showQuestionInput) return;
+            const line = ENTRANCE_LINES[entranceStep] as any;
+            if (line?.action === 'question_input') {
+              setShowQuestionInput(true);
+              return;
+            }
             if (entranceStep < ENTRANCE_LINES.length - 1) setEntranceStep(s => s + 1);
             else runSpiritPath(STAGES[0].spiritPath, () => setPhase('intro'));
           }} />

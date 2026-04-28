@@ -201,7 +201,7 @@ const GUA_64: Record<string, { name: string; korean: string }> = {
 export function getGuaName(gua: number[]): { name: string; korean: string } {
   const lower = trigramIndex(gua.slice(0, 3));
   const upper = trigramIndex(gua.slice(3, 6));
-  return GUA_64[`${lower},${upper}`] || { name: '?', korean: '?' };
+  return GUA_64[`${upper},${lower}`] || { name: '?', korean: '?' };
 }
 
 export function getLowerTrigramName(gua: number[]): string {
