@@ -231,12 +231,13 @@ export default function GunghamPage() {
     setTypingDone(false);
     setError(null);
 
+    const cleanTime = (t: string) => (t && t !== 'unknown') ? t : undefined;
     const persons: any[] = [
-      { ...selfInfo, birthTime: selfInfo.birthTime || undefined },
-      { ...otherInfo, birthTime: otherInfo.birthTime || undefined },
+      { ...selfInfo, birthTime: cleanTime(selfInfo.birthTime) },
+      { ...otherInfo, birthTime: cleanTime(otherInfo.birthTime) },
     ];
     if (has3rd) {
-      persons.push({ ...thirdInfo, birthTime: thirdInfo.birthTime || undefined });
+      persons.push({ ...thirdInfo, birthTime: cleanTime(thirdInfo.birthTime) });
     }
 
     const rt = has3rd
