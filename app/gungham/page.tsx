@@ -55,10 +55,13 @@ const ELEMENT_HANGUL: Record<string, string> = {
 };
 
 const PREAMBLE_MESSAGES = [
-  '"좋은 궁합"의 기준은 사람마다 다르네.\n\n정서적 유대를 원하는 사람,\n실리적 도움을 원하는 사람,\n편안함을 원하는 사람,\n긴장감 속에서 성장하고 싶은 사람...\n\n자네가 생각하는\n"좋은 관계"란 무엇인가?',
-  '지금 본인의 상태에 따라\n맞는 상대가 달라진다네.\n\n힘든 시기라면\n안정을 주는 사람이,\n안정적이라면\n자극을 주는 사람이\n오히려 도움이 될 수 있어.\n\n같은 상대라도\n시기에 따라 관계의 질이\n변한다네.',
-  '궁합은 고정된 운명이 아니야.\n\n점수가 높아도\n노력 없이 유지되는 관계는 없고,\n점수가 낮아도 서로를 이해하면\n더 깊은 관계가 될 수 있네.\n\n숫자에 얽매이지 말고,\n이해의 도구로 사용하게.',
-  '"이 사람이 당신의 운명이다"라고\n단정하는 곳은 조심하게.\n\n여기서는 그런 단정을 하지 않네.\n데이터를 보여줄 뿐,\n해석과 판단은 자네 몫이야.',
+  '"좋은 궁합"의 기준은\n사람마다 다르네.',
+  '정서적 유대를 원하는 사람,\n편안함을 원하는 사람,\n성장을 원하는 사람...',
+  '자네가 생각하는\n"좋은 관계"란 무엇인가?',
+  '같은 상대라도\n시기에 따라 관계의 질이\n변한다네.',
+  '궁합은 고정된 운명이 아니야.\n숫자에 얽매이지 말고,\n이해의 도구로 사용하게.',
+  '"이 사람이 당신의 운명이다"라고\n단정하는 곳은 조심하게.',
+  '여기서는 그런 단정을 하지 않네.\n데이터를 보여줄 뿐,\n해석과 판단은 자네 몫이야.',
 ];
 
 const RELATION_CHOICES = [
@@ -156,6 +159,11 @@ export default function GunghamPage() {
   }, [phase, preambleIndex, perspectiveQuestions, currentQIndex]);
 
   const dialogueKey = `${phase}-${preambleIndex}-${currentQIndex}`;
+
+  // ── 타이핑 완료 콜백 (안정 참조) ──
+  const handleTypingComplete = useCallback(() => {
+    setTypingDone(true);
+  }, []);
 
   // ── 탭 핸들러 ──
   const handleTap = useCallback(() => {
@@ -517,7 +525,7 @@ export default function GunghamPage() {
               key={dialogueKey}
               line={currentLine}
               typing
-              onTypingComplete={() => setTypingDone(true)}
+              onTypingComplete={handleTypingComplete}
               onTap={handleTap}
               showIndicator={showIndicator}
             />
