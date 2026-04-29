@@ -421,17 +421,38 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
     }
   })();
 
-  const handleDownloadCard = async () => {
-    if (!categoryCardRef.current) return;
-    const html2canvas = (await import('html2canvas')).default;
-    const canvas = await html2canvas(categoryCardRef.current, {
-      backgroundColor: '#f5f0e1',
-      scale: 2,
+  const handleDownloadCard = async (style: 'dark' | 'light' = 'dark') => {
+    // 카테고리 데이터 조립
+    const catItems = Object.entries(categories).map(([cat, val]) => {
+      const { main, sub } = parseCatKey(cat);
+      const verdict = verdictMap.get(cat)?.verdict;
+      return { name: main, sub: sub || undefined, value: val, verdict };
     });
-    const link = document.createElement('a');
-    link.download = `육효점-${bonGua?.name || '결과'}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+
+    const params = new URLSearchParams({
+      gua: bonGua?.name || '',
+      ji: jiName || '',
+      q: userQuestion,
+      date: castDateDisplay.western,
+      ganji: castDateDisplay.eastern,
+      summary: chongronSummary.replace(/\n/g, '|'),
+      cats: JSON.stringify(catItems),
+      style,
+    });
+
+    try {
+      const res = await fetch(`/api/hyo/card?${params}`);
+      if (!res.ok) throw new Error('카드 생성 실패');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `육효점-${bonGua?.name || '결과'}-${style}.png`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('카드 이미지 생성에 실패했습니다.');
+    }
   };
 
   // 카테고리 키에서 괄호 분리
@@ -796,7 +817,7 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
       {/* 버튼 그룹 */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
         <button
-          onClick={handleDownloadCard}
+          onClick={() => handleDownloadCard('dark')}
           style={{
             padding: '8px 18px',
             background: 'rgba(240, 223, 173, 0.1)',
@@ -807,7 +828,21 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
             cursor: 'pointer',
           }}
         >
-          카드 이미지 저장
+          카드 저장 (어두운)
+        </button>
+        <button
+          onClick={() => handleDownloadCard('light')}
+          style={{
+            padding: '8px 18px',
+            background: 'rgba(240, 223, 173, 0.1)',
+            border: '1px solid rgba(240, 223, 173, 0.2)',
+            borderRadius: 16,
+            color: '#f0dfad',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          카드 저장 (밝은)
         </button>
         {bonGua && (
           <CopyButton
