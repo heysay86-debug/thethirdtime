@@ -435,23 +435,23 @@ export default function GunghamPage() {
         </div>
       )}
 
+      {/* ── 상단 로고 ── */}
+      {isDialogueMode && phase !== 'cast' && (
+        <div
+          className="fixed top-0 left-0 right-0 flex justify-center"
+          style={{
+            zIndex: 55,
+            paddingTop: 'max(12px, env(safe-area-inset-top))',
+            pointerEvents: 'none',
+          }}
+        >
+          <img src="/icon/logo.svg" alt="" style={{ width: 90, opacity: 0.5, filter: 'brightness(0.7)' }} />
+        </div>
+      )}
+
       {/* ── 대화 모드: 하단 고정 대화창 ── */}
       {isDialogueMode && phase !== 'cast' && (
         <div className="fixed inset-0 flex flex-col justify-end" style={{ zIndex: 10 }}>
-          {/* 헤더 */}
-          <div style={{
-            position: 'absolute', top: 0, left: 0, right: 0,
-            textAlign: 'center', paddingTop: 20, zIndex: 11,
-            pointerEvents: 'none',
-          }}>
-            <h1 style={{
-              fontSize: 20, fontWeight: 700, color: '#f0dfad',
-              fontFamily: '"Gaegu", cursive', margin: 0,
-            }}>
-              3장 - 인연의 거울
-            </h1>
-            <p style={{ fontSize: 11, color: '#889', marginTop: 4 }}>궁합 분석</p>
-          </div>
 
           {/* 탭 영역 */}
           <div className="flex-1" onClick={handleTap} />
@@ -546,8 +546,9 @@ export default function GunghamPage() {
             overflowY: 'auto',
           }}
         >
-          {/* 헤더 */}
-          <div style={{ textAlign: 'center', paddingTop: 16 }}>
+          {/* 로고 + 헤더 */}
+          <div style={{ textAlign: 'center', paddingTop: 8 }}>
+            <img src="/icon/logo.svg" alt="" style={{ width: 90, opacity: 0.5, filter: 'brightness(0.7)', margin: '0 auto 8px' }} />
             <h1 style={{
               fontSize: 20, fontWeight: 700, color: '#f0dfad',
               fontFamily: '"Gaegu", cursive', margin: 0,
@@ -606,6 +607,9 @@ export default function GunghamPage() {
         @keyframes indicator-bounce {
           0%, 100% { transform: translateY(0); opacity: 0.5; }
           50% { transform: translateY(4px); opacity: 1; }
+        }
+        button:active {
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.3) !important;
         }
       `}</style>
     </div>
