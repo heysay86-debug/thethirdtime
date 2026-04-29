@@ -192,29 +192,6 @@ export default function GunghamPage() {
     }
   }, [fromSaju, selfInfo]);
 
-  // ── 인물 입력 완료 ──
-  const handlePersonNext = useCallback((who: 'self' | 'other' | 'third') => {
-    setTypingDone(false);
-    if (who === 'self') {
-      setPhase('input_other');
-    } else if (who === 'other') {
-      if (has3rd) {
-        setPhase('input_third');
-      } else {
-        startCastAndAnalyze();
-      }
-    } else {
-      startCastAndAnalyze();
-    }
-  }, [has3rd]);
-
-  const handlePersonBack = useCallback((who: 'self' | 'other' | 'third') => {
-    setTypingDone(false);
-    if (who === 'self') setPhase('relation_select');
-    else if (who === 'other') setPhase('input_self');
-    else setPhase('input_other');
-  }, []);
-
   // ── cast 시퀀스 + 분석 실행 ──
   const startCastAndAnalyze = useCallback(async () => {
     setCastStep(0);
@@ -266,6 +243,29 @@ export default function GunghamPage() {
       setTypingDone(false);
     }
   }, [selfInfo, otherInfo, thirdInfo, has3rd, relationType]);
+
+  // ── 인물 입력 완료 ──
+  const handlePersonNext = useCallback((who: 'self' | 'other' | 'third') => {
+    setTypingDone(false);
+    if (who === 'self') {
+      setPhase('input_other');
+    } else if (who === 'other') {
+      if (has3rd) {
+        setPhase('input_third');
+      } else {
+        startCastAndAnalyze();
+      }
+    } else {
+      startCastAndAnalyze();
+    }
+  }, [has3rd, startCastAndAnalyze]);
+
+  const handlePersonBack = useCallback((who: 'self' | 'other' | 'third') => {
+    setTypingDone(false);
+    if (who === 'self') setPhase('relation_select');
+    else if (who === 'other') setPhase('input_self');
+    else setPhase('input_other');
+  }, []);
 
   // ── 관점 질문 로드 ──
   const startPerspectiveQuestions = useCallback(async () => {
