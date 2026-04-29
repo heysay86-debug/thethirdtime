@@ -9,6 +9,10 @@ import { interpretCast, type GuaInterpretation, type YaoInterpretation } from '@
 import { getGuaPalace, getPalaceLabel, liuqinKorean, type GuaPalaceInfo } from '@/src/hyo/gua-palace';
 import { generateTraditionalReading } from '@/src/hyo/gua-reading';
 import { analyzeLiuYao, type LiuYaoAnalysis, type CategoryAssessment, type Verdict } from '@/src/hyo/liuyao';
+import { getYearPillar } from '@/src/engine/pillar_year';
+import { getMonthPillar } from '@/src/engine/pillar_month';
+import { getIljinByDate } from '@/src/engine/data/iljin_adapter';
+import { getHourPillar } from '@/src/engine/pillar_hour';
 
 type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete';
 
@@ -375,6 +379,24 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
   const jiName = changedGua?.name || bonGua?.name;
   const isSameGua = bonGua?.name === jiName;
 
+  // 카드용 점일 표시 (서양식 + 동양식 병기)
+  const castDateDisplay = (() => {
+    const d = castDate;
+    const western = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} / ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    try {
+      const yearP = getYearPillar(d);
+      const monthP = getMonthPillar(d);
+      const iljin = getIljinByDate(d);
+      const hourP = getHourPillar(d, true);
+      const dayStr = iljin ? iljin.hanja : '';
+      const hourStr = hourP.known ? `${hourP.pillar.gan}${hourP.pillar.ji}` : '';
+      const eastern = `${yearP.gan}${yearP.ji}년 ${monthP.gan}${monthP.ji}월 ${dayStr}일${hourStr ? ` ${hourStr}시` : ''}`;
+      return { western, eastern };
+    } catch {
+      return { western, eastern: '' };
+    }
+  })();
+
   const handleDownloadCard = async () => {
     if (!categoryCardRef.current) return;
     const html2canvas = (await import('html2canvas')).default;
@@ -663,6 +685,15 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
                   <span style={{ fontSize: 14, color: '#8a7a60' }}>→</span>
                   <span style={{ fontSize: 16, fontWeight: 700, color: '#3a2e1e' }}>{jiName}</span>
                 </>
+              )}
+            </div>
+            {/* 점일 표시 */}
+            <div style={{ fontSize: 10, color: '#a89070', marginBottom: 4, lineHeight: 1.5 }}>
+              {castDateDisplay.western}
+              {castDateDisplay.eastern && (
+                <span style={{ marginLeft: 6, color: '#8a7a60' }}>
+                  {castDateDisplay.eastern}
+                </span>
               )}
             </div>
             {userQuestion && (
