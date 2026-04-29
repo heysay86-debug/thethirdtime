@@ -429,19 +429,21 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
       return { name: main, sub: sub || undefined, value: val, verdict };
     });
 
-    const params = new URLSearchParams({
-      gua: bonGua?.name || '',
-      ji: jiName || '',
-      q: userQuestion,
-      date: castDateDisplay.western,
-      ganji: castDateDisplay.eastern,
-      summary: chongronSummary.replace(/\n/g, '|'),
-      cats: JSON.stringify(catItems),
-      style,
-    });
-
     try {
-      const res = await fetch(`/api/hyo/card?${params}`);
+      const res = await fetch('/api/hyo/card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gua: bonGua?.name || '',
+          ji: jiName || '',
+          q: userQuestion,
+          date: castDateDisplay.western,
+          ganji: castDateDisplay.eastern,
+          summary: chongronSummary.replace(/\n/g, '|'),
+          cats: catItems,
+          style,
+        }),
+      });
       if (!res.ok) throw new Error('카드 생성 실패');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

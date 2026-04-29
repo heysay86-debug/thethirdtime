@@ -51,18 +51,18 @@ const VERDICT_COLORS_LIGHT: Record<string, string> = {
   '대길': '#8a6a1e', '길': '#3a7a4a', '평': '#777', '흉': '#a06030', '대흉': '#a03030',
 };
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
-  const gua = searchParams.get('gua') || '';
-  const ji = searchParams.get('ji') || '';
-  const q = searchParams.get('q') || '';
-  const date = searchParams.get('date') || '';
-  const ganji = searchParams.get('ganji') || '';
-  const summary = (searchParams.get('summary') || '').replace(/\|/g, '\n');
-  const style = searchParams.get('style') === 'light' ? 'light' : 'dark';
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const gua = body.gua || '';
+  const ji = body.ji || '';
+  const q = body.q || '';
+  const date = body.date || '';
+  const ganji = body.ganji || '';
+  const summary = (body.summary || '').replace(/\|/g, '\n');
+  const style = body.style === 'light' ? 'light' : 'dark';
 
   let cats: CatItem[] = [];
-  try { cats = JSON.parse(searchParams.get('cats') || '[]'); } catch { /* */ }
+  try { cats = Array.isArray(body.cats) ? body.cats : JSON.parse(body.cats || '[]'); } catch { /* */ }
 
   const isDark = style === 'dark';
   const vc = isDark ? VERDICT_COLORS_DARK : VERDICT_COLORS_LIGHT;
