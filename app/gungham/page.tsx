@@ -988,7 +988,7 @@ function PairCard({ pair }: { pair: any }) {
         </div>
       )}
 
-      <div style={{ marginTop: 12, fontSize: 12, color: '#a0a8b0', lineHeight: 1.6 }}>
+      <div style={{ marginTop: 12, fontSize: 12, color: '#a0a8b0', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
         {pair.interpretation.summary}
       </div>
     </div>
@@ -1062,7 +1062,7 @@ function FinalResultSection({
             {perspectiveResult.insights.map((insight: string, i: number) => (
               <div key={i} style={{
                 fontSize: 13, color: '#c8cdd3', lineHeight: 1.7,
-                padding: '8px 0',
+                padding: '8px 0', whiteSpace: 'pre-line',
                 borderBottom: i < perspectiveResult.insights.length - 1 ? '1px solid rgba(240,223,173,0.06)' : 'none',
               }}>
                 {insight}
@@ -1071,7 +1071,7 @@ function FinalResultSection({
 
             <div style={{
               marginTop: 12, fontSize: 13, color: '#f0dfad',
-              fontFamily: '"Gaegu", cursive', lineHeight: 1.7,
+              fontFamily: '"Gaegu", cursive', lineHeight: 1.7, whiteSpace: 'pre-line',
             }}>
               {perspectiveResult.closing}
             </div>
@@ -1088,7 +1088,7 @@ function FinalResultSection({
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 11, color: '#97c6aa', fontWeight: 600, marginBottom: 4 }}>강점</div>
             {pair.interpretation.strengths.map((s: string, i: number) => (
-              <div key={i} style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8 }}>
+              <div key={i} style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8, whiteSpace: 'pre-line' }}>
                 {s}
               </div>
             ))}
@@ -1097,7 +1097,7 @@ function FinalResultSection({
           <div style={{ marginBottom: 8 }}>
             <div style={{ fontSize: 11, color: '#f2b6b6', fontWeight: 600, marginBottom: 4 }}>주의할 점</div>
             {pair.interpretation.weaknesses.map((w: string, i: number) => (
-              <div key={i} style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8 }}>
+              <div key={i} style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8, whiteSpace: 'pre-line' }}>
                 {w}
               </div>
             ))}
@@ -1105,7 +1105,7 @@ function FinalResultSection({
 
           <div>
             <div style={{ fontSize: 11, color: '#618199', fontWeight: 600, marginBottom: 4 }}>조언</div>
-            <div style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8 }}>
+            <div style={{ fontSize: 12, color: '#c8cdd3', lineHeight: 1.6, paddingLeft: 8, whiteSpace: 'pre-line' }}>
               {pair.interpretation.advice}
             </div>
           </div>
