@@ -678,6 +678,14 @@ function BirthDateInput({ value, onChange }: { value: string; onChange: (v: stri
   const monthRef = useRef<HTMLInputElement>(null);
   const dayRef = useRef<HTMLInputElement>(null);
 
+  // value prop 변경 시 내부 state 동기화
+  useEffect(() => {
+    const [ny, nm, nd] = value ? value.split('-') : ['', '', ''];
+    setYear(ny);
+    setMonth(nm);
+    setDay(nd);
+  }, [value]);
+
   const emit = (yy: string, mm: string, dd: string) => {
     if (yy.length === 4 && mm.length >= 1 && dd.length >= 1) {
       onChange(`${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
