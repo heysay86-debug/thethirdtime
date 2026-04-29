@@ -156,6 +156,30 @@ function VerdictBadge({ verdict }: { verdict: Verdict }) {
   );
 }
 
+// 카드(밝은 배경)용 verdict 뱃지
+const CARD_VERDICT_COLORS: Record<string, string> = {
+  '대길': '#8a6a1e',
+  '길': '#3a7a4a',
+  '평': '#777',
+  '흉': '#a06030',
+  '대흉': '#a03030',
+};
+
+function CardVerdictBadge({ verdict }: { verdict: string }) {
+  const color = CARD_VERDICT_COLORS[verdict] || '#777';
+  return (
+    <span style={{
+      fontSize: 8, fontWeight: 700, color,
+      padding: '1px 4px', borderRadius: 3,
+      border: `1px solid ${color}44`,
+      background: `${color}12`,
+      letterSpacing: 0.5,
+    }}>
+      {verdict}
+    </span>
+  );
+}
+
 // 괘 해석 텍스트 포맷 — 총론 + 효사 + 카테고리 + 지괘 + 구조
 function formatGuaText(
   bonGua: GuaInterpretation,
@@ -726,6 +750,7 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
             <tbody>
               {Object.entries(categories).map(([cat, val], i) => {
                 const { main, sub } = parseCatKey(cat);
+                const cardVerdict = verdictMap.get(cat)?.verdict;
                 return (
                   <tr key={cat} style={{
                     borderBottom: i < Object.entries(categories).length - 1 ? '1px solid rgba(139, 115, 85, 0.1)' : 'none',
@@ -735,7 +760,10 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
                       color: '#8a6a3e', fontWeight: 600,
                       verticalAlign: 'top',
                     }}>
-                      <div>{main}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        {main}
+                        {cardVerdict && <CardVerdictBadge verdict={cardVerdict} />}
+                      </div>
                       {sub && <div style={{ fontSize: 9, color: '#a89070', fontWeight: 400 }}>{sub}</div>}
                     </td>
                     <td style={{
