@@ -801,13 +801,27 @@ function PersonInputPanel({
       />
 
       {/* 태어난 시각 */}
-      <input
-        type="time"
-        value={info.birthTime}
-        onChange={e => onChange({ ...info, birthTime: e.target.value })}
-        placeholder="태어난 시각 (선택)"
-        style={{ ...panelInput, colorScheme: 'dark' }}
-      />
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        <input
+          type="time"
+          value={info.birthTime === 'unknown' ? '' : info.birthTime}
+          onChange={e => onChange({ ...info, birthTime: e.target.value })}
+          placeholder="태어난 시각"
+          style={{ ...panelInput, flex: 1, colorScheme: 'dark' }}
+          disabled={info.birthTime === 'unknown'}
+        />
+        <button
+          type="button"
+          onClick={() => onChange({ ...info, birthTime: info.birthTime === 'unknown' ? '' : 'unknown' })}
+          style={{
+            ...panelBtn, flex: '0 0 auto', padding: '8px 12px', fontSize: 12,
+            backgroundColor: info.birthTime === 'unknown' ? '#dde1e5' : 'rgba(104,128,151,0.15)',
+            color: info.birthTime === 'unknown' ? '#3e4857' : '#688097',
+          }}
+        >
+          모르겠어요
+        </button>
+      </div>
 
       {/* 성별 */}
       <div style={{ display: 'flex', gap: 6 }}>
