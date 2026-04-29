@@ -667,6 +667,84 @@ const btnTertiary: React.CSSProperties = {
   width: '100%',
 };
 
+// ─── 생년월일 분리 입력 ──────────────────────────────────────
+
+function BirthDateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [y, m, d] = value ? value.split('-') : ['', '', ''];
+  const [year, setYear] = useState(y);
+  const [month, setMonth] = useState(m);
+  const [day, setDay] = useState(d);
+  const monthRef = useRef<HTMLInputElement>(null);
+  const dayRef = useRef<HTMLInputElement>(null);
+
+  const emit = (yy: string, mm: string, dd: string) => {
+    if (yy.length === 4 && mm.length >= 1 && dd.length >= 1) {
+      onChange(`${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+    } else {
+      onChange('');
+    }
+  };
+
+  const handleYear = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 4);
+    setYear(digits);
+    emit(digits, month, day);
+    if (digits.length === 4) monthRef.current?.focus();
+  };
+
+  const handleMonth = (v: string) => {
+    let digits = v.replace(/\D/g, '').slice(0, 2);
+    if (digits.length === 1 && parseInt(digits) > 1) digits = '0' + digits;
+    setMonth(digits);
+    emit(year, digits, day);
+    if (digits.length === 2) dayRef.current?.focus();
+  };
+
+  const handleDay = (v: string) => {
+    const digits = v.replace(/\D/g, '').slice(0, 2);
+    setDay(digits);
+    emit(year, month, digits);
+  };
+
+  const fieldStyle: React.CSSProperties = {
+    ...panelInput,
+    textAlign: 'center',
+    padding: '10px 4px',
+    fontSize: 16,
+    letterSpacing: 1,
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <input
+        type="text" inputMode="numeric" placeholder="1990"
+        value={year} onChange={e => handleYear(e.target.value)}
+        style={{ ...fieldStyle, flex: 2 }}
+        onFocus={e => (e.target.style.borderColor = '#f0dfad')}
+        onBlur={e => (e.target.style.borderColor = 'rgba(104,128,151,0.30)')}
+      />
+      <span style={{ color: '#556', fontSize: 14 }}>.</span>
+      <input
+        ref={monthRef}
+        type="text" inputMode="numeric" placeholder="01"
+        value={month} onChange={e => handleMonth(e.target.value)}
+        style={{ ...fieldStyle, flex: 1 }}
+        onFocus={e => (e.target.style.borderColor = '#f0dfad')}
+        onBlur={e => (e.target.style.borderColor = 'rgba(104,128,151,0.30)')}
+      />
+      <span style={{ color: '#556', fontSize: 14 }}>.</span>
+      <input
+        ref={dayRef}
+        type="text" inputMode="numeric" placeholder="01"
+        value={day} onChange={e => handleDay(e.target.value)}
+        style={{ ...fieldStyle, flex: 1 }}
+        onFocus={e => (e.target.style.borderColor = '#f0dfad')}
+        onBlur={e => (e.target.style.borderColor = 'rgba(104,128,151,0.30)')}
+      />
+    </div>
+  );
+}
+
 // ─── 인물 입력 패널 (대화창 위에 표시) ──────────────────────
 
 function PersonInputPanel({
@@ -717,11 +795,9 @@ function PersonInputPanel({
         ))}
       </div>
 
-      <input
-        type="date"
+      <BirthDateInput
         value={info.birthDate}
-        onChange={e => onChange({ ...info, birthDate: e.target.value })}
-        style={{ ...panelInput, colorScheme: 'dark' }}
+        onChange={val => onChange({ ...info, birthDate: val })}
       />
 
       {/* 태어난 시각 */}
