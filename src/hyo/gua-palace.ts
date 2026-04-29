@@ -14,7 +14,7 @@ type Wuxing = '木' | '火' | '土' | '金' | '水';
 const DIZHI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'] as const;
 type Dizhi = typeof DIZHI[number];
 
-const DIZHI_WUXING: Record<Dizhi, Wuxing> = {
+export const DIZHI_WUXING: Record<Dizhi, Wuxing> = {
   '子': '水', '丑': '土', '寅': '木', '卯': '木', '辰': '土', '巳': '火',
   '午': '火', '未': '土', '申': '金', '酉': '金', '戌': '土', '亥': '水',
 };

@@ -8,6 +8,7 @@ import BgmPlayer from '@/app/alt2/components/base/BgmPlayer';
 import { interpretCast, type GuaInterpretation, type YaoInterpretation } from '@/src/hyo/gua-lookup';
 import { getGuaPalace, getPalaceLabel, liuqinKorean, type GuaPalaceInfo } from '@/src/hyo/gua-palace';
 import { generateTraditionalReading } from '@/src/hyo/gua-reading';
+import { analyzeLiuYao, type LiuYaoAnalysis, type CategoryAssessment, type Verdict } from '@/src/hyo/liuyao';
 
 type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete';
 
@@ -124,6 +125,30 @@ function CopyButton({ getText, label = '복사하기' }: { getText: () => string
     >
       {copied ? '복사됨!' : label}
     </button>
+  );
+}
+
+// verdict 뱃지
+const VERDICT_COLORS: Record<string, string> = {
+  '대길': '#f0dfad',
+  '길': '#97c6aa',
+  '평': '#889',
+  '흉': '#c9956a',
+  '대흉': '#c96a6a',
+};
+
+function VerdictBadge({ verdict }: { verdict: Verdict }) {
+  const color = VERDICT_COLORS[verdict] || '#889';
+  return (
+    <span style={{
+      fontSize: 9, fontWeight: 700, color,
+      padding: '1px 5px', borderRadius: 4,
+      border: `1px solid ${color}44`,
+      background: `${color}15`,
+      letterSpacing: 0.5,
+    }}>
+      {verdict}
+    </span>
   );
 }
 
@@ -309,12 +334,13 @@ function IncantationNarration({ lines, onComplete }: { lines: string[]; onComple
   );
 }
 
-function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
+function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDate }: {
   guaInfo: { name: string; korean: string };
   castResult: ReturnType<typeof interpretCast>;
   yaos: YaoResult[];
   onReset: () => void;
   userQuestion: string;
+  castDate: Date;
 }) {
   const [showStructure, setShowStructure] = useState(false);
   const categoryCardRef = useRef<HTMLDivElement>(null);
@@ -326,6 +352,20 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
 
   // 동효 개수별 카테고리 소스
   const categories = getCategorySource(changingYao, bonGua, changedGua) || {};
+
+  // 월건·일진 기반 기운 분석
+  const liuyaoAnalysis: LiuYaoAnalysis | null = (() => {
+    if (!palaceInfo || Object.keys(categories).length === 0) return null;
+    try {
+      return analyzeLiuYao(castDate, palaceInfo, yaos, Object.keys(categories));
+    } catch {
+      return null;
+    }
+  })();
+
+  // 카테고리별 verdict 빠른 조회
+  const verdictMap = new Map<string, CategoryAssessment>();
+  liuyaoAnalysis?.assessments.forEach(a => verdictMap.set(a.category, a));
 
   // 카드용 총론 요약 (앞 3줄)
   const chongronSummary = bonGua?.chongron
@@ -487,9 +527,25 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
         </div>
       )}
 
-      {/* 4. 17개 카테고리 전체 — 잘림 없이 */}
+      {/* 4. 오늘의 기운 + 17개 카테고리 전체 */}
       {Object.keys(categories).length > 0 && (
         <div style={{ marginBottom: 20 }}>
+          {/* 오늘의 기운 요약 */}
+          {liuyaoAnalysis && (
+            <div style={{
+              padding: '10px 12px', marginBottom: 12,
+              background: 'rgba(97,129,153,0.1)',
+              borderRadius: 8, borderLeft: '2px solid rgba(97,129,153,0.4)',
+            }}>
+              <div style={{ fontSize: 11, color: '#889', fontWeight: 600, marginBottom: 4 }}>
+                오늘의 기운
+              </div>
+              <div style={{ fontSize: 11, color: '#a0a8b0', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                {liuyaoAnalysis.summary}
+              </div>
+            </div>
+          )}
+
           <div style={{
             fontSize: 12, color: '#f0dfad', letterSpacing: 1, marginBottom: 10,
             borderBottom: '1px solid rgba(240,223,173,0.15)',
@@ -503,21 +559,38 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion }: {
           }}>
             {Object.entries(categories).map(([cat, val]) => {
               const { main, sub } = parseCatKey(cat);
+              const assessment = verdictMap.get(cat);
               return (
                 <div key={cat} style={{
-                  display: 'flex', gap: 8, alignItems: 'flex-start',
                   padding: '7px 10px',
                   background: 'rgba(240,223,173,0.05)',
                   borderRadius: 8,
                   fontSize: 12,
                 }}>
-                  <div style={{ flexShrink: 0, minWidth: 52 }}>
-                    <div style={{ color: '#f0dfad', fontWeight: 600 }}>{main}</div>
-                    {sub && (
-                      <div style={{ color: '#667', fontSize: 10, marginTop: 1 }}>{sub}</div>
-                    )}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <div style={{ flexShrink: 0, minWidth: 52 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ color: '#f0dfad', fontWeight: 600 }}>{main}</span>
+                        {assessment && (
+                          <VerdictBadge verdict={assessment.verdict} />
+                        )}
+                      </div>
+                      {sub && (
+                        <div style={{ color: '#667', fontSize: 10, marginTop: 1 }}>{sub}</div>
+                      )}
+                    </div>
+                    <span style={{ color: '#ccc', lineHeight: 1.6 }}>{val}</span>
                   </div>
-                  <span style={{ color: '#ccc', lineHeight: 1.6 }}>{val}</span>
+                  {assessment && assessment.interpretation && (
+                    <div style={{
+                      marginTop: 6, paddingTop: 6,
+                      borderTop: '1px solid rgba(240,223,173,0.06)',
+                      fontSize: 11, color: '#889', lineHeight: 1.6,
+                      whiteSpace: 'pre-line',
+                    }}>
+                      {assessment.interpretation}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -837,6 +910,7 @@ export default function HyoPage() {
   const [resultBg, setResultBg] = useState(false);
   const [bgFlash, setBgFlash] = useState(false);
   const [userQuestion, setUserQuestion] = useState('');
+  const [castDate, setCastDate] = useState<Date>(new Date());
   const [showQuestionInput, setShowQuestionInput] = useState(false);
 
   const BUBBLE_MESSAGES = [
@@ -919,6 +993,7 @@ export default function HyoPage() {
       setTimeout(() => {
         setResultBg(true);
         setBgFlash(false);
+        setCastDate(new Date());
         setPhase('incantation');
       }, 600);
       trackEvent('hyo_complete');
@@ -1371,7 +1446,7 @@ export default function HyoPage() {
 
       {/* ═══ 주문 섹션 (incantation) — 나레이션 방식 ═══ */}
       {phase === 'incantation' && (() => {
-        const now = new Date();
+        const now = castDate;
         const dateTimeStr = `${now.getFullYear()}년 ${now.getMonth() + 1}월 ${now.getDate()}일 ${now.getHours()}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
 
         const lines = [
@@ -1496,6 +1571,7 @@ export default function HyoPage() {
             castResult={castResult}
             yaos={yaos}
             userQuestion={userQuestion}
+            castDate={castDate}
             onReset={() => {
               setStageIndex(0);
               setPhase('intro');
