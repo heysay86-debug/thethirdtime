@@ -61,6 +61,7 @@ function ScoreBar({ item }: { item: DailyScore }) {
 
 export default function DailyFortuneModal({ onClose }: { onClose: () => void }) {
   const [phase, setPhase] = useState<'roulette' | 'stopped' | 'result'>('roulette');
+  const [showInfo, setShowInfo] = useState(false);
   const [spinning, setSpinning] = useState(false);
   const [resultA, setResultA] = useState(0);
   const [resultB, setResultB] = useState(0);
@@ -173,8 +174,37 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
               fontFamily: '"Gaegu", cursive', fontSize: 18,
               color: '#f0dfad', marginBottom: 8,
             }}>
-              육효점으로 알아보는 오늘의 운세
+              <span>육효점</span>
+              <button
+                onClick={e => { e.stopPropagation(); setShowInfo(v => !v); }}
+                style={{
+                  background: 'none', border: '1px solid rgba(240,223,173,0.3)',
+                  borderRadius: '50%', width: 20, height: 20,
+                  fontSize: 11, color: '#f0dfad', cursor: 'pointer',
+                  marginLeft: 4, verticalAlign: 'middle',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >?</button>
+              <span>으로 알아보는 오늘의 운세</span>
             </div>
+            {showInfo && (
+              <div style={{
+                padding: '10px 14px', marginBottom: 12,
+                background: 'rgba(240,223,173,0.08)',
+                border: '1px solid rgba(240,223,173,0.15)',
+                borderRadius: 10, fontSize: 12, color: '#a0a8b0', lineHeight: 1.7,
+              }}>
+                육효점은 주역에 뿌리를 둔 3천 년 전통의 점술입니다. 팔괘를 조합해 64가지 괘를 만들고, 변하는 효의 흐름으로 현재 상황과 앞으로의 방향을 읽습니다.
+                <br />
+                <a
+                  href="/blog/what-is-yukyo"
+                  target="_blank"
+                  style={{ color: '#f0dfad', fontSize: 11, marginTop: 4, display: 'inline-block' }}
+                >
+                  자세히 보기 →
+                </a>
+              </div>
+            )}
             <div style={{ fontSize: 12, color: '#889', marginBottom: 20 }}>
               탭하여 팔괘를 돌리세요
             </div>
