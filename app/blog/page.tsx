@@ -217,6 +217,11 @@ export default function BlogListPage() {
     }
   }
 
+  // 각 책 내 title 오름차순 정렬
+  for (const id of Object.keys(bookPosts)) {
+    bookPosts[id].sort((a, b) => a.title.localeCompare(b.title));
+  }
+
   const openBook = BOOKS.find(b => b.id === openBookId);
 
   return (
