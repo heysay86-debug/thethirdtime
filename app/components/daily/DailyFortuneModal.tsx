@@ -60,7 +60,7 @@ function ScoreBar({ item }: { item: DailyScore }) {
 // ─── 메인 모달 ──────────────────────────────────────────────
 
 export default function DailyFortuneModal({ onClose }: { onClose: () => void }) {
-  const [phase, setPhase] = useState<'roulette' | 'result'>('roulette');
+  const [phase, setPhase] = useState<'roulette' | 'stopped' | 'result'>('roulette');
   const [spinning, setSpinning] = useState(false);
   const [resultA, setResultA] = useState(0);
   const [resultB, setResultB] = useState(0);
@@ -83,9 +83,7 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
     stoppedCount.current++;
     if (stoppedCount.current >= 3) {
       setTimeout(() => {
-        const result = getDailyFortune(resultA, resultB, resultD6, new Date());
-        setFortune(result);
-        setPhase('result');
+        setPhase('stopped');
       }, 600);
     }
   }, [resultA, resultB, resultD6]);
@@ -189,6 +187,33 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
               <BaguaWheel label="하괘" spinning={spinning} resultIdx={resultB} onStop={handleOneStop} size={100} />
               <FlippingDice spinning={spinning} resultVal={resultD6} onStop={handleOneStop} size={50} />
             </div>
+          </div>
+        )}
+
+        {/* ── 멈춤 → 결과보기 버튼 ── */}
+        {phase === 'stopped' && (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              fontFamily: '"Gaegu", cursive', fontSize: 18,
+              color: '#f0dfad', marginBottom: 20,
+            }}>
+              괘가 완성되었네
+            </div>
+            <button
+              onClick={() => {
+                const result = getDailyFortune(resultA, resultB, resultD6, new Date());
+                setFortune(result);
+                setPhase('result');
+              }}
+              style={{
+                padding: '12px 32px', borderRadius: 12,
+                fontSize: 14, fontWeight: 600,
+                backgroundColor: '#f0dfad', color: '#2a1f14',
+                border: 'none', cursor: 'pointer',
+              }}
+            >
+              결과 보기
+            </button>
           </div>
         )}
 
