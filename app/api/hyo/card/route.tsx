@@ -85,41 +85,41 @@ export async function POST(request: NextRequest) {
 
           <div style={{
             display: 'flex', flexDirection: 'column' as const,
-            paddingTop: isDark ? 120 : 100,
+            paddingTop: isDark ? 180 : 160,
             paddingBottom: isDark ? 180 : 60,
             paddingLeft: 50, paddingRight: 50,
             position: 'relative' as const,
             height: 2000,
           }}>
             {/* 괘 이름 */}
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 4 }}>
-              <span style={{ fontSize: 28, fontWeight: 700, color: titleColor }}>{gua}</span>
-              {!isSame && <span style={{ fontSize: 22, color: subColor, marginLeft: 12, marginRight: 12 }}>→</span>}
-              {!isSame && <span style={{ fontSize: 28, fontWeight: 700, color: titleColor }}>{ji}</span>}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 42, fontWeight: 700, color: titleColor }}>{gua}</span>
+              {!isSame && <span style={{ fontSize: 33, color: subColor, marginLeft: 16, marginRight: 16 }}>→</span>}
+              {!isSame && <span style={{ fontSize: 42, fontWeight: 700, color: titleColor }}>{ji}</span>}
             </div>
 
             {/* 날짜 */}
-            <div style={{ display: 'flex', justifyContent: 'center', fontSize: 13, color: subColor, marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', fontSize: 20, color: subColor, marginBottom: 12 }}>
               <span>{[date, ganji].filter(Boolean).join('  ')}</span>
             </div>
 
             {/* 질문 */}
             {q ? (
-              <div style={{ display: 'flex', justifyContent: 'center', fontSize: 16, color: textColor, marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', fontSize: 24, color: textColor, marginBottom: 24 }}>
                 <span>{`"${q}"`}</span>
               </div>
-            ) : <div style={{ display: 'flex', marginBottom: 16 }}></div>}
+            ) : <div style={{ display: 'flex', marginBottom: 24 }}></div>}
 
             {/* 총론 */}
             {summary ? (
               <div style={{
                 display: 'flex',
-                fontSize: 14, lineHeight: 1.7,
+                fontSize: 21, lineHeight: 1.7,
                 color: summaryColor,
-                padding: 16, marginBottom: 20,
+                padding: 20, marginBottom: 28,
                 backgroundColor: summaryBg,
-                borderRadius: 10,
-                borderLeft: `3px solid ${summaryBorder}`,
+                borderRadius: 12,
+                borderLeft: `4px solid ${summaryBorder}`,
               }}>
                 <span>{summary}</span>
               </div>
@@ -132,17 +132,17 @@ export async function POST(request: NextRequest) {
                 return (
                   <div key={i} style={{
                     display: 'flex',
-                    padding: '10px 12px',
+                    padding: '14px 12px',
                     borderBottom: i < cats.length - 1 ? `1px solid ${dividerColor}` : 'none',
                   }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' as const, width: 130 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' as const, width: 180 }}>
                       <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: 14, fontWeight: 700, color: catLabelColor }}>{cat.name}</span>
+                        <span style={{ fontSize: 21, fontWeight: 700, color: catLabelColor }}>{cat.name}</span>
                         {cat.verdict && (
                           <span style={{
-                            fontSize: 10, fontWeight: 700, color: vColor,
-                            marginLeft: 6,
-                            padding: '1px 5px', borderRadius: 4,
+                            fontSize: 15, fontWeight: 700, color: vColor,
+                            marginLeft: 8,
+                            padding: '2px 7px', borderRadius: 5,
                             border: `1px solid ${vColor}`,
                           }}>
                             {cat.verdict}
@@ -150,10 +150,10 @@ export async function POST(request: NextRequest) {
                         )}
                       </div>
                       {cat.sub && (
-                        <span style={{ fontSize: 10, color: catSubColor, marginTop: 2 }}>{cat.sub}</span>
+                        <span style={{ fontSize: 15, color: catSubColor, marginTop: 3 }}>{cat.sub}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 14, lineHeight: 1.6, color: catValueColor, flex: 1 }}>
+                    <span style={{ fontSize: 21, lineHeight: 1.6, color: catValueColor, flex: 1 }}>
                       {cat.value}
                     </span>
                   </div>
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
 
             {/* 브랜딩 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
-              <span style={{ fontSize: 13, color: subColor }}>
+              <span style={{ fontSize: 20, color: subColor }}>
                 제3의시간 · 육효점 · ttt.betterdan.net
               </span>
             </div>
