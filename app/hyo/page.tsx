@@ -362,7 +362,7 @@ function formatGuaText(
   }
 
   // 카테고리
-  const categorySource = getCategorySource(changingYao, bonGua, changedGua);
+  const categorySource = getCategorySource(changingYao, bonGua, changedGua, yaos);
   if (categorySource) {
     text += `\n── 항목별 풀이 ──\n`;
     for (const [cat, val] of Object.entries(categorySource)) {
@@ -390,30 +390,56 @@ function getCategorySource(
   changingYao: YaoInterpretation[],
   bonGua: GuaInterpretation | null,
   changedGua: GuaInterpretation | null,
+  yaos?: YaoResult[],
 ): Record<string, string> | null {
   const count = changingYao.length;
 
   if (count === 0) {
-    // 본괘 초효 카테고리
+    // 팔괘 룰렛으로 처리됨 (여기 오면 안 되지만 fallback)
     return bonGua?.yao?.[0]?.categories || null;
   }
   if (count === 1) {
-    // 해당 동효 카테고리
+    // 본괘의 변효 효사
     return changingYao[0].categories;
   }
   if (count === 2) {
-    // 위쪽 동효 카테고리
+    // 음효 우선, 둘 다 같으면 위쪽
+    const yao0 = changingYao[0];
+    const yao1 = changingYao[1];
+    const isYin0 = yaos ? !yaos[yao0.yao - 1]?.isYang : false;
+    const isYin1 = yaos ? !yaos[yao1.yao - 1]?.isYang : false;
+    if (isYin0 && !isYin1) return yao0.categories;
+    if (isYin1 && !isYin0) return yao1.categories;
+    // 둘 다 같으면 위쪽(yao 번호 큰 쪽)
     return changingYao[changingYao.length - 1].categories;
   }
   if (count === 3) {
-    // 본괘 총론 기준 (초효)
+    // 본괘+지괘 괘사(총론) — 카테고리는 본괘 초효 fallback
     return bonGua?.yao?.[0]?.categories || null;
   }
-  if (count === 6) {
-    // 지괘 초효 카테고리
+  if (count === 4) {
+    // 지괘의 불변효 중 맨 아래 효사
+    if (changedGua && yaos) {
+      for (let i = 0; i < 6; i++) {
+        if (!yaos[i]?.isChanging) {
+          return changedGua.yao?.[i]?.categories || null;
+        }
+      }
+    }
     return changedGua?.yao?.[0]?.categories || null;
   }
-  // 4~5개: 지괘 해당 효 카테고리 — 지괘 초효 fallback
+  if (count === 5) {
+    // 지괘의 불변효사 (1개뿐)
+    if (changedGua && yaos) {
+      for (let i = 0; i < 6; i++) {
+        if (!yaos[i]?.isChanging) {
+          return changedGua.yao?.[i]?.categories || null;
+        }
+      }
+    }
+    return changedGua?.yao?.[0]?.categories || null;
+  }
+  // 6개: 지괘 괘사(총론) — 카테고리는 지괘 초효 fallback
   return changedGua?.yao?.[0]?.categories || null;
 }
 
@@ -537,7 +563,7 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
   const palaceInfo = getGuaPalace(castResult.originalGua);
 
   // 동효 개수별 카테고리 소스
-  const categories = getCategorySource(changingYao, bonGua, changedGua) || {};
+  const categories = getCategorySource(changingYao, bonGua, changedGua, yaos) || {};
 
   // 월건·일진 기반 기운 분석
   const liuyaoAnalysis: LiuYaoAnalysis | null = (() => {
