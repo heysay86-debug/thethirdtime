@@ -90,14 +90,14 @@ export async function POST(request: NextRequest) {
             position: 'relative' as const,
             height: 1440,
           }}>
-            {/* 타이틀 + 날짜 우측 정렬 */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <span style={{ fontSize: 28, fontWeight: 700, color: '#3a2e1e' }}>오늘의 운세</span>
+            {/* 타이틀 + 날짜 중앙 정렬 */}
+            <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', marginBottom: 28 }}>
+              <span style={{ fontSize: 32, fontWeight: 700, color: '#3a2e1e', marginBottom: 6 }}>오늘의 운세</span>
               <span style={{ fontSize: 18, color: '#8a7a60' }}>{date} {dateGanji}</span>
             </div>
 
-            {/* 괘명 2배 */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            {/* 괘명 */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
               <span style={{ fontSize: 48, fontWeight: 700, color: '#3a2e1e' }}>{guaName}</span>
               <span style={{ fontSize: 36, color: '#8a7a60', margin: '0 16px' }}>→</span>
               <span style={{ fontSize: 48, fontWeight: 700, color: '#3a2e1e' }}>{jiGuaName}</span>
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
 
             {/* 괘상 (CSS 효) */}
             {(guaBits as number[]).length === 6 && (
-              <div style={{ display: 'flex', flexDirection: 'column-reverse' as const, alignItems: 'center', gap: 8, marginBottom: 24 }}>
+              <div style={{ display: 'flex', flexDirection: 'column-reverse' as const, alignItems: 'center', gap: 8, marginBottom: 32 }}>
                 {(guaBits as number[]).map((bit: number, i: number) => {
                   const isChanging = i === changingYaoPos - 1;
                   const barColor = isChanging ? '#8a6a1e' : '#a09888';
