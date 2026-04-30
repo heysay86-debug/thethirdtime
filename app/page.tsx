@@ -271,7 +271,7 @@ export default function MainMenu() {
           onClick={() => setShowDailyFortune(true)}
           style={{
             position: 'absolute',
-            top: 0, left: 0, right: 0, height: '30%',
+            top: 0, left: 0, right: 0, height: '27%',
             cursor: 'pointer',
             display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
             paddingBottom: 8,
