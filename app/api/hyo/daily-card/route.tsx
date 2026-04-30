@@ -85,15 +85,18 @@ export async function POST(request: NextRequest) {
 
           <div style={{
             display: 'flex', flexDirection: 'column' as const,
-            paddingTop: 140, paddingBottom: 60,
+            paddingTop: 30, paddingBottom: 60,
             paddingLeft: 80, paddingRight: 80,
             position: 'relative' as const,
             height: 1440,
           }}>
-            {/* 타이틀 + 날짜 중앙 정렬 */}
-            <div style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', marginBottom: 28 }}>
-              <span style={{ fontSize: 32, fontWeight: 700, color: '#3a2e1e', marginBottom: 6 }}>오늘의 운세</span>
-              <span style={{ fontSize: 18, color: '#8a7a60' }}>{date} {dateGanji}</span>
+            {/* 타이틀 + 날짜 — 로고 중앙선 맞춤 우측 배치 한줄 */}
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+              height: 60, marginBottom: 40,
+            }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: '#3a2e1e', marginRight: 10 }}>오늘의 운세</span>
+              <span style={{ fontSize: 16, color: '#8a7a60' }}>{date} {dateGanji}</span>
             </div>
 
             {/* 괘명 */}
@@ -135,7 +138,7 @@ export async function POST(request: NextRequest) {
 
             {/* 캐릭터 표정 중앙 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-              <img src={charUri} width={120} height={120} style={{ opacity: 0.9 }} />
+              <img src={charUri} style={{ height: 120, opacity: 0.9 }} />
             </div>
 
             {/* 4대 운세 (좌) + 총운 (우) */}
@@ -180,7 +183,7 @@ export async function POST(request: NextRequest) {
                 alignItems: 'center', justifyContent: 'center',
                 width: 160, position: 'relative' as const,
               }}>
-                <img src={charUri} width={140} height={140} style={{
+                <img src={charUri} style={{ height: 140,
                   position: 'absolute' as const, opacity: 0.08,
                   top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 }} />
