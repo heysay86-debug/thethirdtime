@@ -290,9 +290,9 @@ export default function BlogListPage() {
         {/* 책장 — 고정 위치 */}
         <div style={{
           position: 'fixed',
-          top: 'calc(50% - 25px)',
+          top: 'calc(50% - 19px)',
           left: '50%',
-          transform: 'translate(calc(-50% + 20px), -50%)',
+          transform: 'translate(calc(-50% + 23px), -50%)',
           zIndex: 15,
           maxWidth: 400,
           width: '80%',
