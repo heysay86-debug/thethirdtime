@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
           <div style={{
             display: 'flex', flexDirection: 'column' as const,
-            paddingTop: 130, paddingBottom: 60,
+            paddingTop: 90, paddingBottom: 60,
             paddingLeft: 80, paddingRight: 80,
             position: 'relative' as const,
             height: 1440,
@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
             {/* 타이틀 + 날짜 — 로고 중앙선 맞춤 우측 배치 한줄 */}
             <div style={{
               display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-              height: 60, marginBottom: 40,
+              height: 60, marginBottom: 80,
             }}>
               <span style={{ fontSize: 24, fontWeight: 700, color: '#3a2e1e', marginRight: 10 }}>오늘의 운세</span>
               <span style={{ fontSize: 16, color: '#8a7a60' }}>{date} {dateGanji}</span>
