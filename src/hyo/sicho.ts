@@ -11,6 +11,40 @@
  *   9 = 노양(老陽) — 양효, 변효 (━━━○━)
  */
 
+// ─── 엔트로피 풀 + 보안 난수 ────────────────────────────────
+
+const _entropyPool: number[] = [];
+
+/** 유저 터치/클릭 이벤트에서 엔트로피 수집 */
+export function collectEntropy(event: TouchEvent | MouseEvent) {
+  const micro = performance.now() % 1;
+  const src: { clientX?: number; clientY?: number } =
+    (event as TouchEvent).touches?.[0] ?? event;
+  const x = (src.clientX ?? 0) % 256;
+  const y = (src.clientY ?? 0) % 256;
+  _entropyPool.push(micro, x, y);
+  if (_entropyPool.length > 64) _entropyPool.shift();
+}
+
+/** crypto.getRandomValues + 유저 엔트로피 혼합 균등 난수 */
+function secureRandom(min: number, max: number): number {
+  const range = max - min + 1;
+  const bytesNeeded = Math.ceil(Math.log2(range) / 8) + 1;
+  const maxValid = Math.floor(256 ** bytesNeeded / range) * range - 1;
+  let value: number;
+  do {
+    const arr = new Uint8Array(bytesNeeded);
+    crypto.getRandomValues(arr);
+    _entropyPool.forEach((v, i) => {
+      arr[i % arr.length] ^= Math.floor(v * 256) & 0xff;
+    });
+    value = arr.reduce((acc, byte, i) => acc + byte * (256 ** i), 0);
+  } while (value > maxValid);
+  return min + (value % range);
+}
+
+// ─── 타입 ───────────────────────────────────────────────────
+
 export type YaoValue = 6 | 7 | 8 | 9;
 
 export interface YaoResult {
@@ -41,8 +75,8 @@ export interface SambyeonResult {
  * @returns SichoStep + 남은 시초 수
  */
 function oneByeon(total: number): { step: SichoStep; remaining: number } {
-  // 분이: 랜덤으로 좌우 나눔
-  const leftCount = Math.floor(Math.random() * (total - 2)) + 1;
+  // 분이: 보안 난수 + 유저 엔트로피로 좌우 나눔
+  const leftCount = secureRandom(1, total - 2);
   const rightCount = total - leftCount;
 
   // 괘일: 오른쪽에서 1개를 손가락에

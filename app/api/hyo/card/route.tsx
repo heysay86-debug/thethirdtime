@@ -114,9 +114,9 @@ export async function POST(request: NextRequest) {
             {summary ? (
               <div style={{
                 display: 'flex',
-                fontSize: 21, lineHeight: 1.7,
+                fontSize: 18, lineHeight: 1.5,
                 color: summaryColor,
-                padding: 20, marginBottom: 28,
+                padding: 20, marginBottom: 24,
                 backgroundColor: summaryBg,
                 borderRadius: 12,
                 borderLeft: `4px solid ${summaryBorder}`,

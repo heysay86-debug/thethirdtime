@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { performSambyeon, getGuaName, type YaoResult } from '@/src/hyo/sicho';
+import { performSambyeon, getGuaName, collectEntropy, type YaoResult } from '@/src/hyo/sicho';
 import { trackEvent } from '@/src/analytics';
 import { STAGES, START_POS, ALTAR_POS } from '@/src/hyo/stages';
 import BgmPlayer from '@/app/alt2/components/base/BgmPlayer';
@@ -17,6 +17,67 @@ import { getHourPillar } from '@/src/engine/pillar_hour';
 type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete';
 
 // 픽셀 도트 1개
+// 시초 나뭇가지 탭 — 좌우 분리 애니메이션
+function SichoSplitVisual({ onClick }: { onClick: (e: React.MouseEvent | React.TouchEvent) => void }) {
+  const [splitting, setSplitting] = useState(false);
+  const branchHeights = useRef(
+    Array.from({ length: 49 }, () => 28 + Math.floor(Math.random() * 8))
+  );
+
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    if (splitting) return;
+    setSplitting(true);
+    setTimeout(() => {
+      onClick(e);
+    }, 400);
+  };
+
+  return (
+    <>
+      <div
+        onClick={handleTap}
+        onTouchStart={handleTap}
+        style={{
+          display: 'flex', justifyContent: 'center',
+          padding: '16px 0', cursor: 'pointer',
+        }}
+      >
+        {/* 왼쪽 묶음 */}
+        <div style={{
+          display: 'flex', gap: 2,
+          transform: splitting ? 'translateX(-30px)' : 'translateX(0)',
+          transition: 'transform 400ms ease-out',
+        }}>
+          {branchHeights.current.slice(0, 25).map((h, i) => (
+            <div key={i} style={{
+              width: 2, height: h,
+              backgroundColor: '#c4a86a', borderRadius: 1,
+              opacity: 0.6 + (i % 3) * 0.15,
+            }} />
+          ))}
+        </div>
+        {/* 간격 */}
+        <div style={{ width: splitting ? 20 : 0, transition: 'width 400ms ease-out' }} />
+        {/* 오른쪽 묶음 */}
+        <div style={{
+          display: 'flex', gap: 2,
+          transform: splitting ? 'translateX(30px)' : 'translateX(0)',
+          transition: 'transform 400ms ease-out',
+        }}>
+          {branchHeights.current.slice(25).map((h, i) => (
+            <div key={i} style={{
+              width: 2, height: h,
+              backgroundColor: '#c4a86a', borderRadius: 1,
+              opacity: 0.6 + (i % 3) * 0.15,
+            }} />
+          ))}
+        </div>
+      </div>
+      <div style={{ fontSize: 11, color: '#889', marginTop: 4, textAlign: 'center' }}>탭하여 나누기</div>
+    </>
+  );
+}
+
 function Dot({ color, glow }: { color: string; glow?: boolean }) {
   return (
     <div style={{
@@ -395,11 +456,9 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
   const verdictMap = new Map<string, CategoryAssessment>();
   liuyaoAnalysis?.assessments.forEach(a => verdictMap.set(a.category, a));
 
-  // 카드용 총론 요약 (앞 3줄) — 지괘가 있으면 지괘 총론, 없으면 본괘 총론
+  // 카드용 총론 전문 — 지괘가 있으면 지괘 총론, 없으면 본괘 총론
   const cardChongronSource = (changedGua && changingYao.length > 0) ? changedGua : bonGua;
-  const chongronSummary = cardChongronSource?.chongron
-    ? cardChongronSource.chongron.split('\n').slice(0, 3).join('\n')
-    : '';
+  const chongronSummary = cardChongronSource?.chongron || '';
 
   const jiName = changedGua?.name || bonGua?.name;
   const isSameGua = bonGua?.name === jiName;
@@ -1046,8 +1105,9 @@ export default function HyoPage() {
     { speaker: '복길', style: 'normal' as const, text: '좋네. 그 질문을 마음에 품고,\n여섯 그루의 나무에서\n가지를 모아오게 될 걸세.' },
   ];
 
-  // 시초 나누기 (탭)
-  const handleSplit = useCallback(async () => {
+  // 시초 나누기 (탭) — 엔트로피 수집 포함
+  const handleSplit = useCallback(async (e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) collectEntropy(e.nativeEvent as MouseEvent | TouchEvent);
     if (stageIndex === 0 && yaos.length === 0) trackEvent('hyo_start');
     setPhase('counting');
     setBubbleText(BUBBLE_MESSAGES[Math.floor(Math.random() * BUBBLE_MESSAGES.length)]);
@@ -1450,31 +1510,7 @@ export default function HyoPage() {
                 {stage.splitPrompt}
               </div>
               {/* 시초 묶음 — 탭 영역 */}
-              <div
-                onClick={handleSplit}
-                style={{
-                  display: 'flex', justifyContent: 'center', gap: 2,
-                  padding: '16px 0',
-                  cursor: 'pointer',
-                  transition: 'transform 0.15s',
-                }}
-                onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.95)')}
-                onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-              >
-                {Array.from({ length: 49 }).map((_, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      width: 2,
-                      height: 28 + Math.random() * 8,
-                      backgroundColor: '#c4a86a',
-                      borderRadius: 1,
-                      opacity: 0.6 + Math.random() * 0.4,
-                    }}
-                  />
-                ))}
-              </div>
-              <div style={{ fontSize: 11, color: '#889', marginTop: 4 }}>탭하여 나누기</div>
+              <SichoSplitVisual onClick={handleSplit} />
             </>
           )}
 
