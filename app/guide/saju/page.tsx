@@ -62,7 +62,7 @@ export default function SajuGuidePage() {
     <PageShell title="사주란?">
       {/* Bokgil intro */}
       <div style={{ marginBottom: 24 }}>
-        <BokgilSays text="사주의 세계에\n오신 것을 환영하네.\n하나씩 풀어 설명해\n드리겠소." />
+        <BokgilSays text="사주의 세계에 오신 것을 환영하네. 하나씩 풀어 설명해 드리겠소." />
       </div>
 
       {/* Guide sections */}
@@ -130,7 +130,7 @@ export default function SajuGuidePage() {
 
       {/* Closing remark from Bokgil */}
       <div style={{ marginTop: 24 }}>
-        <BokgilSays text="여기까지가 기초라네.\n더 깊은 이야기는\n사주 분석을 받으며\n함께 풀어보세." />
+        <BokgilSays text="여기까지가 기초라네. 더 깊은 이야기는 사주 분석을 받으며 함께 풀어보세." />
       </div>
 
       {/* CTA */}

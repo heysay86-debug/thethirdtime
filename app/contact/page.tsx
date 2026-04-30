@@ -90,13 +90,13 @@ export default function ContactPage() {
     <PageShell title="문의하기">
       {/* Bokgil intro */}
       <div style={{ marginBottom: 20 }}>
-        <BokgilSays text="무엇이 궁금하신가?\n이곳에 적어두면\n내 반드시 전해두겠네." />
+        <BokgilSays text="무엇이 궁금하신가? 이곳에 적어두면 내 반드시 전해두겠네." />
       </div>
 
       {submitted ? (
         <>
           <div style={{ marginBottom: 20 }}>
-            <BokgilSays text="자네의 이야기를\n잘 전해두겠네." />
+            <BokgilSays text="자네의 이야기를 잘 전해두겠네." />
           </div>
           <div style={{ textAlign: 'center', marginTop: 24 }}>
             <a

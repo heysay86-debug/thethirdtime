@@ -54,7 +54,7 @@ export default function FaqPage() {
     <PageShell title="자주 묻는 질문">
       {/* Bokgil intro */}
       <div style={{ marginBottom: 20 }}>
-        <BokgilSays text="자주 들어오는\n질문들을 모아두었네.\n궁금한 것을 눌러보게." />
+        <BokgilSays text="자주 들어오는 질문들을 모아두었네. 궁금한 것을 눌러보게." />
       </div>
 
       <BoardFrame>
