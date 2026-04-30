@@ -90,19 +90,52 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
     }
   }, [resultA, resultB, resultD6]);
 
-  const handleShare = useCallback(async () => {
-    if (!fortune) return;
-    const text = `오늘의 운세 (${fortune.date})\n${fortune.guaName} → ${fortune.jiGuaName}\n\n문서운 ${fortune.scores[0]?.score}점 | 재물운 ${fortune.scores[1]?.score}점\n연애운 ${fortune.scores[2]?.score}점 | 건강운 ${fortune.scores[3]?.score}점\n\n총운: ${fortune.totalScore}점 (${fortune.totalVerdict})\n\n제3의시간에서 확인하기\nhttps://www.betterdan.net`;
+  const [sharing, setSharing] = useState(false);
 
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: '오늘의 운세 - 제3의시간', text });
-      } catch { /* cancelled */ }
-    } else {
-      await navigator.clipboard.writeText(text);
-      alert('클립보드에 복사되었습니다!');
+  const handleShare = useCallback(async () => {
+    if (!fortune || sharing) return;
+    setSharing(true);
+    try {
+      const res = await fetch('/api/hyo/daily-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: fortune.date,
+          dateGanji: fortune.dateGanji,
+          guaName: fortune.guaName,
+          jiGuaName: fortune.jiGuaName,
+          scores: fortune.scores.map(s => ({ label: s.label, score: s.score, verdict: s.verdict })),
+          totalScore: fortune.totalScore,
+          totalVerdict: fortune.totalVerdict,
+          jiGuaSummary: fortune.jiGuaSummary,
+        }),
+      });
+      if (!res.ok) throw new Error('이미지 생성 실패');
+      const blob = await res.blob();
+
+      // 모바일 Web Share API로 이미지 공유 시도
+      if (navigator.share && navigator.canShare) {
+        const file = new File([blob], `오늘의운세-${fortune.date}.png`, { type: 'image/png' });
+        const shareData = { files: [file], title: '오늘의 운세 - 제3의시간' };
+        if (navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          setSharing(false);
+          return;
+        }
+      }
+
+      // Fallback: 다운로드
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.download = `오늘의운세-${fortune.date}.png`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('이미지 생성에 실패했습니다.');
     }
-  }, [fortune]);
+    setSharing(false);
+  }, [fortune, sharing]);
 
   return (
     <div style={{
@@ -244,7 +277,7 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
                 border: 'none', cursor: 'pointer',
               }}
             >
-              공유하기
+              {sharing ? '이미지 생성 중...' : '이미지로 공유하기'}
             </button>
           </div>
         )}
