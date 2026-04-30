@@ -79,6 +79,7 @@ export function getDailyFortune(
     guaName: guaInfo.korean,
     jiGuaName: jiGuaInfo.korean,
     changingYaoPos: d6,
+    guaBits: gua,
     scores,
     totalScore,
     totalVerdict,

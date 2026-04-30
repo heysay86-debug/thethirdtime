@@ -15,6 +15,7 @@ export interface DailyFortune {
   guaName: string;             // 본괘 이름
   jiGuaName: string;           // 지괘 이름
   changingYaoPos: number;      // 동효 위치 (1~6)
+  guaBits: number[];           // 본괘 6비트 (초효→상효, 0=음 1=양)
   scores: DailyScore[];        // 4대 운세
   totalScore: number;          // 총운 (0~100)
   totalVerdict: string;        // 총운 verdict

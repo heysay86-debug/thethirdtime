@@ -46,6 +46,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       date = '', dateGanji = '', guaName = '', jiGuaName = '',
+      guaBits = [] as number[], changingYaoPos = 0,
       scores = [] as ScoreItem[],
       totalScore = 50, totalVerdict = '평',
       jiGuaSummary = '',
@@ -70,20 +71,45 @@ export async function POST(request: NextRequest) {
             position: 'relative' as const,
             height: 1440,
           }}>
-            {/* 제목 */}
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-              <span style={{ fontSize: 42, fontWeight: 700, color: '#3a2e1e' }}>오늘의 운세</span>
+            {/* 타이틀 + 날짜 우측 정렬 */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#3a2e1e' }}>오늘의 운세</span>
+              <span style={{ fontSize: 18, color: '#8a7a60' }}>{date} {dateGanji}</span>
             </div>
 
-            {/* 날짜 */}
-            <div style={{ display: 'flex', justifyContent: 'center', fontSize: 20, color: '#8a7a60', marginBottom: 6 }}>
-              <span>{date} {dateGanji}</span>
+            {/* 괘명 2배 */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <span style={{ fontSize: 48, fontWeight: 700, color: '#3a2e1e' }}>{guaName}</span>
+              <span style={{ fontSize: 36, color: '#8a7a60', margin: '0 16px' }}>→</span>
+              <span style={{ fontSize: 48, fontWeight: 700, color: '#3a2e1e' }}>{jiGuaName}</span>
             </div>
 
-            {/* 괘 이름 */}
-            <div style={{ display: 'flex', justifyContent: 'center', fontSize: 28, color: '#3a2e1e', marginBottom: 30 }}>
-              <span>{guaName} → {jiGuaName}</span>
-            </div>
+            {/* 괘상 (CSS 효) */}
+            {(guaBits as number[]).length === 6 && (
+              <div style={{ display: 'flex', flexDirection: 'column-reverse' as const, alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                {(guaBits as number[]).map((bit: number, i: number) => {
+                  const isChanging = i === changingYaoPos - 1;
+                  const barColor = isChanging ? '#8a6a1e' : '#a09888';
+                  return (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {bit === 1 ? (
+                        <div style={{ width: 160, height: 12, backgroundColor: barColor, borderRadius: 2 }} />
+                      ) : (
+                        <div style={{ display: 'flex', gap: 16 }}>
+                          <div style={{ width: 72, height: 12, backgroundColor: barColor, borderRadius: 2 }} />
+                          <div style={{ width: 72, height: 12, backgroundColor: barColor, borderRadius: 2 }} />
+                        </div>
+                      )}
+                      {isChanging ? (
+                        <span style={{ fontSize: 18, fontWeight: 700, color: '#8a6a1e', width: 20 }}>/</span>
+                      ) : (
+                        <span style={{ width: 20 }}> </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* 총운 */}
             <div style={{

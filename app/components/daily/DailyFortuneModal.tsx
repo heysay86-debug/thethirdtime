@@ -104,6 +104,8 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
           dateGanji: fortune.dateGanji,
           guaName: fortune.guaName,
           jiGuaName: fortune.jiGuaName,
+          guaBits: fortune.guaBits,
+          changingYaoPos: fortune.changingYaoPos,
           scores: fortune.scores.map(s => ({ label: s.label, score: s.score, verdict: s.verdict })),
           totalScore: fortune.totalScore,
           totalVerdict: fortune.totalVerdict,
@@ -193,18 +195,77 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
         {/* ── 결과 단계 ── */}
         {phase === 'result' && fortune && (
           <div>
-            {/* 헤더 */}
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 12, color: '#889' }}>{fortune.date} {fortune.dateGanji}</div>
-              <div style={{
-                fontSize: 22, fontWeight: 700, color: '#f0dfad',
-                fontFamily: '"Gaegu", cursive', marginTop: 4,
+            {/* 헤더: 타이틀 + 날짜 한줄 우측 정렬 */}
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
+              gap: 8, marginBottom: 12,
+            }}>
+              <span style={{
+                fontSize: 16, fontWeight: 700, color: '#f0dfad',
+                fontFamily: '"Gaegu", cursive',
               }}>
                 오늘의 운세
-              </div>
-              <div style={{ fontSize: 14, color: '#c8cdd3', marginTop: 4 }}>
-                {fortune.guaName} → {fortune.jiGuaName}
-              </div>
+              </span>
+              <span style={{ fontSize: 11, color: '#889' }}>
+                {fortune.date} {fortune.dateGanji}
+              </span>
+            </div>
+
+            {/* 괘명 (2배 크기) */}
+            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#f0dfad' }}>
+                {fortune.guaName}
+              </span>
+              <span style={{ fontSize: 22, color: '#667', margin: '0 10px' }}>→</span>
+              <span style={{ fontSize: 28, fontWeight: 700, color: '#f0dfad' }}>
+                {fortune.jiGuaName}
+              </span>
+            </div>
+
+            {/* 괘상 (CSS 효 표현) */}
+            <div style={{
+              display: 'flex', flexDirection: 'column-reverse',
+              alignItems: 'center', gap: 6,
+              padding: '12px 0', marginBottom: 16,
+            }}>
+              {fortune.guaBits.map((bit, i) => {
+                const isChanging = i === fortune.changingYaoPos - 1;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {/* 효 막대 */}
+                    {bit === 1 ? (
+                      // 양효: 긴 막대
+                      <div style={{
+                        width: 120, height: 8,
+                        backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
+                        borderRadius: 2,
+                      }} />
+                    ) : (
+                      // 음효: 끊긴 막대
+                      <div style={{ display: 'flex', gap: 12 }}>
+                        <div style={{
+                          width: 54, height: 8,
+                          backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
+                          borderRadius: 2,
+                        }} />
+                        <div style={{
+                          width: 54, height: 8,
+                          backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
+                          borderRadius: 2,
+                        }} />
+                      </div>
+                    )}
+                    {/* 변효 표시 */}
+                    {isChanging && (
+                      <span style={{
+                        fontSize: 14, fontWeight: 700, color: '#f0dfad',
+                        width: 16, textAlign: 'center',
+                      }}>/</span>
+                    )}
+                    {!isChanging && <span style={{ width: 16 }} />}
+                  </div>
+                );
+              })}
             </div>
 
             {/* 총운 */}
