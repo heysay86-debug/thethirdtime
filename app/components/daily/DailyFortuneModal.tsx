@@ -198,7 +198,7 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
             {/* 헤더: 타이틀 + 날짜 한줄 우측 정렬 */}
             <div style={{
               display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-              gap: 8, marginBottom: 12,
+              gap: 8, marginBottom: 20,
             }}>
               <span style={{
                 fontSize: 16, fontWeight: 700, color: '#f0dfad',
@@ -211,8 +211,8 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
               </span>
             </div>
 
-            {/* 괘명 (2배 크기) */}
-            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+            {/* 괘명 — 헤더와 여백 구분 */}
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
               <span style={{ fontSize: 28, fontWeight: 700, color: '#f0dfad' }}>
                 {fortune.guaName}
               </span>
@@ -226,7 +226,7 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
             <div style={{
               display: 'flex', flexDirection: 'column-reverse',
               alignItems: 'center', gap: 6,
-              padding: '12px 0', marginBottom: 16,
+              padding: '16px 0', marginBottom: 20,
             }}>
               {fortune.guaBits.map((bit, i) => {
                 const isChanging = i === fortune.changingYaoPos - 1;

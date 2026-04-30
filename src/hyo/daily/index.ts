@@ -68,10 +68,8 @@ export function getDailyFortune(
     totalScore >= 40 ? '평' :
     totalScore >= 20 ? '흉' : '대흉';
 
-  // 지괘 총론 요약 (앞 2줄)
-  const jiGuaSummary = jiInterp?.chongron
-    ? jiInterp.chongron.split('\n').slice(0, 2).join('\n')
-    : '';
+  // 지괘 총론 전문
+  const jiGuaSummary = jiInterp?.chongron || '';
 
   return {
     date: dateStr,
