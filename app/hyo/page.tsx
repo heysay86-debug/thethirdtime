@@ -1354,7 +1354,7 @@ export default function HyoPage() {
       }, 600);
       trackEvent('hyo_complete');
     }
-  }, [stageIndex]);
+  }, [stageIndex, yaos]);
 
   // 괘 정보
   const guaInfo = gameComplete ? (() => {
@@ -1651,7 +1651,7 @@ export default function HyoPage() {
       )}
 
       {/* ═══ 미니게임 섹션 (intro~result) — 기존 중앙 카드 ═══ */}
-      {phase !== 'entrance' && !gameComplete && (
+      {phase !== 'entrance' && phase !== 'dice_reroll' && !gameComplete && (
         <div style={{
           position: 'relative', zIndex: 10,
           display: 'flex', flexDirection: 'column', alignItems: 'center',
