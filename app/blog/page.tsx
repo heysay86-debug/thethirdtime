@@ -48,7 +48,7 @@ const BOOKS: BookDef[] = [
     title: '육효점',
     color: '#4a3a5c',
     textColor: '#f0dfad',
-    matchTags: ['육효'],
+    matchTags: ['육효', '팔괘'],
   },
 ];
 
