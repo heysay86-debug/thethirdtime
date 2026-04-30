@@ -173,7 +173,7 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
               fontFamily: '"Gaegu", cursive', fontSize: 18,
               color: '#f0dfad', marginBottom: 8,
             }}>
-              오늘의 운세
+              육효점으로 알아보는 오늘의 운세
             </div>
             <div style={{ fontSize: 12, color: '#889', marginBottom: 20 }}>
               탭하여 팔괘를 돌리세요
