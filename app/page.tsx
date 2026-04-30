@@ -293,7 +293,7 @@ export default function MainMenu() {
               background: 'rgba(26,30,36,0.85)',
               border: '1px solid rgba(240,223,173,0.25)',
               borderRadius: '10px 10px 10px 2px',
-              fontSize: 10, color: '#f0dfad',
+              fontSize: 13, color: '#f0dfad',
               fontFamily: '"Gaegu", cursive',
               lineHeight: 1.4,
               maxWidth: 140,
