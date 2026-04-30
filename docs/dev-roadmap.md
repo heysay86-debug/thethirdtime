@@ -1,6 +1,6 @@
 # sajuweb 개발 로드맵
 
-최종 업데이트: 2026-04-29
+최종 업데이트: 2026-04-30
 GitHub: https://github.com/heysay86-debug/thethirdtime
 라이브: https://saju-api-rough-shadow-6686.fly.dev/alt2
 기술 스택: TypeScript / Node.js / Next.js
@@ -775,6 +775,56 @@ GitHub: https://github.com/heysay86-debug/thethirdtime
 - [ ] 주 3회 콘텐츠 루틴 안착 (화 릴스, 목 캐러셀, 일 릴스)
 - [ ] 틱톡 계정 추가 (인스타 안착 후)
 - [ ] Meta Graph API 직접 연동 (트래픽 증가 시)
+
+---
+
+### M-HYO-2. 육효점 기능 확장 ✅ (2026-04-29~30)
+- [x] 3장 궁합 대화창: 1장과 동일한 하단 고정 DialogueBox 포맷으로 전면 변경
+  - DialogueBox + ChoicePanel 공유 컴포넌트 적용
+  - 인물 입력 패널 대화창 위 배치, 모바일 키보드 보정
+  - 생시 '모르겠어요' 옵션, stale closure 버그 수정
+- [x] 육효 해석 엔진 (`src/hyo/liuyao/` 7개 모듈)
+  - 월건·일진·용신 기반 기운 분석
+  - 카테고리별 왕쇠+일진 관계+동효+원신/기신 종합 → verdict (대길/길/평/흉/대흉)
+  - 해석문 생성 (템플릿 기반)
+- [x] 시초법 난수 개선: Math.random() → crypto.getRandomValues() + 유저 엔트로피 혼합
+- [x] 나뭇가지 탭 UI: SichoSplitVisual (좌우 분리 애니메이션 + collectEntropy)
+- [x] 변효 0개 시 팔괘 룰렛 미니게임 (BaguaWheel 2개 + FlippingDice 1개)
+  - CSS 원판 룰렛 + 주사위 플리핑, 감속 애니메이션
+  - 항상 1개 변효 보장
+- [x] 육효 결과 카드 이미지: Satori(next/og) 기반 880×2000 PNG
+  - 배경 이미지 2종 (dark/light), 서양+동양식 날짜 병기
+  - 카테고리별 verdict 뱃지, 지괘 총론 전문, 유의사항
+- [x] 복길의서고 "육효점이란 무엇인가" 글 전면 보강
+
+### M-DAILY. 데일리 운세 ✅ (2026-04-30)
+- [x] 메인 메뉴 성 이미지 위 복길 캐릭터 + 말풍선 진입점
+- [x] 데일리 운세 모달 (팔괘 룰렛 → 결과보기 → 4대 운세 + 총운)
+  - 문서운(官), 재물운(財), 연애운(財+應), 건강운(孫) 용신 기반 점수 산출
+  - 월건 왕쇠 + 일진 관계 + 동효 영향 → 0~100 점수
+  - 지괘 총론 전문 + "2장에서 더 자세히" CTA
+  - 육효점 ? 버튼 (간단 설명 팝업 + 블로그 링크)
+- [x] SNS 공유용 카드 이미지 (Satori, 1080×1440)
+  - 캐릭터 표정 (excite/normal/dspt/dizzy)
+  - 4대 운세 바(2/3) + 총운 점수(1/3) 좌우 배치
+  - Web Share API + 다운로드 fallback
+- [x] 데일리 운세 엔진 (`src/hyo/daily/` 3개 모듈)
+
+### M-BLOG-2. 복길의 서고 리뉴얼 ✅ (2026-04-30)
+- [x] 픽셀아트 책장 배경 UI
+- [x] tags 기반 자동 분류 4권 (사주 기초 / 십성 이야기 / 오행과 일간 / 육효점)
+- [x] 책 탭 → 모달 펼침 → 글 목록 → 상세 이동
+- [x] BOOKS 테이블 matchTags 수정만으로 분류 자동 반영
+
+### M-PERF. 성능 최적화 ✅ (2026-04-30)
+- [x] 폰트: Google Fonts `<link>` → next/font/google(Gaegu) + next/font/local(Paperlogy)
+- [x] DailyFortuneModal: dynamic import (초기 번들 제거)
+- [x] BGM: audio.preload='none' (재생 전 다운로드 방지)
+- [x] Fly.io: min_machines_running=1 이미 설정 확인
+
+### M-UX-4. 글로벌 UX 프로토콜 ✅ (2026-04-30)
+- [x] 모든 버튼 active시 inset box-shadow 적용 (글로벌 프로토콜)
+- [x] 상단 로고 표시 (궁합 대화 모드)
 
 ---
 
