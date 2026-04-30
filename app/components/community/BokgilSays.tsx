@@ -65,7 +65,7 @@ export default function BokgilSays({ text }: BokgilSaysProps) {
               lineHeight: 1.6,
             }}
           >
-            {text.split('\n').map((line, i) => (
+            {text.split(/\\n|\n/).map((line, i) => (
               <React.Fragment key={i}>
                 {i > 0 && <br />}
                 {line}
