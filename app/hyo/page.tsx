@@ -78,139 +78,259 @@ function SichoSplitVisual({ onClick }: { onClick: (e: React.MouseEvent | React.T
   );
 }
 
-// ─── 주사위 미니게임 (변효 0개 시) ────────────────────────────
+// ─── 팔괘 룰렛 + 주사위 미니게임 (변효 0개 시) ─────────────
 
-const TRIGRAM_LABELS = ['건(天)', '태(澤)', '리(火)', '진(雷)', '손(風)', '감(水)', '간(山)', '곤(地)'];
-const TRIGRAM_BITS: number[][] = [
-  [1,1,1], // 건
-  [1,1,0], // 태
-  [1,0,1], // 리
-  [0,0,1], // 진
-  [1,1,0].reverse(), // 손 = [0,1,1]
-  [0,1,0], // 감
-  [1,0,0], // 간
-  [0,0,0], // 곤
-];
-// 정확한 소성괘 비트 (초효부터, LSB)
-const TRIGRAM_TO_BITS: number[][] = [
-  [1,1,1], // 1=건
-  [0,1,1], // 2=태
-  [1,0,1], // 3=리
-  [1,0,0], // 4=진
-  [0,1,1], // 5=손 — 수정: trigramIndex 기준
-  [0,1,0], // 6=감
-  [0,0,1], // 7=간 — 수정
-  [0,0,0], // 8=곤
-];
+const TRIGRAM_LABELS = ['건', '태', '리', '진', '손', '감', '간', '곤'];
+const TRIGRAM_SYMBOLS = ['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'];
+const TRIGRAM_ELEMENTS = ['天', '澤', '火', '雷', '風', '水', '山', '地'];
+
+// 팔괘 룰렛 컴포넌트
+function BaguaWheel({ label, spinning, resultIdx, onStop }: {
+  label: string;
+  spinning: boolean;
+  resultIdx: number; // 0~7
+  onStop?: () => void;
+}) {
+  const [rotation, setRotation] = useState(0);
+  const [stopped, setStopped] = useState(false);
+  const rafRef = useRef<number>(0);
+  const speedRef = useRef(0);
+
+  useEffect(() => {
+    if (!spinning || stopped) return;
+    // 목표 각도: resultIdx 위치가 상단(0도)에 오도록
+    const targetBase = -resultIdx * 45; // 각 괘 45도 간격
+    const fullSpins = 360 * (3 + Math.random() * 2); // 3~5바퀴
+    const target = fullSpins + ((targetBase % 360) + 360) % 360;
+    const duration = 2500;
+    const start = performance.now();
+    const startRot = rotation;
+
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = startRot + target * eased;
+      setRotation(current);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        setStopped(true);
+        onStop?.();
+      }
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [spinning]);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ fontSize: 10, color: '#667', marginBottom: 2 }}>{label}</div>
+      {/* 화살표 마커 */}
+      <div style={{ fontSize: 14, color: '#f0dfad', lineHeight: 1 }}>▼</div>
+      {/* 원판 */}
+      <div style={{
+        width: 130, height: 130,
+        borderRadius: '50%',
+        border: '2px solid rgba(240,223,173,0.3)',
+        background: 'rgba(240,223,173,0.05)',
+        position: 'relative',
+        overflow: 'hidden',
+        transform: `rotate(${rotation}deg)`,
+      }}>
+        {TRIGRAM_SYMBOLS.map((sym, i) => {
+          const angle = i * 45;
+          const isSelected = stopped && i === resultIdx;
+          return (
+            <div key={i} style={{
+              position: 'absolute',
+              width: '100%', height: '100%',
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+              transform: `rotate(${angle}deg)`,
+              paddingTop: 8,
+            }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                transform: `rotate(-${angle + rotation}deg)`, // 글자 수직 유지
+                transition: stopped ? 'none' : undefined,
+              }}>
+                <span style={{
+                  fontSize: isSelected ? 22 : 16,
+                  color: isSelected ? '#f0dfad' : '#889',
+                  transition: 'all 0.3s',
+                  textShadow: isSelected ? '0 0 8px rgba(240,223,173,0.5)' : 'none',
+                }}>{sym}</span>
+                <span style={{
+                  fontSize: 9,
+                  color: isSelected ? '#f0dfad' : '#667',
+                }}>{TRIGRAM_LABELS[i]}</span>
+              </div>
+            </div>
+          );
+        })}
+        {/* 중심 */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: 36, height: 36, borderRadius: '50%',
+          background: 'rgba(26,30,36,0.9)',
+          border: '1px solid rgba(240,223,173,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <span style={{ fontSize: 10, color: '#667' }}>☯</span>
+        </div>
+      </div>
+      {/* 결과 표시 */}
+      {stopped && (
+        <div style={{ fontSize: 13, color: '#f0dfad', fontWeight: 600 }}>
+          {TRIGRAM_SYMBOLS[resultIdx]} {TRIGRAM_LABELS[resultIdx]}({TRIGRAM_ELEMENTS[resultIdx]})
+        </div>
+      )}
+    </div>
+  );
+}
+
+// 주사위 면 패턴 (점 위치)
+const DICE_DOTS: Record<number, [number, number][]> = {
+  1: [[50,50]],
+  2: [[25,25],[75,75]],
+  3: [[25,25],[50,50],[75,75]],
+  4: [[25,25],[75,25],[25,75],[75,75]],
+  5: [[25,25],[75,25],[50,50],[25,75],[75,75]],
+  6: [[25,25],[75,25],[25,50],[75,50],[25,75],[75,75]],
+};
+
+// 주사위 플리핑 컴포넌트
+function FlippingDice({ spinning, resultVal, onStop }: {
+  spinning: boolean;
+  resultVal: number; // 1~6
+  onStop?: () => void;
+}) {
+  const [displayVal, setDisplayVal] = useState(1);
+  const [stopped, setStopped] = useState(false);
+
+  useEffect(() => {
+    if (!spinning || stopped) return;
+    const duration = 2200;
+    const start = performance.now();
+    let frame: number;
+
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // 감속: 초반 빠르게, 후반 느리게
+      const interval = 50 + progress * 300;
+      if (progress < 1) {
+        setDisplayVal(Math.floor(Math.random() * 6) + 1);
+        frame = window.setTimeout(() => requestAnimationFrame(animate), interval);
+      } else {
+        setDisplayVal(resultVal);
+        setStopped(true);
+        onStop?.();
+      }
+    };
+    frame = window.setTimeout(() => requestAnimationFrame(animate), 50);
+    return () => clearTimeout(frame);
+  }, [spinning]);
+
+  const dots = DICE_DOTS[displayVal] || DICE_DOTS[1];
+  const isShaking = spinning && !stopped;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{ fontSize: 10, color: '#667', marginBottom: 2 }}>동효</div>
+      <div style={{
+        width: 64, height: 64,
+        borderRadius: 10,
+        border: '2px solid rgba(240,223,173,0.3)',
+        background: 'rgba(240,223,173,0.08)',
+        position: 'relative',
+        animation: isShaking ? 'dice-shake 0.1s infinite' : 'none',
+      }}>
+        {dots.map(([x, y], i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${x}%`, top: `${y}%`,
+            transform: 'translate(-50%, -50%)',
+            width: 10, height: 10,
+            borderRadius: '50%',
+            backgroundColor: stopped ? '#f0dfad' : '#aab4be',
+            transition: 'background-color 0.3s',
+          }} />
+        ))}
+      </div>
+      {stopped && (
+        <div style={{ fontSize: 13, color: '#f0dfad', fontWeight: 600 }}>
+          {resultVal}효 변
+        </div>
+      )}
+    </div>
+  );
+}
 
 function DiceRerollGame({ onComplete }: {
   onComplete: (yaos: YaoResult[]) => void;
 }) {
-  const [rolling, setRolling] = useState(false);
-  const [done, setDone] = useState(false);
-  const [d8a, setD8a] = useState(1); // 상괘
-  const [d8b, setD8b] = useState(1); // 하괘
-  const [d6, setD6] = useState(1);   // 동효 위치
-  const [displayA, setDisplayA] = useState(1);
-  const [displayB, setDisplayB] = useState(1);
-  const [display6, setDisplay6] = useState(1);
+  const [phase, setLocalPhase] = useState<'idle' | 'spinning' | 'done'>('idle');
+  const [resultA, setResultA] = useState(0);
+  const [resultB, setResultB] = useState(0);
+  const [resultD6, setResultD6] = useState(1);
+  const stoppedCount = useRef(0);
 
-  const handleRoll = useCallback(() => {
-    if (rolling || done) return;
-    setRolling(true);
+  const handleTap = useCallback(() => {
+    if (phase !== 'idle') return;
 
     // 최종 값 결정
-    const arr8 = new Uint8Array(2);
-    const arr6 = new Uint8Array(1);
-    crypto.getRandomValues(arr8);
-    crypto.getRandomValues(arr6);
-    const finalA = (arr8[0] % 8) + 1;
-    const finalB = (arr8[1] % 8) + 1;
-    const final6 = (arr6[0] % 6) + 1;
-    setD8a(finalA);
-    setD8b(finalB);
-    setD6(final6);
+    const arr = new Uint8Array(3);
+    crypto.getRandomValues(arr);
+    setResultA(arr[0] % 8);
+    setResultB(arr[1] % 8);
+    setResultD6((arr[2] % 6) + 1);
+    stoppedCount.current = 0;
+    setLocalPhase('spinning');
+  }, [phase]);
 
-    // 슬롯머신 애니메이션
-    let count = 0;
-    const interval = setInterval(() => {
-      setDisplayA(Math.floor(Math.random() * 8) + 1);
-      setDisplayB(Math.floor(Math.random() * 8) + 1);
-      setDisplay6(Math.floor(Math.random() * 6) + 1);
-      count++;
-      if (count > 15) {
-        clearInterval(interval);
-        setDisplayA(finalA);
-        setDisplayB(finalB);
-        setDisplay6(final6);
-        setRolling(false);
-        setDone(true);
+  const handleOneStop = useCallback(() => {
+    stoppedCount.current++;
+    if (stoppedCount.current >= 3) {
+      setLocalPhase('done');
 
-        // 괘 조립
-        setTimeout(() => {
-          // sicho.ts의 trigramIndex와 동일한 매핑 사용
-          // d8 1~8 → 건태리진손감간곤 → trigramIndex 7,3,5,1,6,2,4,0
-          const trigramIndexMap = [7, 3, 5, 1, 6, 2, 4, 0]; // d8값 1~8 → trigramIndex
-          const upperIdx = trigramIndexMap[finalA - 1];
-          const lowerIdx = trigramIndexMap[finalB - 1];
+      setTimeout(() => {
+        const trigramIndexMap = [7, 3, 5, 1, 6, 2, 4, 0];
+        const upperIdx = trigramIndexMap[resultA];
+        const lowerIdx = trigramIndexMap[resultB];
+        const toBits = (idx: number): number[] => [idx & 1, (idx >> 1) & 1, (idx >> 2) & 1];
+        const gua = [...toBits(lowerIdx), ...toBits(upperIdx)];
+        const changingIdx = resultD6 - 1;
 
-          // trigramIndex → 비트 (LSB first)
-          const toBits = (idx: number): number[] => [idx & 1, (idx >> 1) & 1, (idx >> 2) & 1];
-          const lowerBits = toBits(lowerIdx);
-          const upperBits = toBits(upperIdx);
-          const gua = [...lowerBits, ...upperBits]; // 6비트
+        const newYaos: YaoResult[] = gua.map((bit, i) => {
+          const isChanging = i === changingIdx;
+          const isYang = bit === 1;
+          if (isChanging) {
+            return { value: (isYang ? 9 : 6) as YaoValue, isYang, isChanging: true, label: isYang ? '노양' : '노음' };
+          }
+          return { value: (isYang ? 7 : 8) as YaoValue, isYang, isChanging: false, label: isYang ? '소양' : '소음' };
+        });
 
-          // 동효 위치 (1~6, 0-indexed = final6 - 1)
-          const changingIdx = final6 - 1;
-
-          // yaos 생성
-          const newYaos: YaoResult[] = gua.map((bit, i) => {
-            const isChanging = i === changingIdx;
-            const isYang = bit === 1;
-            if (isChanging) {
-              return {
-                value: (isYang ? 9 : 6) as YaoValue,
-                isYang, isChanging: true,
-                label: isYang ? '노양' : '노음',
-              };
-            }
-            return {
-              value: (isYang ? 7 : 8) as YaoValue,
-              isYang, isChanging: false,
-              label: isYang ? '소양' : '소음',
-            };
-          });
-
-          onComplete(newYaos);
-        }, 800);
-      }
-    }, 80);
-  }, [rolling, done, onComplete]);
-
-  // 주사위 스타일
-  const diceBase: React.CSSProperties = {
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontWeight: 700, fontSize: 24, color: '#f0dfad',
-    border: '2px solid rgba(240,223,173,0.3)',
-    backgroundColor: 'rgba(240,223,173,0.08)',
-    cursor: 'pointer',
-  };
-
-  const d8Style: React.CSSProperties = {
-    ...diceBase,
-    width: 64, height: 64,
-    borderRadius: 8,
-    transform: 'rotate(45deg)',
-  };
-
-  const d6Style: React.CSSProperties = {
-    ...diceBase,
-    width: 56, height: 56,
-    borderRadius: 10,
-  };
+        onComplete(newYaos);
+      }, 1000);
+    }
+  }, [resultA, resultB, resultD6, onComplete]);
 
   return (
-    <div style={{ textAlign: 'center' }}>
+    <div style={{ textAlign: 'center' }} onClick={handleTap}>
+      <style>{`
+        @keyframes dice-shake {
+          0% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(-8deg) scale(1.05); }
+          50% { transform: rotate(8deg) scale(0.95); }
+          75% { transform: rotate(-4deg) scale(1.02); }
+          100% { transform: rotate(0deg) scale(1); }
+        }
+      `}</style>
+
       <div style={{
         fontFamily: '"Gaegu", cursive', fontSize: 16,
         color: '#c8cdd3', lineHeight: 1.7, marginBottom: 24,
@@ -219,51 +339,22 @@ function DiceRerollGame({ onComplete }: {
         {'기운이 고요하여\n해석에 의미가 발생하지 않네.\n\n다른 방법으로 다시 여쭤보겠네.'}
       </div>
 
-      <div
-        onClick={handleRoll}
-        style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          gap: 20, padding: '24px 0', cursor: 'pointer',
-        }}
-      >
-        {/* 팔각주사위 1 (상괘) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <div style={d8Style}>
-            <span style={{ transform: 'rotate(-45deg)' }}>{displayA}</span>
-          </div>
-          <span style={{ fontSize: 10, color: '#667' }}>
-            {done ? TRIGRAM_LABELS[d8a - 1] : '상괘'}
-          </span>
-        </div>
-
-        {/* 팔각주사위 2 (하괘) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <div style={d8Style}>
-            <span style={{ transform: 'rotate(-45deg)' }}>{displayB}</span>
-          </div>
-          <span style={{ fontSize: 10, color: '#667' }}>
-            {done ? TRIGRAM_LABELS[d8b - 1] : '하괘'}
-          </span>
-        </div>
-
-        {/* 육각주사위 (동효) */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-          <div style={d6Style}>
-            {display6}
-          </div>
-          <span style={{ fontSize: 10, color: '#667' }}>
-            {done ? `${d6}효 변` : '동효'}
-          </span>
-        </div>
+      <div style={{
+        display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
+        gap: 16, padding: '16px 0', cursor: phase === 'idle' ? 'pointer' : 'default',
+      }}>
+        <BaguaWheel label="상괘" spinning={phase === 'spinning'} resultIdx={resultA} onStop={handleOneStop} />
+        <BaguaWheel label="하괘" spinning={phase === 'spinning'} resultIdx={resultB} onStop={handleOneStop} />
+        <FlippingDice spinning={phase === 'spinning'} resultVal={resultD6} onStop={handleOneStop} />
       </div>
 
-      {!done && !rolling && (
-        <div style={{ fontSize: 12, color: '#889', marginTop: 8 }}>
-          탭하여 주사위를 굴리세요
+      {phase === 'idle' && (
+        <div style={{ fontSize: 12, color: '#889', marginTop: 12 }}>
+          탭하여 팔괘를 돌리세요
         </div>
       )}
-      {done && (
-        <div style={{ fontSize: 12, color: '#f0dfad', marginTop: 8 }}>
+      {phase === 'done' && (
+        <div style={{ fontSize: 13, color: '#f0dfad', marginTop: 12 }}>
           괘를 읽고 있습니다...
         </div>
       )}
@@ -1338,7 +1429,7 @@ export default function HyoPage() {
         setPhase('intro');
       });
     } else {
-      // 변효 0개 체크 → 주사위 미니게임
+      // 변효 0개 체크 → 팔괘 룰렛 미니게임
       const hasChanging = yaos.some(y => y.isChanging);
       if (!hasChanging) {
         setPhase('dice_reroll');
