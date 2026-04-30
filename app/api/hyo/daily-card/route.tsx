@@ -214,6 +214,13 @@ export async function POST(request: NextRequest) {
               </div>
             )}
 
+            {/* 유의사항 */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+              <span style={{ fontSize: 14, color: '#8a7a60', lineHeight: 1.6, textAlign: 'center' as const }}>
+                운의 흐름은 언제나 변화합니다. 이 결과가 개선을 위한 노력으로 이어지길 바랍니다
+              </span>
+            </div>
+
             {/* 브랜딩 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
               <span style={{ fontSize: 18, color: '#5a4e3e', fontWeight: 600 }}>
