@@ -345,7 +345,6 @@ export default function GunghamPage() {
       margin: '0 auto',
       overflow: 'hidden',
     }}>
-      <link href="https://fonts.googleapis.com/css2?family=Gaegu&display=swap" rel="stylesheet" />
       <BgmPlayer show src="/bgm/memorialfield.mp3" autoPlayFromMenu />
 
       {/* ── 배경 맵 + 캐릭터 ── */}

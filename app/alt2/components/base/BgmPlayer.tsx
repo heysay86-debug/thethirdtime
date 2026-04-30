@@ -20,6 +20,7 @@ export default function BgmPlayer({ show = true, src = '/bgm/crystalfield.mp3', 
     const audio = new Audio(src);
     audio.loop = true;
     audio.volume = 0.055;
+    audio.preload = 'none'; // 재생 전까지 다운로드하지 않음
     audioRef.current = audio;
     return () => {
       audio.pause();

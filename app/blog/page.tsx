@@ -338,7 +338,6 @@ export default function BlogListPage() {
         />
       )}
 
-      <link href="https://fonts.googleapis.com/css2?family=Gaegu&display=swap" rel="stylesheet" />
     </div>
   );
 }

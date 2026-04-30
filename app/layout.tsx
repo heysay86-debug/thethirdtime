@@ -1,6 +1,24 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import Script from 'next/script';
+import { Gaegu } from 'next/font/google';
+import localFont from 'next/font/local';
+
+const gaegu = Gaegu({
+  weight: '400',
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-gaegu',
+});
+
+const paperlogy = localFont({
+  src: [
+    { path: '../public/fonts/Paperlogy-4Regular.ttf', weight: '400', style: 'normal' },
+    { path: '../public/fonts/Paperlogy-7Bold.ttf', weight: '700', style: 'normal' },
+  ],
+  display: 'swap',
+  variable: '--font-paperlogy',
+});
 
 const SITE_URL = 'https://ttt.betterdan.net';
 
@@ -63,7 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           crossOrigin="anonymous"
         />
       </head>
-      <body className="min-h-screen" style={{ backgroundColor: '#1a1e24' }}>
+      <body className={`min-h-screen ${gaegu.variable} ${paperlogy.variable}`} style={{ backgroundColor: '#1a1e24' }}>
         {children}
       </body>
     </html>

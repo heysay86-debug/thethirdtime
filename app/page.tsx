@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import BgmPlayer from './alt2/components/base/BgmPlayer';
-import DailyFortuneModal from './components/daily/DailyFortuneModal';
+import dynamic from 'next/dynamic';
+const DailyFortuneModal = dynamic(() => import('./components/daily/DailyFortuneModal'), { ssr: false });
 
 // ─── 유저 타입 ─────────────────────────────────────────────
 
@@ -138,7 +139,6 @@ export default function MainMenu() {
     }}>
       <BgmPlayer show src="/bgm/crystal-labyrinth.mp3" autoStart />
       {/* Gaegu 폰트 로드 */}
-      <link href="https://fonts.googleapis.com/css2?family=Gaegu&display=swap" rel="stylesheet" />
 
       {/* 배경 이미지 */}
       <div style={{
