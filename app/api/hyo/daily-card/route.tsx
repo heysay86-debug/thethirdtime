@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
 
             {/* 브랜딩 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 'auto' }}>
-              <span style={{ fontSize: 18, color: '#a89070' }}>
+              <span style={{ fontSize: 18, color: '#5a4e3e', fontWeight: 600 }}>
                 제3의시간 · 오늘의 운세 · www.betterdan.net
               </span>
             </div>
