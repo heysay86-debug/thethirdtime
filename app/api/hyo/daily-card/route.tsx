@@ -147,8 +147,8 @@ export async function POST(request: NextRequest) {
               borderTop: '2px solid #d5c9b0', borderBottom: '2px solid #d5c9b0',
               padding: '24px 0',
             }}>
-              {/* 좌: 4대 운세 바 */}
-              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: 1 }}>
+              {/* 좌: 4대 운세 바 (2/3) */}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: 2 }}>
                 {(scores as ScoreItem[]).map((s: ScoreItem, i: number) => (
                   <div key={i} style={{ display: 'flex', flexDirection: 'column' as const }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -177,21 +177,21 @@ export async function POST(request: NextRequest) {
                 ))}
               </div>
 
-              {/* 우: 총운 + 배경 캐릭터 */}
+              {/* 우: 총운 + 배경 캐릭터 (1/3) */}
               <div style={{
                 display: 'flex', flexDirection: 'column' as const,
                 alignItems: 'center', justifyContent: 'center',
-                width: 160, position: 'relative' as const,
+                flex: 1, position: 'relative' as const,
               }}>
-                <img src={charUri} style={{ height: 140,
+                <img src={charUri} style={{ height: 180,
                   position: 'absolute' as const, opacity: 0.08,
                   top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                 }} />
-                <span style={{ fontSize: 18, color: '#8a7a60', marginBottom: 8 }}>총운</span>
-                <span style={{ fontSize: 72, fontWeight: 700, color: getColor(totalScore), lineHeight: 1 }}>
+                <span style={{ fontSize: 20, color: '#8a7a60', marginBottom: 10 }}>총운</span>
+                <span style={{ fontSize: 96, fontWeight: 700, color: getColor(totalScore), lineHeight: 1 }}>
                   {totalScore}
                 </span>
-                <span style={{ fontSize: 24, fontWeight: 700, color: getColor(totalScore), marginTop: 8 }}>
+                <span style={{ fontSize: 28, fontWeight: 700, color: getColor(totalScore), marginTop: 10 }}>
                   {totalVerdict}
                 </span>
               </div>
