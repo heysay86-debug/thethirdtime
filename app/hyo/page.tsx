@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { performSambyeon, getGuaName, collectEntropy, type YaoResult } from '@/src/hyo/sicho';
+import { performSambyeon, getGuaName, collectEntropy, type YaoResult, type YaoValue } from '@/src/hyo/sicho';
 import { trackEvent } from '@/src/analytics';
 import { STAGES, START_POS, ALTAR_POS } from '@/src/hyo/stages';
 import BgmPlayer from '@/app/alt2/components/base/BgmPlayer';
@@ -14,7 +14,7 @@ import { getMonthPillar } from '@/src/engine/pillar_month';
 import { getIljinByDate } from '@/src/engine/data/iljin_adapter';
 import { getHourPillar } from '@/src/engine/pillar_hour';
 
-type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete';
+type Phase = 'entrance' | 'intro' | 'split' | 'counting' | 'result' | 'incantation' | 'preview' | 'complete' | 'dice_reroll';
 
 // 픽셀 도트 1개
 // 시초 나뭇가지 탭 — 좌우 분리 애니메이션
@@ -75,6 +75,199 @@ function SichoSplitVisual({ onClick }: { onClick: (e: React.MouseEvent | React.T
       </div>
       <div style={{ fontSize: 11, color: '#889', marginTop: 4, textAlign: 'center' }}>탭하여 나누기</div>
     </>
+  );
+}
+
+// ─── 주사위 미니게임 (변효 0개 시) ────────────────────────────
+
+const TRIGRAM_LABELS = ['건(天)', '태(澤)', '리(火)', '진(雷)', '손(風)', '감(水)', '간(山)', '곤(地)'];
+const TRIGRAM_BITS: number[][] = [
+  [1,1,1], // 건
+  [1,1,0], // 태
+  [1,0,1], // 리
+  [0,0,1], // 진
+  [1,1,0].reverse(), // 손 = [0,1,1]
+  [0,1,0], // 감
+  [1,0,0], // 간
+  [0,0,0], // 곤
+];
+// 정확한 소성괘 비트 (초효부터, LSB)
+const TRIGRAM_TO_BITS: number[][] = [
+  [1,1,1], // 1=건
+  [0,1,1], // 2=태
+  [1,0,1], // 3=리
+  [1,0,0], // 4=진
+  [0,1,1], // 5=손 — 수정: trigramIndex 기준
+  [0,1,0], // 6=감
+  [0,0,1], // 7=간 — 수정
+  [0,0,0], // 8=곤
+];
+
+function DiceRerollGame({ onComplete }: {
+  onComplete: (yaos: YaoResult[]) => void;
+}) {
+  const [rolling, setRolling] = useState(false);
+  const [done, setDone] = useState(false);
+  const [d8a, setD8a] = useState(1); // 상괘
+  const [d8b, setD8b] = useState(1); // 하괘
+  const [d6, setD6] = useState(1);   // 동효 위치
+  const [displayA, setDisplayA] = useState(1);
+  const [displayB, setDisplayB] = useState(1);
+  const [display6, setDisplay6] = useState(1);
+
+  const handleRoll = useCallback(() => {
+    if (rolling || done) return;
+    setRolling(true);
+
+    // 최종 값 결정
+    const arr8 = new Uint8Array(2);
+    const arr6 = new Uint8Array(1);
+    crypto.getRandomValues(arr8);
+    crypto.getRandomValues(arr6);
+    const finalA = (arr8[0] % 8) + 1;
+    const finalB = (arr8[1] % 8) + 1;
+    const final6 = (arr6[0] % 6) + 1;
+    setD8a(finalA);
+    setD8b(finalB);
+    setD6(final6);
+
+    // 슬롯머신 애니메이션
+    let count = 0;
+    const interval = setInterval(() => {
+      setDisplayA(Math.floor(Math.random() * 8) + 1);
+      setDisplayB(Math.floor(Math.random() * 8) + 1);
+      setDisplay6(Math.floor(Math.random() * 6) + 1);
+      count++;
+      if (count > 15) {
+        clearInterval(interval);
+        setDisplayA(finalA);
+        setDisplayB(finalB);
+        setDisplay6(final6);
+        setRolling(false);
+        setDone(true);
+
+        // 괘 조립
+        setTimeout(() => {
+          // sicho.ts의 trigramIndex와 동일한 매핑 사용
+          // d8 1~8 → 건태리진손감간곤 → trigramIndex 7,3,5,1,6,2,4,0
+          const trigramIndexMap = [7, 3, 5, 1, 6, 2, 4, 0]; // d8값 1~8 → trigramIndex
+          const upperIdx = trigramIndexMap[finalA - 1];
+          const lowerIdx = trigramIndexMap[finalB - 1];
+
+          // trigramIndex → 비트 (LSB first)
+          const toBits = (idx: number): number[] => [idx & 1, (idx >> 1) & 1, (idx >> 2) & 1];
+          const lowerBits = toBits(lowerIdx);
+          const upperBits = toBits(upperIdx);
+          const gua = [...lowerBits, ...upperBits]; // 6비트
+
+          // 동효 위치 (1~6, 0-indexed = final6 - 1)
+          const changingIdx = final6 - 1;
+
+          // yaos 생성
+          const newYaos: YaoResult[] = gua.map((bit, i) => {
+            const isChanging = i === changingIdx;
+            const isYang = bit === 1;
+            if (isChanging) {
+              return {
+                value: (isYang ? 9 : 6) as YaoValue,
+                isYang, isChanging: true,
+                label: isYang ? '노양' : '노음',
+              };
+            }
+            return {
+              value: (isYang ? 7 : 8) as YaoValue,
+              isYang, isChanging: false,
+              label: isYang ? '소양' : '소음',
+            };
+          });
+
+          onComplete(newYaos);
+        }, 800);
+      }
+    }, 80);
+  }, [rolling, done, onComplete]);
+
+  // 주사위 스타일
+  const diceBase: React.CSSProperties = {
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontWeight: 700, fontSize: 24, color: '#f0dfad',
+    border: '2px solid rgba(240,223,173,0.3)',
+    backgroundColor: 'rgba(240,223,173,0.08)',
+    cursor: 'pointer',
+  };
+
+  const d8Style: React.CSSProperties = {
+    ...diceBase,
+    width: 64, height: 64,
+    borderRadius: 8,
+    transform: 'rotate(45deg)',
+  };
+
+  const d6Style: React.CSSProperties = {
+    ...diceBase,
+    width: 56, height: 56,
+    borderRadius: 10,
+  };
+
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        fontFamily: '"Gaegu", cursive', fontSize: 16,
+        color: '#c8cdd3', lineHeight: 1.7, marginBottom: 24,
+        whiteSpace: 'pre-line',
+      }}>
+        {'기운이 고요하여\n해석에 의미가 발생하지 않네.\n\n다른 방법으로 다시 여쭤보겠네.'}
+      </div>
+
+      <div
+        onClick={handleRoll}
+        style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: 20, padding: '24px 0', cursor: 'pointer',
+        }}
+      >
+        {/* 팔각주사위 1 (상괘) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <div style={d8Style}>
+            <span style={{ transform: 'rotate(-45deg)' }}>{displayA}</span>
+          </div>
+          <span style={{ fontSize: 10, color: '#667' }}>
+            {done ? TRIGRAM_LABELS[d8a - 1] : '상괘'}
+          </span>
+        </div>
+
+        {/* 팔각주사위 2 (하괘) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <div style={d8Style}>
+            <span style={{ transform: 'rotate(-45deg)' }}>{displayB}</span>
+          </div>
+          <span style={{ fontSize: 10, color: '#667' }}>
+            {done ? TRIGRAM_LABELS[d8b - 1] : '하괘'}
+          </span>
+        </div>
+
+        {/* 육각주사위 (동효) */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <div style={d6Style}>
+            {display6}
+          </div>
+          <span style={{ fontSize: 10, color: '#667' }}>
+            {done ? `${d6}효 변` : '동효'}
+          </span>
+        </div>
+      </div>
+
+      {!done && !rolling && (
+        <div style={{ fontSize: 12, color: '#889', marginTop: 8 }}>
+          탭하여 주사위를 굴리세요
+        </div>
+      )}
+      {done && (
+        <div style={{ fontSize: 12, color: '#f0dfad', marginTop: 8 }}>
+          괘를 읽고 있습니다...
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1145,6 +1338,12 @@ export default function HyoPage() {
         setPhase('intro');
       });
     } else {
+      // 변효 0개 체크 → 주사위 미니게임
+      const hasChanging = yaos.some(y => y.isChanging);
+      if (!hasChanging) {
+        setPhase('dice_reroll');
+        return;
+      }
       setCharPos(ALTAR_POS);
       setBgFlash(true);
       setTimeout(() => {
@@ -1574,6 +1773,28 @@ export default function HyoPage() {
           )}
 
         </div>
+        </div>
+      )}
+
+      {/* ═══ 주사위 미니게임 (변효 0개 시) ═══ */}
+      {phase === 'dice_reroll' && (
+        <div style={{
+          position: 'relative', zIndex: 5,
+          padding: '60px 24px',
+          maxWidth: 440, margin: '0 auto',
+        }}>
+          <DiceRerollGame onComplete={(newYaos) => {
+            setYaos(newYaos);
+            setCastDate(new Date());
+            setCharPos(ALTAR_POS);
+            setBgFlash(true);
+            setTimeout(() => {
+              setResultBg(true);
+              setBgFlash(false);
+              setPhase('incantation');
+            }, 600);
+            trackEvent('hyo_complete');
+          }} />
         </div>
       )}
 
