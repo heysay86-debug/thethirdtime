@@ -230,39 +230,26 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
             }}>
               {fortune.guaBits.map((bit, i) => {
                 const isChanging = i === fortune.changingYaoPos - 1;
+                const barColor = isChanging ? '#f0dfad' : '#aab4be';
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {/* 효 막대 */}
+                  <div key={i} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {bit === 1 ? (
-                      // 양효: 긴 막대
-                      <div style={{
-                        width: 120, height: 8,
-                        backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
-                        borderRadius: 2,
-                      }} />
+                      <div style={{ width: 120, height: 8, backgroundColor: barColor, borderRadius: 2 }} />
                     ) : (
-                      // 음효: 끊긴 막대
                       <div style={{ display: 'flex', gap: 12 }}>
-                        <div style={{
-                          width: 54, height: 8,
-                          backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
-                          borderRadius: 2,
-                        }} />
-                        <div style={{
-                          width: 54, height: 8,
-                          backgroundColor: isChanging ? '#f0dfad' : '#aab4be',
-                          borderRadius: 2,
-                        }} />
+                        <div style={{ width: 54, height: 8, backgroundColor: barColor, borderRadius: 2 }} />
+                        <div style={{ width: 54, height: 8, backgroundColor: barColor, borderRadius: 2 }} />
                       </div>
                     )}
-                    {/* 변효 표시 */}
                     {isChanging && (
-                      <span style={{
-                        fontSize: 14, fontWeight: 700, color: '#f0dfad',
-                        width: 16, textAlign: 'center',
-                      }}>/</span>
+                      <div style={{
+                        position: 'absolute', top: '50%', left: '50%',
+                        transform: 'translate(-50%, -50%) rotate(-45deg)',
+                        width: 2, height: 20,
+                        backgroundColor: '#f0dfad',
+                        borderRadius: 1,
+                      }} />
                     )}
-                    {!isChanging && <span style={{ width: 16 }} />}
                   </div>
                 );
               })}

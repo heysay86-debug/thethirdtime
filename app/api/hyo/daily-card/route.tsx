@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
                   const isChanging = i === changingYaoPos - 1;
                   const barColor = isChanging ? '#8a6a1e' : '#a09888';
                   return (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' as const }}>
                       {bit === 1 ? (
                         <div style={{ width: 160, height: 12, backgroundColor: barColor, borderRadius: 2 }} />
                       ) : (
@@ -100,10 +100,13 @@ export async function POST(request: NextRequest) {
                           <div style={{ width: 72, height: 12, backgroundColor: barColor, borderRadius: 2 }} />
                         </div>
                       )}
-                      {isChanging ? (
-                        <span style={{ fontSize: 18, fontWeight: 700, color: '#8a6a1e', width: 20 }}>/</span>
-                      ) : (
-                        <span style={{ width: 20 }}> </span>
+                      {isChanging && (
+                        <div style={{
+                          position: 'absolute' as const, top: '50%', left: '50%',
+                          transform: 'translate(-50%, -50%) rotate(-45deg)',
+                          width: 3, height: 28,
+                          backgroundColor: '#8a6a1e', borderRadius: 1,
+                        }} />
                       )}
                     </div>
                   );
