@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
             {/* 브랜딩 */}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 40 }}>
               <span style={{ fontSize: 20, color: subColor }}>
-                제3의시간 · 육효점 · ttt.betterdan.net
+                제3의시간 · 육효점 · www.betterdan.net
               </span>
             </div>
           </div>

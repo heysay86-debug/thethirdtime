@@ -395,9 +395,10 @@ function CompleteView({ guaInfo, castResult, yaos, onReset, userQuestion, castDa
   const verdictMap = new Map<string, CategoryAssessment>();
   liuyaoAnalysis?.assessments.forEach(a => verdictMap.set(a.category, a));
 
-  // 카드용 총론 요약 (앞 3줄)
-  const chongronSummary = bonGua?.chongron
-    ? bonGua.chongron.split('\n').slice(0, 3).join('\n')
+  // 카드용 총론 요약 (앞 3줄) — 지괘가 있으면 지괘 총론, 없으면 본괘 총론
+  const cardChongronSource = (changedGua && changingYao.length > 0) ? changedGua : bonGua;
+  const chongronSummary = cardChongronSource?.chongron
+    ? cardChongronSource.chongron.split('\n').slice(0, 3).join('\n')
     : '';
 
   const jiName = changedGua?.name || bonGua?.name;
