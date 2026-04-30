@@ -287,12 +287,15 @@ export default function BlogListPage() {
           <div style={{ fontSize: 10, color: '#667', marginTop: 4 }}>— 복길</div>
         </div>
 
-        {/* 책장 — 선반 위에 책 배치 */}
+        {/* 책장 — 고정 위치 */}
         <div style={{
-          flex: 1,
-          display: 'flex', flexDirection: 'column',
-          justifyContent: 'center',
-          paddingBottom: 80,
+          position: 'fixed',
+          top: 'calc(50% - 25px)',
+          left: '50%',
+          transform: 'translate(calc(-50% + 20px), -50%)',
+          zIndex: 15,
+          maxWidth: 400,
+          width: '80%',
         }}>
           {loading ? (
             <div style={{ textAlign: 'center', color: '#889' }}>불러오는 중...</div>
