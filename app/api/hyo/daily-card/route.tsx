@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
 
           <div style={{
             display: 'flex', flexDirection: 'column' as const,
-            paddingTop: 30, paddingBottom: 60,
+            paddingTop: 130, paddingBottom: 60,
             paddingLeft: 80, paddingRight: 80,
             position: 'relative' as const,
             height: 1440,
