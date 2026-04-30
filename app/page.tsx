@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import BgmPlayer from './alt2/components/base/BgmPlayer';
+import DailyFortuneModal from './components/daily/DailyFortuneModal';
 
 // ─── 유저 타입 ─────────────────────────────────────────────
 
@@ -78,6 +79,7 @@ export default function MainMenu() {
   const [showAlert, setShowAlert] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showDailyFortune, setShowDailyFortune] = useState(false);
 
   const fetchUser = useCallback(async () => {
     try {
@@ -264,6 +266,44 @@ export default function MainMenu() {
           alt=""
           style={{ width: '100%', minHeight: 580, objectFit: 'fill', display: 'block' }}
         />
+        {/* 데일리 운세 진입 — 성 이미지 위 오버레이 */}
+        <div
+          onClick={() => setShowDailyFortune(true)}
+          style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, height: '42%',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+            paddingBottom: 8,
+          }}
+        >
+          {/* 복길 캐릭터 + 말풍선 */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <img
+              src="/character/angel_dot.png"
+              alt="복길"
+              style={{
+                height: 36, width: 'auto',
+                imageRendering: 'pixelated',
+                filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.5))',
+              }}
+            />
+            <div style={{
+              padding: '5px 10px',
+              background: 'rgba(26,30,36,0.85)',
+              border: '1px solid rgba(240,223,173,0.25)',
+              borderRadius: '10px 10px 10px 2px',
+              fontSize: 10, color: '#f0dfad',
+              fontFamily: '"Gaegu", cursive',
+              lineHeight: 1.4,
+              maxWidth: 140,
+              whiteSpace: 'pre-line',
+            }}>
+              {'오늘의 운세가\n궁금하지 않나?\n여기를 눌러보게'}
+            </div>
+          </div>
+        </div>
+
         {/* 버튼 오버레이 — 양피지 영역에 배치 */}
         <div style={{
           position: 'absolute',
@@ -400,6 +440,11 @@ export default function MainMenu() {
           to { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
       `}</style>
+
+      {/* 데일리 운세 모달 */}
+      {showDailyFortune && (
+        <DailyFortuneModal onClose={() => setShowDailyFortune(false)} />
+      )}
     </div>
   );
 }
