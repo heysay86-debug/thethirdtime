@@ -21,7 +21,7 @@ async function loadAssets() {
     fontBold = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   }
   if (!bgBase64) {
-    const buf = await readFile(join(process.cwd(), 'public/card/daily.png'));
+    const buf = await readFile(join(process.cwd(), 'public/card/daily2.png'));
     bgBase64 = `data:image/png;base64,${buf.toString('base64')}`;
   }
   return { regular: fontRegular, bold: fontBold, bg: bgBase64 };
