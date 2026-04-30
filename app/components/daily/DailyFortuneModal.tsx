@@ -255,61 +255,33 @@ export default function DailyFortuneModal({ onClose }: { onClose: () => void }) 
               })}
             </div>
 
-            {/* 캐릭터 표정 (총운 기반) */}
-            <div style={{ textAlign: 'center', marginBottom: 12 }}>
-              <img
-                src={`/character/${fortune.totalScore >= 70 ? 'excite' : fortune.totalScore >= 50 ? 'normal' : fortune.totalScore >= 30 ? 'dspt' : 'dizzy'}.svg`}
-                alt=""
-                style={{ height: 72, width: 'auto', opacity: 0.9 }}
-              />
-            </div>
-
-            {/* 4대 운세 (좌) + 총운 (우) */}
+            {/* 총운 */}
             <div style={{
-              display: 'flex', gap: 12, marginBottom: 16,
+              textAlign: 'center', padding: '16px 0', marginBottom: 16,
               borderTop: '1px solid rgba(240,223,173,0.1)',
               borderBottom: '1px solid rgba(240,223,173,0.1)',
-              padding: '14px 0',
             }}>
-              {/* 좌: 4대 운세 바 */}
-              <div style={{ flex: 1 }}>
-                {fortune.scores.map((s, i) => (
-                  <ScoreBar key={i} item={s} />
-                ))}
-              </div>
-
-              {/* 우: 총운 크게 */}
+              <div style={{ fontSize: 11, color: '#889', marginBottom: 4 }}>총운</div>
               <div style={{
-                flex: '0 0 90px',
-                display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                position: 'relative',
+                fontSize: 42, fontWeight: 700,
+                color: getScoreColor(fortune.totalScore),
+                lineHeight: 1,
               }}>
-                {/* 배경 캐릭터 (반투명) */}
-                <img
-                  src={`/character/${fortune.totalScore >= 70 ? 'excite' : fortune.totalScore >= 50 ? 'normal' : fortune.totalScore >= 30 ? 'dspt' : 'dizzy'}.svg`}
-                  alt=""
-                  style={{
-                    position: 'absolute', width: '100%', height: 'auto',
-                    opacity: 0.08, top: '50%', transform: 'translateY(-50%)',
-                  }}
-                />
-                <div style={{ fontSize: 11, color: '#889', marginBottom: 4, position: 'relative' }}>총운</div>
-                <div style={{
-                  fontSize: 42, fontWeight: 700,
-                  color: getScoreColor(fortune.totalScore),
-                  lineHeight: 1, position: 'relative',
-                }}>
-                  {fortune.totalScore}
-                </div>
-                <div style={{
-                  fontSize: 13, fontWeight: 700, marginTop: 6,
-                  color: getVerdictColor(fortune.totalVerdict),
-                  position: 'relative',
-                }}>
-                  {fortune.totalVerdict}
-                </div>
+                {fortune.totalScore}
               </div>
+              <div style={{
+                fontSize: 14, fontWeight: 700, marginTop: 4,
+                color: getVerdictColor(fortune.totalVerdict),
+              }}>
+                {fortune.totalVerdict}
+              </div>
+            </div>
+
+            {/* 4대 운세 */}
+            <div style={{ marginBottom: 16 }}>
+              {fortune.scores.map((s, i) => (
+                <ScoreBar key={i} item={s} />
+              ))}
             </div>
 
             {/* 지괘 해석 */}

@@ -27,6 +27,23 @@ async function loadAssets() {
   return { regular: fontRegular, bold: fontBold, bg: bgBase64 };
 }
 
+const charCache: Record<string, string> = {};
+
+async function loadCharBase64(name: string): Promise<string> {
+  if (!charCache[name]) {
+    const buf = await readFile(join(process.cwd(), `public/character/${name}.svg`));
+    charCache[name] = `data:image/svg+xml;base64,${buf.toString('base64')}`;
+  }
+  return charCache[name];
+}
+
+function getCharName(score: number): string {
+  if (score >= 70) return 'excite';
+  if (score >= 50) return 'normal';
+  if (score >= 30) return 'dspt';
+  return 'dizzy';
+}
+
 interface ScoreItem {
   label: string;
   score: number;
@@ -53,6 +70,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     const { regular, bold, bg } = await loadAssets();
+    const charName = getCharName(totalScore);
+    const charUri = await loadCharBase64(charName);
 
     return new ImageResponse(
       (
@@ -114,50 +133,65 @@ export async function POST(request: NextRequest) {
               </div>
             )}
 
-            {/* 총운 */}
-            <div style={{
-              display: 'flex', flexDirection: 'column' as const, alignItems: 'center',
-              padding: '30px 0', marginBottom: 30,
-              borderTop: '2px solid #d5c9b0', borderBottom: '2px solid #d5c9b0',
-            }}>
-              <span style={{ fontSize: 18, color: '#8a7a60', marginBottom: 8 }}>총운</span>
-              <span style={{ fontSize: 72, fontWeight: 700, color: getColor(totalScore), lineHeight: 1 }}>
-                {totalScore}
-              </span>
-              <span style={{ fontSize: 24, fontWeight: 700, color: getColor(totalScore), marginTop: 8 }}>
-                {totalVerdict}
-              </span>
+            {/* 캐릭터 표정 중앙 */}
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <img src={charUri} width={120} height={120} style={{ opacity: 0.9 }} />
             </div>
 
-            {/* 4대 운세 */}
-            <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 20, marginBottom: 30 }}>
-              {(scores as ScoreItem[]).map((s: ScoreItem, i: number) => (
-                <div key={i} style={{ display: 'flex', flexDirection: 'column' as const }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontSize: 22, fontWeight: 700, color: '#3a2e1e' }}>{s.label}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 28, fontWeight: 700, color: getColor(s.score) }}>{s.score}</span>
-                      <span style={{
-                        fontSize: 16, fontWeight: 700, color: getColor(s.score),
-                        padding: '2px 8px', borderRadius: 6,
-                        border: `2px solid ${getColor(s.score)}`,
-                      }}>
-                        {s.verdict}
-                      </span>
+            {/* 4대 운세 (좌) + 총운 (우) */}
+            <div style={{
+              display: 'flex', gap: 24, marginBottom: 30,
+              borderTop: '2px solid #d5c9b0', borderBottom: '2px solid #d5c9b0',
+              padding: '24px 0',
+            }}>
+              {/* 좌: 4대 운세 바 */}
+              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 16, flex: 1 }}>
+                {(scores as ScoreItem[]).map((s: ScoreItem, i: number) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column' as const }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: '#3a2e1e' }}>{s.label}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 24, fontWeight: 700, color: getColor(s.score) }}>{s.score}</span>
+                        <span style={{
+                          fontSize: 14, fontWeight: 700, color: getColor(s.score),
+                          padding: '1px 6px', borderRadius: 5,
+                          border: `2px solid ${getColor(s.score)}`,
+                        }}>
+                          {s.verdict}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{
+                      display: 'flex', height: 10, borderRadius: 5,
+                      backgroundColor: '#e0d8c8', overflow: 'hidden',
+                    }}>
+                      <div style={{
+                        width: `${s.score}%`, height: '100%',
+                        backgroundColor: getColor(s.score), borderRadius: 5,
+                      }} />
                     </div>
                   </div>
-                  {/* 바 */}
-                  <div style={{
-                    display: 'flex', height: 10, borderRadius: 5,
-                    backgroundColor: '#e0d8c8', overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${s.score}%`, height: '100%',
-                      backgroundColor: getColor(s.score), borderRadius: 5,
-                    }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* 우: 총운 + 배경 캐릭터 */}
+              <div style={{
+                display: 'flex', flexDirection: 'column' as const,
+                alignItems: 'center', justifyContent: 'center',
+                width: 160, position: 'relative' as const,
+              }}>
+                <img src={charUri} width={140} height={140} style={{
+                  position: 'absolute' as const, opacity: 0.08,
+                  top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                }} />
+                <span style={{ fontSize: 18, color: '#8a7a60', marginBottom: 8 }}>총운</span>
+                <span style={{ fontSize: 72, fontWeight: 700, color: getColor(totalScore), lineHeight: 1 }}>
+                  {totalScore}
+                </span>
+                <span style={{ fontSize: 24, fontWeight: 700, color: getColor(totalScore), marginTop: 8 }}>
+                  {totalVerdict}
+                </span>
+              </div>
             </div>
 
             {/* 지괘 해석 */}
