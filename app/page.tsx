@@ -280,7 +280,7 @@ export default function MainMenu() {
           {/* 복길 캐릭터 + 말풍선 */}
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
             <img
-              src="/character/angel_dot.png"
+              src="/character/doin_dot.png"
               alt="복길"
               style={{
                 height: 36, width: 'auto',
